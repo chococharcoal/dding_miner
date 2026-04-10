@@ -3,397 +3,315 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>⛏️ Miner Calc — Minecraft RPG 광부 계산기</title>
-
-  <!--
-    ██████████████████████████████████████
-    파일 구조:
-      index.html   ← 현재 파일 (구조/마크업)
-      style.css    ← 모든 스타일
-      app.js       ← 계산 로직 (ES Module)
-      firebase.js  ← Firebase Auth 연동 (ES Module)
-    ██████████████████████████████████████
-  -->
-
+  <title>광부 계산기</title>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
-<div class="app">
 
-  <!-- ══════════════════════════════════
-       로그인 오버레이
-       firebase.js의 onAuthStateChanged가 자동 제어
-  ══════════════════════════════════ -->
-  <div class="overlay" id="lov">
-    <div class="lcard">
-      <div style="font-size:38px;margin-bottom:6px">⛏️</div>
-      <h2>Miner Calc</h2>
-      <p>Minecraft RPG 광부 최적화 계산기</p>
-
-      <button class="gbtn" id="btnGoogle">
-        <svg width="14" height="14" viewBox="0 0 18 18">
-          <path fill="#4285F4" d="M16.51 8H8.98v3h4.3c-.18 1-.74 1.48-1.6 2.04v2.01h2.6a7.8 7.8 0 002.38-5.88c0-.57-.05-.66-.15-1.18z"/>
-          <path fill="#34A853" d="M8.98 17c2.16 0 3.97-.72 5.3-1.94l-2.6-2a4.8 4.8 0 01-7.18-2.54H1.83v2.07A8 8 0 008.98 17z"/>
-          <path fill="#FBBC05" d="M4.5 10.52a4.8 4.8 0 010-3.04V5.41H1.83a8 8 0 000 7.18l2.67-2.07z"/>
-          <path fill="#EA4335" d="M8.98 4.18c1.17 0 2.23.4 3.06 1.2l2.3-2.3A8 8 0 001.83 5.4L4.5 7.49a4.77 4.77 0 014.48-3.31z"/>
-        </svg>
-        Google 로그인 (Firebase Auth)
-      </button>
-
-      <button class="guestbtn" id="btnGuest">게스트로 계속</button>
-
-      <p style="font-size:10px;color:var(--muted);margin-top:12px">
-        firebase.js에 Firebase 프로젝트 설정 입력 필요
-      </p>
+  <!-- 스킬 패널 (전 탭 공통) -->
+  <div class="skill-panel">
+    <div class="skill-panel-title">⚡ 광부 전문가 스킬</div>
+    <div class="skill-row">
+      <span class="skill-name">🔥 초고속 용광로</span>
+      <select id="skillFurnace" onchange="onSkillChange()">
+        <option value="0">0랩 — 기본</option>
+        <option value="1">1랩 — 10% 감소</option>
+        <option value="2">2랩 — 30% 감소</option>
+        <option value="3">3랩 — 40% 감소</option>
+        <option value="4">4랩 — 60% 감소</option>
+        <option value="5">5랩 — 80% 감소</option>
+      </select>
+      <span class="skill-info" id="skillFurnaceInfo">기본 (감소 없음)</span>
+    </div>
+    <div class="skill-row">
+      <span class="skill-name">💎 주괴 좀 사</span>
+      <select id="skillIngotSell" onchange="onSkillChange()">
+        <option value="0">0랩 — 기본</option>
+        <option value="1">1랩 — 5% 증가</option>
+        <option value="2">2랩 — 7% 증가</option>
+        <option value="3">3랩 — 10% 증가</option>
+        <option value="4">4랩 — 20% 증가</option>
+        <option value="5">5랩 — 30% 증가</option>
+        <option value="6">6랩 — 50% 증가</option>
+      </select>
+      <span class="skill-info" id="skillIngotSellInfo">기본 (보너스 없음)</span>
     </div>
   </div>
 
-  <!-- ══════════════════════════════════
-       상단 바
-  ══════════════════════════════════ -->
-  <div class="topbar">
-    <h1>⛏️ MINER CALC</h1>
-    <div class="user-chip">
-      <span class="uid" id="uid">비로그인</span>
-      <button class="avatar" id="av">?</button>
+  <!-- 탭 -->
+  <div class="tabs">
+    <div class="tab on"  onclick="sw(0, this)">⛏ 채굴 수익</div>
+    <div class="tab"     onclick="sw(1, this)">🔥 강화횃불</div>
+    <div class="tab"     onclick="sw(2, this)">⚖ 주괴 최적화</div>
+    <div class="tab"     onclick="sw(3, this)">📦 재료 가격</div>
+  </div>
+
+  <!-- ══ TAB 0: 채굴 수익 ══ -->
+  <div id="t0" class="panel">
+
+    <div class="card">
+      <div class="card-title">곡괭이 & 스테미나</div>
+      <div class="grid2">
+        <div class="field">
+          <label>곡괭이 강화</label>
+          <select id="pickaxeLevel" onchange="cs()">
+            <option value="0">0강</option>
+            <option value="1">1강</option>
+            <option value="2">2강</option>
+            <option value="3">3강</option>
+            <option value="4">4강</option>
+            <option value="5">5강</option>
+            <option value="6">6강</option>
+            <option value="7">7강</option>
+            <option value="8">8강</option>
+            <option value="9">9강</option>
+            <option value="10">10강</option>
+            <option value="11">11강</option>
+            <option value="12">12강</option>
+            <option value="13">13강</option>
+            <option value="14">14강</option>
+            <option value="15">15강</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>총 스테미나</label>
+          <input id="totalStamina" type="number" placeholder="0" oninput="cs()">
+        </div>
+      </div>
+      <div class="field">
+        <label>캘 광석 종류</label>
+        <select id="oreType" onchange="cs()">
+          <option value="even">골고루 (3종 균등)</option>
+          <option value="corum">코룸만</option>
+          <option value="rifton">리프톤만</option>
+          <option value="serent">세렌트만</option>
+        </select>
+      </div>
     </div>
+
+    <div class="card">
+      <div class="card-title">판매가 입력</div>
+      <div class="grid3">
+        <div class="field">
+          <label>코룸 주괴 (원/개)</label>
+          <input id="ingotPriceC" type="number" placeholder="0" oninput="cs()">
+        </div>
+        <div class="field">
+          <label>리프톤 주괴 (원/개)</label>
+          <input id="ingotPriceR" type="number" placeholder="0" oninput="cs()">
+        </div>
+        <div class="field">
+          <label>세렌트 주괴 (원/개)</label>
+          <input id="ingotPriceS" type="number" placeholder="0" oninput="cs()">
+        </div>
+        <div class="field">
+          <label>보석 (원/개)</label>
+          <input id="gemPrice" type="number" placeholder="0" oninput="cs()">
+        </div>
+        <div class="field">
+          <label>항해포인트 (원/개)</label>
+          <input id="naviPrice" type="number" placeholder="0" oninput="cs()">
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">계산 결과</div>
+      <div id="sRes"><div class="empty-msg">값을 입력하면 계산됩니다</div></div>
+    </div>
+
   </div>
 
-  <!-- ══════════════════════════════════
-       탭 바
-  ══════════════════════════════════ -->
-  <div class="tabbar" id="tabbar">
-    <div class="tab on"  data-tab="0">📊 스테미나</div>
-    <div class="tab"     data-tab="1">💎 라이프스톤</div>
-    <div class="tab"     data-tab="2">⚗️ 주괴 최적화</div>
-    <div class="tab"     data-tab="3">🪨 바닐라 재료</div>
-    <div class="tab"     data-tab="4">📋 제작법</div>
+  <!-- ══ TAB 1: 강화횃불 ══ -->
+  <div id="t1" class="panel" style="display:none">
+
+    <div class="card">
+      <div class="card-title">재료 가격</div>
+      <div class="grid2">
+        <div class="field">
+          <label>숯 / 석탄 (원/세트)</label>
+          <input id="tCharcoalPrice" type="number" placeholder="0" oninput="ct()">
+        </div>
+        <div class="field">
+          <label>막대기 (원/세트)</label>
+          <input id="tStickPrice" type="number" placeholder="0" oninput="ct()">
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">제작 계획</div>
+      <div class="grid2">
+        <div class="field">
+          <label>만들 횃불 수 (개)</label>
+          <input id="tWantCount" type="number" placeholder="0" oninput="ct()">
+        </div>
+        <div class="field">
+          <label>횃불 판매가 (원/개) <span class="opt">선택</span></label>
+          <input id="tSellPrice" type="number" placeholder="미입력 시 재료비만" oninput="ct()">
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">계산 결과</div>
+      <div id="tRes"><div class="empty-msg">값을 입력하면 계산됩니다</div></div>
+    </div>
+
   </div>
 
-  <!-- ══════════════════════════════════
-       컨텐츠 영역
-  ══════════════════════════════════ -->
-  <div class="content">
+  <!-- ══ TAB 2: 주괴 최적화 ══ -->
+  <div id="t2" class="panel" style="display:none">
 
-    <!-- ────────────────────────────────
-         TAB 0: 스테미나
-    ──────────────────────────────── -->
-    <div id="t0">
-      <!-- 요약 카드 -->
-      <div class="sg">
-        <div class="sc"><div class="sl">현재 스테미나</div><div class="sv"    id="s_cur">3000</div></div>
-        <div class="sc"><div class="sl">채굴 가능 광석</div><div class="sv g" id="s_ore">1500</div></div>
-        <div class="sc"><div class="sl">제작 주괴</div>     <div class="sv b" id="s_ing">93</div></div>
-        <div class="sc"><div class="sl">예상 수익</div>     <div class="sv p" id="s_earn">—</div></div>
-      </div>
-
-      <!-- 스테미나 설정 -->
-      <div class="panel">
-        <div class="ptitle">⚡ 스테미나 설정</div>
-        <div class="ir">
-          <div class="ig"><div class="il">최대 스테미나</div>   <input type="number" id="maxS"  value="3000" oninput="app.cs()"></div>
-          <div class="ig"><div class="il">현재 스테미나</div>   <input type="number" id="curS"  value="3000" oninput="app.cs()"></div>
+    <div class="card">
+      <div class="card-title">보유 주괴</div>
+      <div class="grid3">
+        <div class="field">
+          <label>코룸 주괴 (개)</label>
+          <input id="iCo" type="number" placeholder="0" oninput="co()">
         </div>
-        <div class="ir">
-          <div class="ig"><div class="il">소비 스테미나/회</div><input type="number" id="sCost" value="10"   oninput="app.cs()"></div>
-          <div class="ig"><div class="il">획득 광석/회</div>    <input type="number" id="oreR"  value="5"    oninput="app.cs()"></div>
+        <div class="field">
+          <label>리프톤 주괴 (개)</label>
+          <input id="iRi" type="number" placeholder="0" oninput="co()">
         </div>
-        <div class="sb"><div class="sbf" id="sbar" style="width:100%"></div></div>
-        <div style="font-size:10px;color:var(--muted);text-align:right" id="spct">100%</div>
-      </div>
-
-      <!-- 주괴 제작 기준 -->
-      <div class="panel">
-        <div class="ptitle">🔩 주괴 제작 기준</div>
-        <div class="ir">
-          <div class="ig"><div class="il">광석 / 주괴</div>     <input type="number" id="oPI"    value="16"  oninput="app.cs()"></div>
-          <div class="ig"><div class="il">강화횃불 / 주괴</div> <input type="number" id="tPI"    value="2"   oninput="app.cs()"></div>
-        </div>
-        <div class="ir">
-          <div class="ig"><div class="il">보유 강화횃불</div>   <input type="number" id="tCnt"   value="200" oninput="app.cs()"></div>
-          <div class="ig">
-            <!-- //제작법 필요: 코룸/리프톤/세렌트 주괴 가격 분리 -->
-            <div class="il">주괴 판매가 (개)</div>
-            <input type="number" id="ingotP" value="0" placeholder="원" oninput="app.cs()">
-          </div>
-        </div>
-        <div class="tip">💡 스테미나 10 → 광석 5개 / 광석 16 + 강화횃불 2 → 주괴 1개</div>
-      </div>
-
-      <!-- 결과 -->
-      <div class="panel">
-        <div class="ptitle">📈 채굴 예측 결과</div>
-        <div class="rbox" id="sRes">계산 중...</div>
-      </div>
-    </div><!-- /t0 -->
-
-    <!-- ────────────────────────────────
-         TAB 1: 라이프스톤
-    ──────────────────────────────── -->
-    <div id="t1" style="display:none">
-      <!-- 판매가 입력 -->
-      <div class="panel">
-        <div class="ptitle">💎 라이프스톤 / 어빌리티 스톤 판매가 (개당)</div>
-        <div class="ir">
-          <div class="ig"><div class="il">하급 라이프스톤</div><input type="number" id="pL1" value="0" oninput="app.cl()"></div>
-          <div class="ig"><div class="il">중급 라이프스톤</div><input type="number" id="pL2" value="0" oninput="app.cl()"></div>
-        </div>
-        <div class="ir">
-          <div class="ig"><div class="il">상급 라이프스톤</div><input type="number" id="pL3" value="0" oninput="app.cl()"></div>
-          <div class="ig"><div class="il">어빌리티 스톤</div>  <input type="number" id="pAb" value="0" oninput="app.cl()"></div>
+        <div class="field">
+          <label>세렌트 주괴 (개)</label>
+          <input id="iSe" type="number" placeholder="0" oninput="co()">
         </div>
       </div>
+    </div>
 
-      <!-- 보유 주괴 -->
-      <div class="panel">
-        <!-- //제작법 필요: 하급/중급/상급 라스 각각의 코룸/리프톤/세렌트 주괴 소모량 -->
-        <!-- //제작법 필요: 어빌리티 스톤 주괴 소모량 -->
-        <!-- //제작법 필요: 각 라이프스톤에 필요한 바닐라 재료 종류 및 세트 수량 -->
-        <div class="ptitle">🧱 보유 주괴</div>
-        <div class="ir">
-          <div class="ig"><div class="il">코룸 주괴</div> <input type="number" id="iCo" value="0" oninput="app.cl()"></div>
-          <div class="ig"><div class="il">리프톤 주괴</div><input type="number" id="iRi" value="0" oninput="app.cl()"></div>
+    <div class="card">
+      <div class="card-title">주괴 단가</div>
+      <div class="grid3">
+        <div class="field">
+          <label>코룸 주괴 (원/개)</label>
+          <input id="oCo" type="number" placeholder="0" oninput="co()">
         </div>
-        <div class="ig" style="margin-bottom:8px">
-          <div class="il">세렌트 주괴</div>
-          <input type="number" id="iSe" value="0" oninput="app.cl()">
+        <div class="field">
+          <label>리프톤 주괴 (원/개)</label>
+          <input id="oRi" type="number" placeholder="0" oninput="co()">
         </div>
-        <div class="tip">바닐라 재료 가격은 [바닐라 재료] 탭에서 입력하면 자동 반영됩니다</div>
-      </div>
-
-      <!-- 결과 -->
-      <div class="panel">
-        <div class="ptitle">📊 라이프스톤 제작 수익 계산</div>
-        <!-- //제작법 필요: 제작법 확정 후 순수익 = 판매가 - 주괴원가 - 바닐라원가 -->
-        <div class="rbox" id="lRes">
-          <div style="color:var(--muted);font-size:11px">
-            가격 및 주괴 수량 입력 후 자동 계산됩니다<br>
-            <span style="color:var(--accent)">※ 제작법 입력 대기 중</span>
-          </div>
+        <div class="field">
+          <label>세렌트 주괴 (원/개)</label>
+          <input id="oSe" type="number" placeholder="0" oninput="co()">
         </div>
       </div>
-    </div><!-- /t1 -->
+    </div>
 
-    <!-- ────────────────────────────────
-         TAB 2: 주괴 최적화
-    ──────────────────────────────── -->
-    <div id="t2" style="display:none">
-      <div class="panel">
-        <div class="ptitle">⚗️ 주괴 직판 vs 제작 최적화</div>
-        <div style="font-size:11px;color:var(--muted);margin-bottom:10px">
-          코룸/리프톤/세렌트를 그냥 팔지, 라스/어빌로 만들어 팔지 최적 경로 계산
+    <div class="card">
+      <div class="card-title">제작물 판매가 & 제작시간</div>
+      <div class="grid2">
+        <div class="field">
+          <label>하급 라이프스톤 (원/개)</label>
+          <input id="oL1" type="number" placeholder="0" oninput="co()">
         </div>
-        <div class="ir">
-          <div class="ig"><div class="il">코룸 주괴 단가</div> <input type="number" id="oCo" value="0" oninput="app.co()"></div>
-          <div class="ig"><div class="il">리프톤 주괴 단가</div><input type="number" id="oRi" value="0" oninput="app.co()"></div>
+        <div class="field">
+          <label>하급 라스 제작시간 (초)</label>
+          <input id="ctL1" type="number" placeholder="0" oninput="co()">
         </div>
-        <div class="ig" style="margin-bottom:8px">
-          <div class="il">세렌트 주괴 단가</div>
-          <input type="number" id="oSe" value="0" oninput="app.co()">
+        <div class="field">
+          <label>중급 라이프스톤 (원/개)</label>
+          <input id="oL2" type="number" placeholder="0" oninput="co()">
         </div>
-
-        <div class="sep"></div>
-        <div style="font-size:11px;color:var(--muted);margin-bottom:7px">라이프스톤 세트당 판매가</div>
-        <div class="ir">
-          <div class="ig"><div class="il">하급 라스 (세트)</div><input type="number" id="oL1" value="0" oninput="app.co()"></div>
-          <div class="ig"><div class="il">중급 라스 (세트)</div><input type="number" id="oL2" value="0" oninput="app.co()"></div>
+        <div class="field">
+          <label>중급 라스 제작시간 (초)</label>
+          <input id="ctL2" type="number" placeholder="0" oninput="co()">
         </div>
-        <div class="ir">
-          <div class="ig"><div class="il">상급 라스 (세트)</div><input type="number" id="oL3" value="0" oninput="app.co()"></div>
-          <div class="ig"><div class="il">어빌 스톤 (세트)</div><input type="number" id="oAb" value="0" oninput="app.co()"></div>
+        <div class="field">
+          <label>상급 라이프스톤 (원/개)</label>
+          <input id="oL3" type="number" placeholder="0" oninput="co()">
         </div>
-        <!-- //제작법 필요: 라스 / 어빌 세트당 주괴 소모량 확정 필요 -->
-        <!--
-          //최적화 로직 (app.js에서 제작법 확정 후 구현):
-          1. 각 라스별 순이익 = 세트 판매가 - (주괴소모량 × 단가) - vanillaCost()
-          2. 이득 라스만 제작 / 손해 라스 → 해당 주괴 직판
-          3. 라스 3종 이득 합산 ≤ 0 → 어빌 최대 제작 후 남은 주괴 직판
-          4. 어빌도 손해 → 전량 주괴 직판
-        -->
-      </div>
-
-      <div class="panel">
-        <div class="ptitle">📊 최적화 결과</div>
-        <div class="rbox" id="oRes">
-          <div style="color:var(--muted);font-size:11px">
-            주괴 단가 및 판매가 입력 후 계산됩니다<br>
-            <span style="color:var(--accent)">※ 제작법 확정 후 재료 원가 차감 정밀 계산 예정</span>
-          </div>
+        <div class="field">
+          <label>상급 라스 제작시간 (초)</label>
+          <input id="ctL3" type="number" placeholder="0" oninput="co()">
+        </div>
+        <div class="field">
+          <label>어빌리티 스톤 (원/개)</label>
+          <input id="oAb" type="number" placeholder="0" oninput="co()">
+        </div>
+        <div class="field">
+          <label>어빌 스톤 제작시간 (초)</label>
+          <input id="ctAb" type="number" placeholder="0" oninput="co()">
         </div>
       </div>
+    </div>
 
-      <div class="panel">
-        <div class="ptitle">🧮 최종 제작 계획 — 필요 재료 &amp; 소요 시간</div>
-        <!-- //제작법 필요: 결과물 수량 역산 → 바닐라 재료 총량 → fmtQty() 표기 -->
-        <!-- //제작법 필요: 소요 시간 = 수량 × craft_time_sec → fmtTime() 표기 -->
-        <div class="rbox" id="matPlan">
-          <div style="color:var(--muted);font-size:11px">제작법 입력 후 표시됩니다</div>
+    <div class="card">
+      <div class="card-title">최적화 결과</div>
+      <div id="oRes"><div class="empty-msg">값을 입력하면 계산됩니다</div></div>
+    </div>
+
+  </div>
+
+  <!-- ══ TAB 3: 재료 가격 ══ -->
+  <div id="t3" class="panel" style="display:none">
+
+    <div class="card">
+      <div class="card-title">바닐라 재료 세트(64개)당 가격</div>
+      <div class="grid2">
+        <div class="field">
+          <label>조약돌</label>
+          <input id="vCo" type="number" placeholder="0" oninput="cv()">
+        </div>
+        <div class="field">
+          <label>심층암 조약돌</label>
+          <input id="vDc" type="number" placeholder="0" oninput="cv()">
+        </div>
+        <div class="field">
+          <label>구리 블럭</label>
+          <input id="vCu" type="number" placeholder="0" oninput="cv()">
+        </div>
+        <div class="field">
+          <label>철 블럭</label>
+          <input id="vIr" type="number" placeholder="0" oninput="cv()">
+        </div>
+        <div class="field">
+          <label>금 블럭</label>
+          <input id="vGo" type="number" placeholder="0" oninput="cv()">
+        </div>
+        <div class="field">
+          <label>다이아 블럭</label>
+          <input id="vDi" type="number" placeholder="0" oninput="cv()">
+        </div>
+        <div class="field">
+          <label>레드스톤 블럭</label>
+          <input id="vRe" type="number" placeholder="0" oninput="cv()">
+        </div>
+        <div class="field">
+          <label>청금석 블럭</label>
+          <input id="vLa" type="number" placeholder="0" oninput="cv()">
+        </div>
+        <div class="field">
+          <label>자수정 블럭</label>
+          <input id="vAm" type="number" placeholder="0" oninput="cv()">
+        </div>
+        <div class="field">
+          <label>기타</label>
+          <input id="vEt" type="number" placeholder="0" oninput="cv()">
         </div>
       </div>
-    </div><!-- /t2 -->
+    </div>
 
-    <!-- ────────────────────────────────
-         TAB 3: 바닐라 재료
-    ──────────────────────────────── -->
-    <div id="t3" style="display:none">
-      <div class="panel">
-        <div class="ptitle">🪨 바닐라 재료 세트당 가격 (1세트 = 64개)</div>
-        <!-- //제작법 필요: 라이프스톤/어빌에 필요한 바닐라 재료 목록 확정 후 항목 추가 -->
-        <div class="ir">
-          <div class="ig"><div class="il">돌 (세트)</div>          <input type="number" id="vSt" value="0" oninput="app.cv()"></div>
-          <div class="ig"><div class="il">구리 블럭 (세트)</div>   <input type="number" id="vCu" value="0" oninput="app.cv()"></div>
-        </div>
-        <div class="ir">
-          <div class="ig"><div class="il">철 블럭 (세트)</div>     <input type="number" id="vIr" value="0" oninput="app.cv()"></div>
-          <div class="ig"><div class="il">금 블럭 (세트)</div>     <input type="number" id="vGo" value="0" oninput="app.cv()"></div>
-        </div>
-        <div class="ir">
-          <div class="ig"><div class="il">다이아 블럭 (세트)</div> <input type="number" id="vDi" value="0" oninput="app.cv()"></div>
-          <div class="ig"><div class="il">에메랄드 블럭 (세트)</div><input type="number" id="vEm" value="0" oninput="app.cv()"></div>
-        </div>
-        <div class="ir">
-          <div class="ig"><div class="il">흑요석 (세트)</div>       <input type="number" id="vOb" value="0" oninput="app.cv()"></div>
-          <div class="ig">
-            <!-- //제작법 필요: 추가 바닐라 재료 항목 -->
-            <div class="il">기타 재료 (세트)</div>
-            <input type="number" id="vEt" value="0" oninput="app.cv()">
-          </div>
-        </div>
-        <div class="tip">1상자 = 54세트 × 64개 = 3,456개 | 입력한 가격은 [라이프스톤], [최적화] 탭에 자동 반영됩니다</div>
-      </div>
+    <div class="card">
+      <div class="card-title">가격 현황</div>
+      <div id="vRes"><div class="empty-msg">재료 가격 입력 후 계산됩니다</div></div>
+    </div>
 
-      <div class="panel">
-        <div class="ptitle">📦 재료 가치 요약</div>
-        <div class="rbox" id="vRes">
-          <div style="color:var(--muted);font-size:11px">재료 가격 입력 후 계산됩니다</div>
-        </div>
-      </div>
-    </div><!-- /t3 -->
+  </div>
 
-    <!-- ────────────────────────────────
-         TAB 4: 제작법
-    ──────────────────────────────── -->
-    <div id="t4" style="display:none">
-      <div class="panel">
-        <div class="ptitle">📋 현재 적용된 제작법</div>
+  <script type="module">
+    import { sw, cs, ct, co, cv, onSkillChange, init } from './app.js';
 
-        <div class="recblock">
-          <div class="rname">⛏️ 채굴 기본</div>
-          <div class="ritem">스테미나 <span>10</span> 소비 → 광석 <span>5개</span></div>
-        </div>
+    window.sw            = sw;
+    window.cs            = cs;
+    window.ct            = ct;
+    window.co            = co;
+    window.cv            = cv;
+    window.onSkillChange = onSkillChange;
 
-        <div class="recblock">
-          <div class="rname">🔩 주괴 제작</div>
-          <div class="ritem">광석 <span>16개</span> + 강화횃불 <span>2개</span> → 주괴 <span>1개</span></div>
-        </div>
-
-        <!-- //제작법 필요: 하급 라이프스톤 재료 및 수량 -->
-        <div class="recblock" style="border:1px dashed var(--border)">
-          <div class="rname" style="color:var(--muted)">
-            💎 하급 라이프스톤 <span class="bdg br" style="margin-left:6px">제작법 미입력</span>
-          </div>
-          <div class="ritem">
-            주괴 소모: <span style="color:var(--accent)">???</span> | 바닐라: <span style="color:var(--accent)">???</span> | 제작시간: <span style="color:var(--accent)">???</span>초
-          </div>
-        </div>
-
-        <!-- //제작법 필요: 중급 라이프스톤 재료 및 수량 -->
-        <div class="recblock" style="border:1px dashed var(--border)">
-          <div class="rname" style="color:var(--muted)">
-            💎 중급 라이프스톤 <span class="bdg br" style="margin-left:6px">제작법 미입력</span>
-          </div>
-          <div class="ritem">
-            주괴 소모: <span style="color:var(--accent)">???</span> | 바닐라: <span style="color:var(--accent)">???</span> | 제작시간: <span style="color:var(--accent)">???</span>초
-          </div>
-        </div>
-
-        <!-- //제작법 필요: 상급 라이프스톤 재료 및 수량 -->
-        <div class="recblock" style="border:1px dashed var(--border)">
-          <div class="rname" style="color:var(--muted)">
-            💎 상급 라이프스톤 <span class="bdg br" style="margin-left:6px">제작법 미입력</span>
-          </div>
-          <div class="ritem">
-            주괴 소모: <span style="color:var(--accent)">???</span> | 바닐라: <span style="color:var(--accent)">???</span> | 제작시간: <span style="color:var(--accent)">???</span>초
-          </div>
-        </div>
-
-        <!-- //제작법 필요: 어빌리티 스톤 재료 및 수량 -->
-        <div class="recblock" style="border:1px dashed var(--border)">
-          <div class="rname" style="color:var(--muted)">
-            🔮 어빌리티 스톤 <span class="bdg br" style="margin-left:6px">제작법 미입력</span>
-          </div>
-          <div class="ritem">
-            주괴 소모: <span style="color:var(--accent)">???</span> | 바닐라: <span style="color:var(--accent)">???</span> | 제작시간: <span style="color:var(--accent)">???</span>초
-          </div>
-        </div>
-      </div>
-
-      <div class="panel">
-        <div class="ptitle">🧱 단위 기준</div>
-        <div class="rbox">
-          <div class="rrow"><span class="rl">1상자</span>           <span class="rv b">54세트</span></div>
-          <div class="rrow"><span class="rl">1세트</span>           <span class="rv b">64개</span></div>
-          <div class="rrow"><span class="rl">1상자 총량</span>      <span class="rv g">3,456개</span></div>
-          <div class="rsec">
-            <div class="rrow"><span class="rl">n상자 표기</span>    <span style="font-size:11px;color:var(--muted)">3,456개 이상일 때만</span></div>
-            <div class="rrow"><span class="rl">n세트 표기</span>    <span style="font-size:11px;color:var(--muted)">64개 이상일 때만</span></div>
-          </div>
-        </div>
-      </div>
-    </div><!-- /t4 -->
-
-  </div><!-- /content -->
-</div><!-- /app -->
-
-<!-- ══════════════════════════════════════
-     Scripts (ES Modules)
-══════════════════════════════════════ -->
-<script type="module">
-  // app.js import
-  import * as app from './app.js';
-
-  // firebase.js import
-  // //firebase_auth: firebaseConfig 입력 후 아래 주석 해제
-  // import { loginGoogle, loginGuest, logout } from './firebase.js';
-
-  // 전역 노출 (HTML oninput에서 app.cs() 형태로 호출)
-  window.app = app;
-
-  // 탭 클릭 이벤트
-  document.getElementById('tabbar').addEventListener('click', (e) => {
-    const tab = e.target.closest('.tab');
-    if (!tab) return;
-    app.sw(+tab.dataset.tab, tab);
-  });
-
-  // 로그인 버튼 (firebase.js 연동 전 임시)
-  document.getElementById('btnGoogle').addEventListener('click', () => {
-    // //firebase_auth: loginGoogle() 호출로 교체
-    document.getElementById('lov').style.display = 'none';
-    document.getElementById('uid').textContent   = 'Google 유저 (테스트)';
-    document.getElementById('av').textContent    = 'G';
-    document.getElementById('av').style.background = '#4285F4';
-  });
-
-  document.getElementById('btnGuest').addEventListener('click', () => {
-    // //firebase_auth: loginGuest() 호출로 교체
-    document.getElementById('lov').style.display = 'none';
-    document.getElementById('uid').textContent   = '게스트';
-    document.getElementById('av').textContent    = '👤';
-    document.getElementById('av').style.background = 'var(--muted)';
-  });
-
-  document.getElementById('av').addEventListener('click', () => {
-    // //firebase_auth: logout() 호출로 교체
-    document.getElementById('lov').style.display = 'flex';
-    document.getElementById('uid').textContent   = '비로그인';
-    document.getElementById('av').textContent    = '?';
-    document.getElementById('av').style.background = 'var(--accent)';
-  });
-
-  // 초기 계산
-  app.init();
-</script>
-
+    document.addEventListener('DOMContentLoaded', init);
+  </script>
 </body>
-</html>
+
+</html>>
