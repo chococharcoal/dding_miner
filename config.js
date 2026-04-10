@@ -29,7 +29,7 @@ export const MINING = {
    ingotDropPct   : 채굴 1회당 주괴 완성품 드랍 확률 (%) — 0이면 표시 안 함
    ── 실제 수치로 교체해주세요 ── */
 export const PICKAXE = [
-  /* 0강 */ { oresPerUse:  0, gemDropPct: 0, naviPointDrop: 0, ingotDropPct: 0 },
+  /* 0강 */ { oresPerUse:  1, gemDropPct: 0, naviPointDrop: 0, ingotDropPct: 0 },
   /* 1강 */ { oresPerUse:  0, gemDropPct: 0, naviPointDrop: 0, ingotDropPct: 0 },
   /* 2강 */ { oresPerUse:  0, gemDropPct: 0, naviPointDrop: 0, ingotDropPct: 0 },
   /* 3강 */ { oresPerUse:  0, gemDropPct: 0, naviPointDrop: 0, ingotDropPct: 0 },
@@ -37,7 +37,7 @@ export const PICKAXE = [
   /* 5강 */ { oresPerUse:  0, gemDropPct: 0, naviPointDrop: 0, ingotDropPct: 0 },
   /* 6강 */ { oresPerUse:  0, gemDropPct: 0, naviPointDrop: 0, ingotDropPct: 0 },
   /* 7강 */ { oresPerUse:  0, gemDropPct: 0, naviPointDrop: 0, ingotDropPct: 0 },
-  /* 8강 */ { oresPerUse:  0, gemDropPct: 0, naviPointDrop: 0, ingotDropPct: 0 },
+  /* 8강 */ { oresPerUse:  5, gemDropPct: 0, naviPointDrop: 0, ingotDropPct: 0 },
   /* 9강 */ { oresPerUse:  0, gemDropPct: 0, naviPointDrop: 0, ingotDropPct: 0 },
   /*10강 */ { oresPerUse:  0, gemDropPct: 0, naviPointDrop: 0, ingotDropPct: 0 },
   /*11강 */ { oresPerUse:  0, gemDropPct: 0, naviPointDrop: 0, ingotDropPct: 0 },
