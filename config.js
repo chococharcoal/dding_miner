@@ -11,7 +11,7 @@ export const SKILLS = {
     reductionPct: [0, 10, 30, 40, 60, 80],
   },
   INGOT_SELL: {
-    name: '주괴 좀 사',
+    name: '주괴 좀 사 주괴',
     maxLevel: 6,
     bonusPct: [0, 5, 7, 10, 20, 30, 50],
   },
