@@ -12,8 +12,9 @@ const { SET_SIZE, BOX_SIZE } = UNITS;
 export const f  = n => Math.round(n).toLocaleString('ko-KR');
 export const fd = (n,d=2) => +n.toFixed(d) === Math.round(+n.toFixed(d))
   ? Math.round(n).toString()
-  : n.toFixed(d).replace(/\.?0+$/,'');
+  : n.toFixed(d).replace(/\.?0+$/,'');  
 
+//상자, 세트, 개 단위 변환
 export function fmtQty(n) {
   n = Math.floor(n);
   if (n<=0) return '0개';
@@ -21,15 +22,23 @@ export function fmtQty(n) {
         sets=Math.floor(rem/SET_SIZE), items=rem%SET_SIZE;
   return [[boxes,'상자'],[sets,'세트'],[items,'개']].filter(([v])=>v>0).map(([v,u])=>v+u).join(' ')||'0개';
 }
+
+//시간, 분, 초 단위 변환
 export function fmtTime(sec) {
   if(sec<=0)return '0초';
   const h=Math.floor(sec/3600),m=Math.floor((sec%3600)/60),s=Math.round(sec%60);
   return [[h,'시간'],[m,'분'],[s,'초']].filter(([v])=>v>0).map(([v,u])=>v+u).join(' ');
 }
+
+
 export function gi(id){ const e=document.getElementById(id); return e?Math.max(0,+e.value||0):0; }
 export function gv(id){ const e=document.getElementById(id); return e?e.value:''; }
 const bdg=(cls,txt)=>`<span class="bdg ${cls}">${txt}</span>`;
 const row=(l,v,vc='')=>`<div class="rrow"><span class="rl">${l}</span><span class="rv ${vc}">${v}</span></div>`;
+
+
+
+
 
 /* ─── 스킬/각인 ─── */
 export function getSK() {
@@ -50,6 +59,10 @@ export function getSK() {
     fl,il,gl,cl,sl,ll,fpl,pl,
   };
 }
+
+
+
+
 export function getENG() {
   const ol=gi('engOreLuck'),rl=gi('engRelic'),cl=gi('engCobby'),
         gc=gi('engGemCobby'),ca=gi('engCart'),ro=gi('engRoulette');
@@ -63,6 +76,10 @@ export function getENG() {
     ol,rl,cl,gc,ca,ro,
   };
 }
+
+
+
+
 
 /* ─── 탭 ─── */
 export function sw(i,el){
@@ -328,7 +345,7 @@ export function cs() {
   // 광석 종류별 색상
   const CC = '#e07b2a'; // 코룸 — 주황
   const CR = '#3a9e68'; // 리프톤 — 초록
-  const CS = '#d94f3d'; // 세렌트 — 붉은
+  const CS = '#d94f3d'; // 세렌트 — 빨강
 
   const cRow = (label, oreAmt, ingotAmt, color, torchAmt) => {
     if(oreAmt <= 0.01) return '';
@@ -369,9 +386,9 @@ export function cs() {
 
   <div class="rsec">
     <div class="rsec-title">⛏ 광석 → 주괴 변환</div>
-    ${cRow('🟠 코룸', m.oreC, m.ingotFromOreC, CC, torchC)}
-    ${cRow('🟢 리프톤', m.oreR, m.ingotFromOreR, CR, torchR)}
-    ${cRow('🔴 세렌트', m.oreS, m.ingotFromOreS, CS, torchS)}
+    ${cRow('코룸', m.oreC, m.ingotFromOreC, CC, torchC)}
+    ${cRow('리프톤', m.oreR, m.ingotFromOreR, CR, torchR)}
+    ${cRow('세렌트', m.oreS, m.ingotFromOreS, CS, torchS)}
     ${m.totalTorch > 0.01 ? `<div class="rrow"><span class="rl" style="color:var(--blue)">🔥 필요 강화횃불 합계</span><span class="rv b">${f(m.totalTorch)}개</span></div>` : ''}
     ${m.fpDrops > 0.01 ? `<div class="rrow"><span class="rl">불붙은 곡괭이 ${bdg('bg','Lv'+sk.fpl)}</span><span class="rv">+${fd(m.fpDrops)}개 주괴</span></div>` : ''}
     <div class="rrow rrow-strong">
@@ -491,7 +508,7 @@ const MAT_META = {
   copper:                {name:'구리 블럭',      color:'#c87941', unit:'개',   perUnit:1},
   iron:                  {name:'철 블럭',        color:'#a0a0a0', unit:'개',   perUnit:1},
   gold:                  {name:'금 블럭',        color:'#d4a020', unit:'개',   perUnit:1},
-  diamond:               {name:'다이아 블럭',    color:'#38c8d0', unit:'개',   perUnit:1},
+  diamond:               {name:'다이아몬드 블럭',    color:'#38c8d0', unit:'개',   perUnit:1},
   redstone:              {name:'레드스톤 블럭',  color:'#d94f3d', unit:'개',   perUnit:1},
   lapis:                 {name:'청금석 블럭',    color:'#3d6fd4', unit:'개',   perUnit:1},
   amethyst:              {name:'자수정 블럭',    color:'#9b6dd4', unit:'개',   perUnit:1},
@@ -500,7 +517,7 @@ const MAT_META = {
   platinum:              {name:'플레티넘 블럭',  color:'#9ab0c8', unit:'개',   perUnit:1},
   stalactite:            {name:'뾰족한 점적석',  color:'#a0c8a0', unit:'개',   perUnit:1},
   tuff:                  {name:'응회암',         color:'#8a9a7a', unit:'개',   perUnit:1},
-  glow_lichen:           {name:'발광이끼',       color:'#70c8a0', unit:'개',   perUnit:1},
+  glow_lichen:           {name:'발광 이끼',       color:'#70c8a0', unit:'개',   perUnit:1},
 };
 
 function matChipQty(matKey, totalQty) {
