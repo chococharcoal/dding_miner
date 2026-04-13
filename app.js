@@ -37,9 +37,6 @@ const bdg=(cls,txt)=>`<span class="bdg ${cls}">${txt}</span>`;
 const row=(l,v,vc='')=>`<div class="rrow"><span class="rl">${l}</span><span class="rv ${vc}">${v}</span></div>`;
 
 
-
-
-
 /* ─── 스킬/각인 ─── */
 export function getSK() {
   const fl=gi('skillFurnace'),il=gi('skillIngotSell'),gl=gi('skillGemSell'),
@@ -61,8 +58,6 @@ export function getSK() {
 }
 
 
-
-
 export function getENG() {
   const ol=gi('engOreLuck'),rl=gi('engRelic'),cl=gi('engCobby'),
         gc=gi('engGemCobby'),ca=gi('engCart'),ro=gi('engRoulette');
@@ -76,9 +71,6 @@ export function getENG() {
     ol,rl,cl,gc,ca,ro,
   };
 }
-
-
-
 
 
 /* ─── 탭 ─── */
@@ -119,7 +111,6 @@ export function onEngravingChange(){
 
 /* ════════════════════════════════════════
    핵심 채굴 계산 함수
-   returns: 기댓값 기반 원시 수치들
 ════════════════════════════════════════ */
 function calcMining() {
   const sk=getSK(), eng=getENG();
@@ -127,7 +118,6 @@ function calcMining() {
   const px=PICKAXE[enh]??PICKAXE[0];
   const miningCount=stamina>0?Math.floor(stamina/MINING.STAMINA_PER_USE):0;
 
-  // 광석 기댓값/회
   const luckyExtra   =(sk.lp/100)*sk.lc;
   const oreLuckExtra = eng.op/100;
   const avgDice=3.5;
@@ -135,24 +125,20 @@ function calcMining() {
   const oresPerUse   = px.oresPerUse + luckyExtra + oreLuckExtra + rouletteExtra;
   const totalOres    = miningCount * oresPerUse;
 
-  // 배분
   let oreC=0,oreR=0,oreS=0;
   if     (oreType==='corum')  oreC=totalOres;
   else if(oreType==='rifton') oreR=totalOres;
   else if(oreType==='serent') oreS=totalOres;
   else{ oreC=totalOres/3; oreR=totalOres/3; oreS=totalOres-oreC-oreR; }
 
-  // 주괴 변환
   const ingotFromOreC=oreC/INGOT_RECIPES.CORUM.ores_per_ingot;
   const ingotFromOreR=oreR/INGOT_RECIPES.RIFTON.ores_per_ingot;
   const ingotFromOreS=oreS/INGOT_RECIPES.SERENT.ores_per_ingot;
 
-  // 횃불
   const totalTorch=ingotFromOreC*INGOT_RECIPES.CORUM.torch_per_ingot
                   +ingotFromOreR*INGOT_RECIPES.RIFTON.torch_per_ingot
                   +ingotFromOreS*INGOT_RECIPES.SERENT.torch_per_ingot;
 
-  // 불붙은 곡괭이
   const fpDrops=miningCount*(sk.fp/100);
   let fpC=0,fpR=0,fpS=0;
   if     (oreType==='corum')  fpC=fpDrops;
@@ -164,7 +150,6 @@ function calcMining() {
   const totalIngotR=ingotFromOreR+fpR;
   const totalIngotS=ingotFromOreS+fpS;
 
-  // 보석
   const totalCobbyPct=px.cobbyPct+sk.ca+eng.cp;
   const cobbyCount   =miningCount*(totalCobbyPct/100);
   const gemCobby     =cobbyCount*(eng.gp/100);
@@ -177,7 +162,6 @@ function calcMining() {
   const sparkleGems=miningCount*(sk.sp/100)*sk.sc;
   const totalGems   =sparkleGems+gemCobby;
 
-  // 유물
   const totalArtPct=px.artifactPct+eng.ap;
   const artDrops   =miningCount*(totalArtPct/100);
   const cartDrops  =miningCount*(eng.kp/100);
@@ -198,18 +182,9 @@ function calcMining() {
   };
 }
 
-/* ════════════════════════════════════════
-   80% 확률 보정 계수 계산
-   이항분포에서 P(X >= k) = 0.80 이 되는 k 를
-   역산하면 k ≈ n*p - z_{0.80} * sqrt(n*p*(1-p))
-   z_{0.80} = 0.842 (표준정규 80번째 백분위 역수)
-   (성공횟수가 충분히 클 때 정규근사)
-   단, 확률이 1이거나 n=0이면 보정 없음.
-════════════════════════════════════════ */
-const Z80 = 0.842; // P(Z < 0.842) ≈ 0.80
+const Z80 = 0.842;
 
 function floor80(n, p) {
-  // n: 시행횟수(실수 가능), p: 성공확률(0~1)
   if (p <= 0 || n <= 0) return 0;
   if (p >= 1) return n;
   const mu  = n * p;
@@ -218,21 +193,15 @@ function floor80(n, p) {
   return Math.max(0, val);
 }
 
-/* ─── 광석/주괴 80% 보정 ─── */
 function calc80Ingots(m) {
-  // 기본 광석/회는 고정이므로, 확률 요소만 보정
-  // 확률 요소: 럭키히트, 광물행운, 광부룰렛, 불붙은 곡괭이, 보석 드랍, 코비, 유물
   const sk=m.sk, eng=m.eng, n=m.miningCount;
 
-  // 럭키히트: n*p 기댓값 → 80% floor
   const luckyOre80  = floor80(n, sk.lp/100) * sk.lc;
   const oreLuck80   = floor80(n, eng.op/100) * 1;
 
-  // 광부룰렛: 등장 수 80% floor × 평균 눈수 보정
   const diceCount80 = floor80(n, eng.dp/100);
   const avgNormal   = 3.5 * ENGRAVING.MINER_ROULETTE.normalMult;
   const avgGolden   = 3.5 * ENGRAVING.MINER_ROULETTE.goldenMult;
-  // 황금주사위도 80% floor
   const golden80    = floor80(diceCount80, ENGRAVING.MINER_ROULETTE.goldenPct/100);
   const normal80    = diceCount80 - golden80;
   const rouletteOre80 = normal80 * avgNormal + golden80 * avgGolden;
@@ -251,7 +220,6 @@ function calc80Ingots(m) {
   const iR80=oreR80/INGOT_RECIPES.RIFTON.ores_per_ingot;
   const iS80=oreS80/INGOT_RECIPES.SERENT.ores_per_ingot;
 
-  // 불붙은 곡괭이 80%
   const fp80=floor80(n, sk.fp/100);
   let fpC80=0,fpR80=0,fpS80=0;
   if     (oreType==='corum')  fpC80=fp80;
@@ -261,16 +229,13 @@ function calc80Ingots(m) {
 
   const tC80=iC80+fpC80, tR80=iR80+fpR80, tS80=iS80+fpS80;
 
-  // 보석 (반짝임의 시작 80%)
   const sparkle80    = floor80(n, sk.sp/100) * sk.sc;
-  // 코비 80%, 그 중 보석코비 80%
   const totalCobbyPct80 = m.totalCobbyPct;
   const cobby80      = floor80(n, totalCobbyPct80/100);
   const gemCobby80   = floor80(cobby80, eng.gp/100);
   const normalCobby80= cobby80 - gemCobby80;
   const totalGems80  = sparkle80 + gemCobby80;
 
-  // 유물 80%
   const art80   = floor80(n, m.artDrops/n||0);
   const cart80  = floor80(n, eng.kp/100);
   const totalArt80 = art80 + cart80*2;
@@ -283,24 +248,6 @@ function calc80Ingots(m) {
 /* ════════════════════════════════════════
    TAB 0: 채굴 수익
 ════════════════════════════════════════ */
-
-// 광물 색상 매핑
-const ORE_COLOR = {
-  cobblestone:           '#8a7060', // 조약돌 — 갈회색
-  deepslate_cobblestone: '#5a5570', // 심층암 — 보라회색
-  copper:                '#c87941', // 구리 — 구리색
-  iron:                  '#a8a8a8', // 철 — 은회색
-  gold:                  '#d4a020', // 금 — 황금
-  diamond:               '#38c8d0', // 다이아 — 시안
-  redstone:              '#d94f3d', // 레드스톤 — 빨강
-  lapis:                 '#3d6fd4', // 청금석 — 파랑
-  amethyst:              '#9b6dd4', // 자수정 — 보라
-};
-
-function matChip(matName, qty, color) {
-  return `<span class="mat-chip" style="background:${color}18;color:${color};border-color:${color}55">${matName} ${qty}</span>`;
-}
-
 export function cs() {
   const m   = calcMining();
   const p80 = calc80Ingots(m);
@@ -313,7 +260,7 @@ export function cs() {
   const rawGR = gi('gemPriceR')   || DEFAULT_PRICES.gem.rifton;
   const rawGS = gi('gemPriceS')   || DEFAULT_PRICES.gem.serent;
   const spPrice    = gi('skillPulsePrice');
-  const artPtPrice = gi('artifactPtPrice') / 100; // 입력: 원/100pt → 계산: 원/pt
+  const artPtPrice = gi('artifactPtPrice') / 100;
 
   const bC = rawIC*(1+sk.ib), bR = rawIR*(1+sk.ib), bS = rawIS*(1+sk.ib);
 
@@ -327,14 +274,12 @@ export function cs() {
   else if(ot==='serent') gemUnit = gemUnitS;
   else gemUnit = (gemUnitC+gemUnitR+gemUnitS)/3;
 
-  // 기댓값 수익
   const ingotRev = m.totalIngotC*bC + m.totalIngotR*bR + m.totalIngotS*bS;
   const gemRev   = m.totalGems * gemUnit;
   const spRev    = m.normalCobby * spPrice;
   const artRev   = artPtPrice>0 ? m.totalArtPts*artPtPrice : 0;
   const totalRev = ingotRev + gemRev + spRev + artRev;
 
-  // 80% 수익
   const ingotRev80 = p80.tC80*bC + p80.tR80*bR + p80.tS80*bS;
   const gemRev80   = p80.totalGems80 * gemUnit;
   const spRev80    = p80.normalCobby80 * spPrice;
@@ -342,10 +287,9 @@ export function cs() {
   const totalRev80 = ingotRev80 + gemRev80 + spRev80 + artRev80;
   const total80IngotAll = p80.tC80+p80.tR80+p80.tS80;
 
-  // 광석 종류별 색상
-  const CC = '#e07b2a'; // 코룸 — 주황
-  const CR = '#3a9e68'; // 리프톤 — 초록
-  const CS = '#d94f3d'; // 세렌트 — 빨강
+  const CC = '#e07b2a';
+  const CR = '#3a9e68';
+  const CS = '#d94f3d';
 
   const cRow = (label, oreAmt, ingotAmt, color, torchAmt) => {
     if(oreAmt <= 0.01) return '';
@@ -360,7 +304,6 @@ export function cs() {
   const torchR = m.ingotFromOreR * INGOT_RECIPES.RIFTON.torch_per_ingot;
   const torchS = m.ingotFromOreS * INGOT_RECIPES.SERENT.torch_per_ingot;
 
-  // 최종 주괴 요약 (0인 종류 제외)
   const ingotParts = [
     m.totalIngotC > 0.01 ? `<span style="color:${CC}">코룸 ${f(m.totalIngotC)}개</span>` : '',
     m.totalIngotR > 0.01 ? `<span style="color:${CR}">리프톤 ${f(m.totalIngotR)}개</span>` : '',
@@ -430,17 +373,17 @@ export function cs() {
   </div>
 
   <div class="result-box">
-    <div class="result-box-row">
-      <div>
+    <div style="display:flex;flex-direction:column;gap:10px">
+      <div style="text-align:center">
         <div class="rb-label">기댓값 수익</div>
         <div class="rb-value">${f(totalRev)}원</div>
-        <div class="rb-sub" style="margin-top:4px">주괴 ${f(m.totalIngotAll)}개</div>
+        <span class="rb-sub">주괴 ${f(m.totalIngotAll)}개</span>
       </div>
-      <div class="rb-divider"></div>
-      <div>
+      <div style="height:1px;background:var(--border);margin:0 8px"></div>
+      <div style="text-align:center">
         <div class="rb-label">🎯 80% 확률로 최소</div>
         <div class="rb-value rb-floor">${f(totalRev80)}원</div>
-        <div class="rb-sub" style="margin-top:4px">${ingot80Parts}${p80.totalGems80>0 ? ` · 보석 ${fd(p80.totalGems80)}개` : ''}${p80.normalCobby80>0 ? ` · 펄스 ${fd(p80.normalCobby80)}개` : ''}</div>
+        <span class="rb-sub">${ingot80Parts}${p80.totalGems80>0 ? ` · 보석 ${fd(p80.totalGems80)}개` : ''}${p80.normalCobby80>0 ? ` · 펄스 ${fd(p80.normalCobby80)}개` : ''}</span>
       </div>
     </div>
   </div>`;
@@ -454,7 +397,7 @@ export function cs() {
 export function ct() {
   const sk=getSK();
   const timePerTorch=TORCH.craft_time_sec*(1-sk.fr);
-  const charU=gi('tCharcoalPrice')/SET_SIZE, stickU=gi('tStickPrice')/SET_SIZE;
+  const charU=gi('tCharcoalPrice')/SET_SIZE, stickU=gi('tWoodPrice')/8;
   const costEa=charU+stickU, wantN=gi('tWantCount'), sellEa=gi('tSellPrice');
   const totalCost=costEa*wantN, totalTime=timePerTorch*wantN;
   const hasPrice=sellEa>0, totalRev=hasPrice?sellEa*wantN:0, net=totalRev-totalCost;
@@ -482,13 +425,10 @@ export function ct() {
 }
 
 /* ════════════════════════════════════════
-   TAB 2: 주괴 & 귀중품 통합 최적화
+   TAB 2: 수익 최적화
 ════════════════════════════════════════ */
-
-// 수량을 "X상자 Y세트 Z개" 또는 "X묶음" 형태로 포맷
-// bundleSize: 묶음 단위가 SET_SIZE(64)와 다를 때 사용
 function fmtQtyLabel(n, unit='개') {
-  n = Math.ceil(n); // 올림 (재료는 부족하면 안 됨)
+  n = Math.ceil(n);
   if(n <= 0) return `0${unit}`;
   const boxes = Math.floor(n / BOX_SIZE);
   const rem   = n % BOX_SIZE;
@@ -501,7 +441,6 @@ function fmtQtyLabel(n, unit='개') {
   return parts.join(' ') || `0${unit}`;
 }
 
-// 재료 chip — 색상 + 수량 표시
 const MAT_META = {
   cobblestone:           {name:'조약돌 묶음',    color:'#8a7060', unit:'묶음', perUnit:64},
   deepslate_cobblestone: {name:'심층암 조약돌 묶음', color:'#5a5570', unit:'묶음', perUnit:64},
@@ -522,7 +461,6 @@ const MAT_META = {
 
 function matChipQty(matKey, totalQty) {
   const m = MAT_META[matKey] || {name:matKey, color:'#888', unit:'개', perUnit:1};
-  // 묶음 단위면 묶음 수로 변환해서 표시
   let displayStr;
   if(m.unit === '묶음') {
     const bundles = Math.ceil(totalQty / m.perUnit);
@@ -547,9 +485,6 @@ export function co() {
   const ctL3=(gi('ctL3')||RECIPES.LS3.craft_time_sec)*(1-fr);
   const ctAb=(gi('ctAb')||RECIPES.ABIL.craft_time_sec)*(1-fr);
 
-  // 바닐라 원가 (개당)
-  // 조약돌/심층암: 묶음 단위 입력(=64개 가격), 나머지는 세트(=64개 가격)
-  // 어차피 둘 다 64개당 가격이므로 동일하게 /SET_SIZE
   const vp = {
     cobblestone:           gi('vCo') / SET_SIZE,
     deepslate_cobblestone: gi('vDc') / SET_SIZE,
@@ -563,7 +498,6 @@ export function co() {
   };
   const vc = type => Object.entries(RECIPES[type].vanilla||{}).reduce((s,[m,q])=>s+q*(vp[m]||0),0);
 
-  // 귀중품 재료가 (개당)
   const pvp = {
     topaz:       gi('vTopaz'),
     sapphire:    gi('vSapphire'),
@@ -579,7 +513,6 @@ export function co() {
   const AP  = PRECIOUS.APPRAISAL;
   const DOC = PRECIOUS.DOC_PRICE;
 
-  // 귀중품별 기댓값
   const precItems = Object.entries(PRECIOUS.ITEMS).map(([key,item])=>{
     const rec = RECIPES[item.recipe];
     const iPrice = item.ingotType==='corum'?cP : item.ingotType==='rifton'?rP : sP;
@@ -593,14 +526,12 @@ export function co() {
     return {key,item,rec,ingotCnt,ingotKey,totalCost,avgSell,netPerItem,ingotCost,vanCost};
   });
 
-  // 개당 순이익
   const rawSell = iCo*cP + iRi*rP + iSe*sP;
   const netLS1  = oL1 - RECIPES.LS1.ingot_corum  * cP - vc('LS1');
   const netLS2  = oL2 - RECIPES.LS2.ingot_rifton * rP - vc('LS2');
   const netLS3  = oL3 - RECIPES.LS3.ingot_serent * sP - vc('LS3');
   const netAbil = oAb - (cP + rP + sP);
 
-  // 전체 옵션 합산
   const allOptions = [
     {key:'LS1',  label:'하급 라이프스톤', net:netLS1,  sell:oL1, iC:1, iR:0, iS:0, ct:ctL1, type:'ls'},
     {key:'LS2',  label:'중급 라이프스톤', net:netLS2,  sell:oL2, iC:0, iR:2, iS:0, ct:ctL2, type:'ls'},
@@ -637,7 +568,6 @@ export function co() {
     const t   = c.count * c.ct;
     craftRev += rev; craftTime += t;
 
-    // 재료 수량 계산 (올림 적용 — 부족하면 안 됨)
     let matChips = '';
     if(c.type === 'ls') {
       const chips = Object.entries(RECIPES[c.key].vanilla||{})
