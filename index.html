@@ -8,7 +8,15 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Jua&family=Noto+Sans+KR:wght@500;700;900&display=swap" rel="stylesheet">
 <style>
+@import url('https://fonts.googleapis.com/css2?family=Jua&family=Noto+Sans+KR:wght@500;700;900&display=swap');
+
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+
+/* 폰트 전체 강제 적용 — 브라우저 기본값 덮어쓰기 */
+*, input, select, button, textarea {
+  font-family: 'Noto Sans KR', 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif !important;
+  font-weight: 700;
+}
 
 :root{
   --bg:#f7f3ee;
@@ -33,6 +41,22 @@
   --rs:8px;
   --sh:0 2px 10px rgba(180,130,80,.10);
   --sh2:0 4px 20px rgba(180,130,80,.16);
+  /* 광물 색상 */
+  --c-corum:#e07b2a;
+  --c-rifton:#3a9e68;
+  --c-serent:#d94f3d;
+  --c-cobblestone:#8a7060;
+  --c-deepslate:#5a5570;
+  --c-copper:#c87941;
+  --c-iron:#a8a8a8;
+  --c-gold:#d4a020;
+  --c-diamond:#38c8d0;
+  --c-redstone:#d94f3d;
+  --c-lapis:#3d6fd4;
+  --c-amethyst:#9b6dd4;
+  --c-topaz:#d4a020;
+  --c-sapphire:#3d6fd4;
+  --c-platinum:#9ab0c8;
 }
 
 body{
@@ -49,7 +73,7 @@ body{
 /* ─ 헤더 ─ */
 .header{text-align:center;padding:24px 12px 0}
 .header-title{
-  font-family:'Jua',sans-serif;
+  font-family:'Jua',sans-serif !important;
   font-size:30px;color:var(--accent);letter-spacing:-0.5px;line-height:1.1
 }
 .header-title em{color:var(--text);font-style:normal}
@@ -66,7 +90,7 @@ body{
   border-radius:var(--r);padding:14px;margin-bottom:10px;box-shadow:var(--sh)
 }
 .skill-panel-title{
-  font-family:'Jua',sans-serif;font-size:16px;color:var(--accent);
+  font-family:'Jua',sans-serif !important;font-size:16px;color:var(--accent);
   margin-bottom:10px;display:flex;align-items:center;gap:6px
 }
 .skill-sec{font-size:11px;font-weight:700;color:var(--muted);letter-spacing:.4px;
@@ -77,9 +101,9 @@ body{
   background:var(--bg);border:1px solid var(--border);border-radius:var(--rs);
   padding:8px 10px;display:flex;flex-direction:column;gap:3px
 }
-.skill-name{font-family:'Jua',sans-serif;font-size:13px;color:var(--text);font-weight:900}
+.skill-name{font-family:'Jua',sans-serif !important;font-size:13px;color:var(--text);font-weight:900}
 .skill-row select{
-  font-family:'Noto Sans KR','Apple SD Gothic Neo','Malgun Gothic',sans-serif;font-weight:700;font-size:12px;
+  font-family:'Noto Sans KR','Apple SD Gothic Neo','Malgun Gothic',sans-serif !important;font-weight:700;font-size:12px;
   border:1.5px solid var(--border2);border-radius:6px;padding:4px 6px;
   background:var(--surface);color:var(--text);cursor:pointer;outline:none
 }
@@ -88,7 +112,7 @@ body{
 /* ─ 탭 ─ */
 .tabs{display:flex;gap:6px;margin-bottom:10px;flex-wrap:wrap}
 .tab{
-  font-family:'Jua',sans-serif;font-size:14px;padding:8px 16px;
+  font-family:'Jua',sans-serif !important;font-size:14px;padding:8px 16px;
   border-radius:20px;border:2px solid var(--border2);
   background:var(--surface);color:var(--muted);cursor:pointer;
   transition:all .15s;white-space:nowrap
@@ -103,7 +127,7 @@ body{
   border-radius:var(--r);padding:14px 16px;box-shadow:var(--sh)
 }
 .card-title{
-  font-family:'Jua',sans-serif;font-size:15px;color:var(--text);
+  font-family:'Jua',sans-serif !important;font-size:15px;color:var(--text);
   margin-bottom:10px;display:flex;align-items:center;gap:6px
 }
 .card-title::before{content:'';display:inline-block;width:4px;height:15px;background:var(--accent);border-radius:2px}
@@ -135,7 +159,7 @@ body{
 
 /* ─ 구분 라벨 ─ */
 .sec-label{
-  font-family:'Jua',sans-serif;font-size:12px;color:var(--accent);
+  font-family:'Jua',sans-serif !important;font-size:12px;color:var(--accent);
   margin:8px 0 5px;display:flex;align-items:center;gap:6px
 }
 .sec-label::after{content:'';flex:1;height:1px;background:var(--border2)}
@@ -151,7 +175,7 @@ body{
 .rv{font-weight:900;text-align:right}
 .rv small{font-size:10px;font-weight:500}
 .rsec{background:var(--bg);border-radius:var(--rs);padding:8px 10px;margin:6px 0;border:1px solid var(--border)}
-.rsec-title{font-family:'Jua',sans-serif;font-size:12px;color:var(--muted);margin-bottom:5px}
+.rsec-title{font-family:'Jua',sans-serif !important;font-size:12px;color:var(--muted);margin-bottom:5px}
 .g{color:var(--green)}.r{color:var(--red)}.b{color:var(--blue)}.p{color:var(--accent)}.muted{color:var(--muted)}
 
 /* ─ 배지 ─ */
@@ -174,7 +198,7 @@ body{
 .result-box-row>div{flex:1;text-align:center;padding:4px 8px}
 .rb-divider{width:1px;background:var(--border2);margin:4px 0;flex:none}
 .rb-label{font-size:11px;color:var(--muted);font-weight:700;margin-bottom:3px}
-.rb-value{font-family:'Jua',sans-serif;font-size:24px;color:var(--accent)}
+.rb-value{font-family:'Jua',sans-serif !important;font-size:24px;color:var(--accent)}
 .rb-floor{color:var(--green)}
 .rb-sub{display:block;font-size:10px;color:var(--muted);font-weight:500;margin-top:2px}
 

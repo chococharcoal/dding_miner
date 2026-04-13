@@ -266,105 +266,169 @@ function calc80Ingots(m) {
 /* ════════════════════════════════════════
    TAB 0: 채굴 수익
 ════════════════════════════════════════ */
+
+// 광물 색상 매핑
+const ORE_COLOR = {
+  cobblestone:           '#8a7060', // 조약돌 — 갈회색
+  deepslate_cobblestone: '#5a5570', // 심층암 — 보라회색
+  copper:                '#c87941', // 구리 — 구리색
+  iron:                  '#a8a8a8', // 철 — 은회색
+  gold:                  '#d4a020', // 금 — 황금
+  diamond:               '#38c8d0', // 다이아 — 시안
+  redstone:              '#d94f3d', // 레드스톤 — 빨강
+  lapis:                 '#3d6fd4', // 청금석 — 파랑
+  amethyst:              '#9b6dd4', // 자수정 — 보라
+};
+
+function matChip(matName, qty, color) {
+  return `<span class="mat-chip" style="background:${color}18;color:${color};border-color:${color}55">${matName} ${qty}</span>`;
+}
+
 export function cs() {
   const m   = calcMining();
   const p80 = calc80Ingots(m);
-  const sk  = m.sk, eng=m.eng;
+  const sk  = m.sk, eng = m.eng;
 
-  const rawIC=gi('ingotPriceC')||DEFAULT_PRICES.ingot.corum;
-  const rawIR=gi('ingotPriceR')||DEFAULT_PRICES.ingot.rifton;
-  const rawIS=gi('ingotPriceS')||DEFAULT_PRICES.ingot.serent;
-  const rawGC=gi('gemPriceC')  ||DEFAULT_PRICES.gem.corum;
-  const rawGR=gi('gemPriceR')  ||DEFAULT_PRICES.gem.rifton;
-  const rawGS=gi('gemPriceS')  ||DEFAULT_PRICES.gem.serent;
-  const spPrice=gi('skillPulsePrice'), artPtPrice=gi('artifactPtPrice');
+  const rawIC = gi('ingotPriceC') || DEFAULT_PRICES.ingot.corum;
+  const rawIR = gi('ingotPriceR') || DEFAULT_PRICES.ingot.rifton;
+  const rawIS = gi('ingotPriceS') || DEFAULT_PRICES.ingot.serent;
+  const rawGC = gi('gemPriceC')   || DEFAULT_PRICES.gem.corum;
+  const rawGR = gi('gemPriceR')   || DEFAULT_PRICES.gem.rifton;
+  const rawGS = gi('gemPriceS')   || DEFAULT_PRICES.gem.serent;
+  const spPrice    = gi('skillPulsePrice');
+  const artPtPrice = gi('artifactPtPrice');
 
-  const bC=rawIC*(1+sk.ib), bR=rawIR*(1+sk.ib), bS=rawIS*(1+sk.ib);
-  let gemUnit=0;
-  const ot=m.oreType;
-  if(ot==='corum')  gemUnit=rawGC*(1+sk.gb);
-  else if(ot==='rifton') gemUnit=rawGR*(1+sk.gb);
-  else if(ot==='serent') gemUnit=rawGS*(1+sk.gb);
-  else gemUnit=((rawGC+rawGR+rawGS)/3)*(1+sk.gb);
+  const bC = rawIC*(1+sk.ib), bR = rawIR*(1+sk.ib), bS = rawIS*(1+sk.ib);
+
+  let gemUnitC = rawGC*(1+sk.gb);
+  let gemUnitR = rawGR*(1+sk.gb);
+  let gemUnitS = rawGS*(1+sk.gb);
+  let gemUnit  = 0;
+  const ot = m.oreType;
+  if(ot==='corum')  gemUnit = gemUnitC;
+  else if(ot==='rifton') gemUnit = gemUnitR;
+  else if(ot==='serent') gemUnit = gemUnitS;
+  else gemUnit = (gemUnitC+gemUnitR+gemUnitS)/3;
 
   // 기댓값 수익
-  const ingotRev  = m.totalIngotC*bC + m.totalIngotR*bR + m.totalIngotS*bS;
-  const gemRev    = m.totalGems * gemUnit;
-  const spRev     = m.normalCobby * spPrice;
-  const artRev    = artPtPrice>0 ? m.totalArtPts*artPtPrice : 0;
-  const totalRev  = ingotRev + gemRev + spRev + artRev;
+  const ingotRev = m.totalIngotC*bC + m.totalIngotR*bR + m.totalIngotS*bS;
+  const gemRev   = m.totalGems * gemUnit;
+  const spRev    = m.normalCobby * spPrice;
+  const artRev   = artPtPrice>0 ? m.totalArtPts*artPtPrice : 0;
+  const totalRev = ingotRev + gemRev + spRev + artRev;
 
   // 80% 수익
-  const ingotRev80= p80.tC80*bC + p80.tR80*bR + p80.tS80*bS;
-  const gemRev80  = p80.totalGems80 * gemUnit;
-  const spRev80   = p80.normalCobby80 * spPrice;
-  const artRev80  = artPtPrice>0 ? p80.artPts80*artPtPrice : 0;
-  const totalRev80= ingotRev80 + gemRev80 + spRev80 + artRev80;
+  const ingotRev80 = p80.tC80*bC + p80.tR80*bR + p80.tS80*bS;
+  const gemRev80   = p80.totalGems80 * gemUnit;
+  const spRev80    = p80.normalCobby80 * spPrice;
+  const artRev80   = artPtPrice>0 ? p80.artPts80*artPtPrice : 0;
+  const totalRev80 = ingotRev80 + gemRev80 + spRev80 + artRev80;
+  const total80IngotAll = p80.tC80+p80.tR80+p80.tS80;
 
-  const iBdg=sk.ib>0?bdg('bg',`주괴 좀 사 주괴 +${Math.round(sk.ib*100)}%`):'';
-  const gBdg=sk.gb>0?bdg('bg',`눈이 부셔 +${Math.round(sk.gb*100)}%`):'';
+  // 광석 종류별 색상
+  const CC = '#e07b2a'; // 코룸 — 주황
+  const CR = '#3a9e68'; // 리프톤 — 초록
+  const CS = '#d94f3d'; // 세렌트 — 붉은
 
-  document.getElementById('sRes').innerHTML = `
+  const cRow = (label, oreAmt, ingotAmt, color, torchAmt) => {
+    if(oreAmt <= 0.01) return '';
+    const torchStr = torchAmt > 0.01 ? ` <span style="color:var(--blue);font-size:10px">(횃불 ${f(torchAmt)}개)</span>` : '';
+    return `<div class="rrow">
+      <span class="rl" style="color:${color};font-weight:700">${label}</span>
+      <span class="rv">${f(oreAmt)}개 → 주괴 <b style="color:${color}">${f(ingotAmt)}개</b>${torchStr}</span>
+    </div>`;
+  };
+
+  const torchC = m.ingotFromOreC * INGOT_RECIPES.CORUM.torch_per_ingot;
+  const torchR = m.ingotFromOreR * INGOT_RECIPES.RIFTON.torch_per_ingot;
+  const torchS = m.ingotFromOreS * INGOT_RECIPES.SERENT.torch_per_ingot;
+
+  // 최종 주괴 요약 (0인 종류 제외)
+  const ingotParts = [
+    m.totalIngotC > 0.01 ? `<span style="color:${CC}">코룸 ${f(m.totalIngotC)}개</span>` : '',
+    m.totalIngotR > 0.01 ? `<span style="color:${CR}">리프톤 ${f(m.totalIngotR)}개</span>` : '',
+    m.totalIngotS > 0.01 ? `<span style="color:${CS}">세렌트 ${f(m.totalIngotS)}개</span>` : '',
+  ].filter(Boolean).join(' · ');
+
+  const ingot80Parts = [
+    p80.tC80 > 0.01 ? `<span style="color:${CC}">코룸 ${f(p80.tC80)}개</span>` : '',
+    p80.tR80 > 0.01 ? `<span style="color:${CR}">리프톤 ${f(p80.tR80)}개</span>` : '',
+    p80.tS80 > 0.01 ? `<span style="color:${CS}">세렌트 ${f(p80.tS80)}개</span>` : '',
+  ].filter(Boolean).join(' · ');
+
+  const iBdg = sk.ib>0 ? bdg('bg',`주괴 좀 사 주괴 +${Math.round(sk.ib*100)}%`) : '';
+  const gBdg = sk.gb>0 ? bdg('bg',`눈이 부셔 +${Math.round(sk.gb*100)}%`) : '';
+
+  let html = `
   <div class="rsec">
     ${row('곡괭이',`${m.enh}강 — 기본 ${m.px.oresPerUse}개/회 · 유물 ${m.px.artifactPct}% · 코비 ${m.px.cobbyPct}%`)}
     ${row('채굴 횟수',`${f(m.miningCount)}회`)}
-    ${row('회당 평균 광석 (기댓값)',`${fd(m.oresPerUse)}개`,'g')}
+    ${m.oresPerUse !== m.px.oresPerUse ? row('회당 평균 광석 (보정 후)',`${fd(m.oresPerUse)}개`,'g') : row('회당 광석',`${m.px.oresPerUse}개`,'g')}
+    ${row('총 획득 광석',`${f(m.totalOres)}개`,'g')}
   </div>
 
   <div class="rsec">
-    <div class="rsec-title">📦 광석 & 주괴</div>
-    ${row('총 획득 광석 (기댓값)',`${f(m.totalOres)}개`,'g')}
-    ${row('코룸',`${f(m.oreC)}개 → 주괴 ${f(m.ingotFromOreC)}개`)}
-    ${row('리프톤',`${f(m.oreR)}개 → 주괴 ${f(m.ingotFromOreR)}개`)}
-    ${row('세렌트',`${f(m.oreS)}개 → 주괴 ${f(m.ingotFromOreS)}개`)}
-    ${m.totalTorch>0?row('필요 강화횃불',`${f(m.totalTorch)}개`,'b'):''}
-    ${m.fpDrops>0?row(`불붙은 곡괭이 ${bdg('bg','Lv'+sk.fpl)}`,`+${fd(m.fpDrops)}개 주괴`):''}
+    <div class="rsec-title">⛏ 광석 → 주괴 변환</div>
+    ${cRow('🟠 코룸', m.oreC, m.ingotFromOreC, CC, torchC)}
+    ${cRow('🟢 리프톤', m.oreR, m.ingotFromOreR, CR, torchR)}
+    ${cRow('🔴 세렌트', m.oreS, m.ingotFromOreS, CS, torchS)}
+    ${m.totalTorch > 0.01 ? `<div class="rrow"><span class="rl" style="color:var(--blue)">🔥 필요 강화횃불 합계</span><span class="rv b">${f(m.totalTorch)}개</span></div>` : ''}
+    ${m.fpDrops > 0.01 ? `<div class="rrow"><span class="rl">불붙은 곡괭이 ${bdg('bg','Lv'+sk.fpl)}</span><span class="rv">+${fd(m.fpDrops)}개 주괴</span></div>` : ''}
     <div class="rrow rrow-strong">
-      <span class="rl">최종 총 주괴 (기댓값)</span>
-      <span class="rv p">${f(m.totalIngotAll)}개 <small>(코${f(m.totalIngotC)}/리${f(m.totalIngotR)}/세${f(m.totalIngotS)})</small></span>
+      <span class="rl" style="color:var(--text)">최종 총 주괴 (기댓값)</span>
+      <span class="rv p">${f(m.totalIngotAll)}개 &nbsp;<small>${ingotParts}</small></span>
     </div>
-  </div>
+  </div>`;
 
-  ${m.totalGems>0||m.cobbyCount>0?`
+  if(m.totalGems > 0 || m.cobbyCount > 0) {
+    html += `
   <div class="rsec">
     <div class="rsec-title">💎 보석 & 코비</div>
-    ${m.sparkleGems>0?row(`반짝임의 시작 ${bdg('bg','Lv'+sk.sl)}`,`${fd(m.sparkleGems)}개`):''}
-    ${m.cobbyCount>0?row(`코비 소환 (${fd(m.totalCobbyPct)}%)`,`${fd(m.cobbyCount)}회`):''}
-    ${m.gemCobby>0?row(`└ 보석코비 ${bdg('bpu',eng.gp+'%')}`,`${fd(m.gemCobby)}개`):''}
-    ${m.normalCobby>0?row('└ 일반코비 (스킬펄스)',`${fd(m.normalCobby)}개`):''}
-    <div class="rrow rrow-strong"><span class="rl">총 보석 (기댓값)</span><span class="rv p">${fd(m.totalGems)}개</span></div>
-    <div class="rrow rrow-strong"><span class="rl">스킬펄스 (기댓값)</span><span class="rv p">${fd(m.normalCobby)}개</span></div>
-  </div>`:''}
+    ${m.sparkleGems > 0 ? row(`반짝임의 시작 ${bdg('bg','Lv'+sk.sl)}`,`${fd(m.sparkleGems)}개`) : ''}
+    ${m.cobbyCount > 0 ? row(`코비 소환 (${fd(m.totalCobbyPct)}%)`,`${fd(m.cobbyCount)}회`) : ''}
+    ${m.gemCobby > 0 ? row(`└ 보석코비 ${bdg('bpu',eng.gp+'%')}`,`${fd(m.gemCobby)}개`) : ''}
+    ${m.normalCobby > 0 ? row('└ 일반코비 (스킬펄스)',`${fd(m.normalCobby)}개`) : ''}
+    ${m.totalGems > 0 ? `<div class="rrow rrow-strong"><span class="rl">총 보석 (기댓값)</span><span class="rv p">${fd(m.totalGems)}개</span></div>` : ''}
+    ${m.normalCobby > 0 ? `<div class="rrow rrow-strong"><span class="rl">스킬펄스 (기댓값)</span><span class="rv p">${fd(m.normalCobby)}개</span></div>` : ''}
+  </div>`;
+  }
 
-  ${m.totalArtifacts>0?`
+  if(m.totalArtifacts > 0) {
+    html += `
   <div class="rsec">
     <div class="rsec-title">🗿 유물</div>
-    ${row(`유물 드랍 (${fd(m.artDrops/m.miningCount*100||0)}%)`,`${fd(m.artDrops)}개`)}
-    ${m.cartDrops>0?row(`광산수레 ${bdg('bb','Lv'+eng.ca)}`,`${fd(m.cartDrops)}회 → ${fd(m.cartDrops*2)}개`):''}
+    ${row(`유물 드랍 (${fd(m.px.artifactPct + m.eng.ap)}%)`,`${fd(m.artDrops)}개`)}
+    ${m.cartDrops > 0 ? row(`광산수레 ${bdg('bb','Lv'+eng.ca)}`,`${fd(m.cartDrops)}회 → ${fd(m.cartDrops*2)}개`) : ''}
     <div class="rrow rrow-strong"><span class="rl">총 유물 포인트 (기댓값)</span><span class="rv b">${f(m.totalArtPts)}pt</span></div>
-  </div>`:''}
+  </div>`;
+  }
 
+  html += `
   <div class="rsec">
     <div class="rsec-title">💰 기댓값 수익 (전량 판매)</div>
     ${row(`주괴 수익 ${iBdg}`,`${f(ingotRev)}원`,'g')}
-    ${m.totalGems>0?row(`보석 수익 ${gBdg}`,`${f(gemRev)}원`,'g'):''}
-    ${m.normalCobby>0?(spPrice>0?row('스킬펄스 수익',`${f(spRev)}원`,'g'):row('스킬펄스','단가 미입력','muted')):''}
-    ${m.totalArtifacts>0?(artPtPrice>0?row('유물 수익',`${f(artRev)}원`,'g'):row('유물 포인트','단가 미입력','muted')):''}
+    ${m.totalGems > 0 ? row(`보석 수익 ${gBdg}`,`${f(gemRev)}원`,'g') : ''}
+    ${m.normalCobby > 0 ? (spPrice>0 ? row('스킬펄스 수익',`${f(spRev)}원`,'g') : row('스킬펄스','단가 미입력','muted')) : ''}
+    ${m.totalArtifacts > 0 ? (artPtPrice>0 ? row('유물 수익',`${f(artRev)}원`,'g') : row('유물 포인트','단가 미입력','muted')) : ''}
   </div>
 
   <div class="result-box">
     <div class="result-box-row">
-      <div><div class="rb-label">기댓값 수익</div><div class="rb-value">${f(totalRev)}원</div></div>
+      <div>
+        <div class="rb-label">기댓값 수익</div>
+        <div class="rb-value">${f(totalRev)}원</div>
+        <div class="rb-sub" style="margin-top:4px">주괴 ${f(m.totalIngotAll)}개</div>
+      </div>
       <div class="rb-divider"></div>
       <div>
         <div class="rb-label">🎯 80% 확률로 최소</div>
-        <div class="rb-value rb-floor">
-          ${f(totalRev80)}원
-          <span class="rb-sub">주괴 ${f(p80.tC80+p80.tR80+p80.tS80)}개 · 보석 ${fd(p80.totalGems80)}개 · 펄스 ${fd(p80.normalCobby80)}개</span>
-        </div>
+        <div class="rb-value rb-floor">${f(totalRev80)}원</div>
+        <div class="rb-sub" style="margin-top:4px">${ingot80Parts}${p80.totalGems80>0 ? ` · 보석 ${fd(p80.totalGems80)}개` : ''}${p80.normalCobby80>0 ? ` · 펄스 ${fd(p80.normalCobby80)}개` : ''}</div>
       </div>
     </div>
   </div>`;
+
+  document.getElementById('sRes').innerHTML = html;
 }
 
 /* ════════════════════════════════════════
@@ -573,22 +637,35 @@ export function co() {
    TAB 3: 재료 가격
 ════════════════════════════════════════ */
 export function cv() {
-  const items=[
-    {n:'조약돌',v:gi('vCo')},{n:'심층암 조약돌',v:gi('vDc')},
-    {n:'구리 블럭',v:gi('vCu')},{n:'철 블럭',v:gi('vIr')},
-    {n:'금 블럭',v:gi('vGo')},{n:'다이아 블럭',v:gi('vDi')},
-    {n:'레드스톤 블럭',v:gi('vRe')},{n:'청금석 블럭',v:gi('vLa')},
-    {n:'자수정 블럭',v:gi('vAm')},
-  ].filter(x=>x.v>0);
+  const MAT_COLOR = {
+    cobblestone:           {name:'조약돌',        color:'#8a7060'},
+    deepslate_cobblestone: {name:'심층암 조약돌',  color:'#5a5570'},
+    copper:                {name:'구리 블럭',      color:'#c87941'},
+    iron:                  {name:'철 블럭',        color:'#a0a0a0'},
+    gold:                  {name:'금 블럭',        color:'#d4a020'},
+    diamond:               {name:'다이아 블럭',    color:'#38c8d0'},
+    redstone:              {name:'레드스톤 블럭',  color:'#d94f3d'},
+    lapis:                 {name:'청금석 블럭',    color:'#3d6fd4'},
+    amethyst:              {name:'자수정 블럭',    color:'#9b6dd4'},
+  };
+  const idMap = {
+    cobblestone:'vCo', deepslate_cobblestone:'vDc', copper:'vCu',
+    iron:'vIr', gold:'vGo', diamond:'vDi', redstone:'vRe', lapis:'vLa', amethyst:'vAm',
+  };
+
+  const items = Object.entries(MAT_COLOR)
+    .map(([key,{name,color}])=>({key,name,color,v:gi(idMap[key])}))
+    .filter(x=>x.v>0);
 
   if(!items.length){
     document.getElementById('vRes').innerHTML='<div class="empty-msg">재료 가격 입력 후 계산됩니다</div>';
     co(); return;
   }
-  document.getElementById('vRes').innerHTML=items.map(x=>`
+
+  document.getElementById('vRes').innerHTML = items.map(x=>`
     <div class="rrow">
-      <span class="rl">${x.n}</span>
-      <span class="rv g">${f(x.v)}원/세트 <small style="color:var(--muted)">(개당 ${(x.v/SET_SIZE).toFixed(1)}원)</small></span>
+      <span class="rl" style="color:${x.color};font-weight:800">${x.name}</span>
+      <span class="rv" style="color:${x.color}">${f(x.v)}원/세트 <small style="color:var(--muted);font-weight:500">(개당 ${(x.v/SET_SIZE).toFixed(1)}원)</small></span>
     </div>`).join('')+`
     <div class="rsec"><div class="rrow">
       <span class="rl">기준</span>
