@@ -408,7 +408,6 @@ body{
   <div class="tab on"  onclick="sw(0,this)">⛏ 채굴 수익</div>
   <div class="tab"     onclick="sw(1,this)">🔥 강화횃불</div>
   <div class="tab"     onclick="sw(2,this)">⚖ 수익 최적화</div>
-  <div class="tab"     onclick="sw(3,this)">📦 재료 가격</div>
 </div>
 
 <!-- ══ TAB 0: 채굴 수익 ══ -->
@@ -461,7 +460,7 @@ body{
         <input id="skillPulsePrice" type="number" placeholder="0" oninput="cs()">
       </div>
       <div class="field">
-        <label>유물 포인트 (원/pt)</label>
+        <label>유물 포인트 (원/100pt)</label>
         <input id="artifactPtPrice" type="number" placeholder="0" oninput="cs()">
       </div>
     </div>
@@ -498,7 +497,7 @@ body{
   </div>
 </div>
 
-<!-- ══ TAB 2: 수익 최적화 (주괴 + 귀중품 통합) ══ -->
+<!-- ══ TAB 2: 수익 최적화 (주괴 + 귀중품 + 재료 통합) ══ -->
 <div id="t2" class="panel" style="display:none">
   <div class="card">
     <div class="card-title">📦 보유 주괴</div>
@@ -519,7 +518,7 @@ body{
   </div>
 
   <div class="card">
-    <div class="card-title">🏪 라이프스톤 / 어빌리티 스톤 (원/개 · 개당 가격)</div>
+    <div class="card-title">🏪 라이프스톤 / 어빌리티 스톤 (원/개)</div>
     <div class="grid2">
       <div class="field"><label>하급 라이프스톤</label><input id="oL1" type="number" placeholder="0" oninput="co()"></div>
       <div class="field"><label>하급 라스 제작시간 (초)</label><input id="ctL1" type="number" placeholder="0" oninput="co()"></div>
@@ -533,8 +532,33 @@ body{
   </div>
 
   <div class="card">
+    <div class="card-title">📦 바닐라 재료 가격</div>
+    <div class="sec-label">묶음(64개)당 가격 — 조약돌 계열</div>
+    <div class="grid2">
+      <div class="field">
+        <label>조약돌 묶음 (원/묶음=64개)</label>
+        <input id="vCo" type="number" placeholder="0" oninput="co()">
+      </div>
+      <div class="field">
+        <label>심층암 조약돌 묶음 (원/묶음=64개)</label>
+        <input id="vDc" type="number" placeholder="0" oninput="co()">
+      </div>
+    </div>
+    <div class="sec-label" style="margin-top:8px">세트(64개)당 가격 — 블럭 계열</div>
+    <div class="grid3">
+      <div class="field"><label>구리 블럭</label><input id="vCu" type="number" placeholder="0" oninput="co()"></div>
+      <div class="field"><label>철 블럭</label><input id="vIr" type="number" placeholder="0" oninput="co()"></div>
+      <div class="field"><label>금 블럭</label><input id="vGo" type="number" placeholder="0" oninput="co()"></div>
+      <div class="field"><label>다이아 블럭</label><input id="vDi" type="number" placeholder="0" oninput="co()"></div>
+      <div class="field"><label>레드스톤 블럭</label><input id="vRe" type="number" placeholder="0" oninput="co()"></div>
+      <div class="field"><label>청금석 블럭</label><input id="vLa" type="number" placeholder="0" oninput="co()"></div>
+      <div class="field"><label>자수정 블럭</label><input id="vAm" type="number" placeholder="0" oninput="co()"></div>
+    </div>
+  </div>
+
+  <div class="card">
     <div class="card-title">👑 귀중품 재료 가격</div>
-    <div class="sec-label">특수 블럭 (원/개 · 개당 가격)</div>
+    <div class="sec-label">특수 블럭 (원/개)</div>
     <div class="grid3">
       <div class="field"><label>토파즈 블럭</label><input id="vTopaz" type="number" placeholder="0" oninput="co()"></div>
       <div class="field"><label>사파이어 블럭</label><input id="vSapphire" type="number" placeholder="0" oninput="co()"></div>
@@ -556,38 +580,16 @@ body{
   </div>
 
   <div class="card">
-    <div class="card-title">📊 최적화 결과 <span style="font-size:11px;color:var(--muted);font-family:'Noto Sans KR'">(주괴 직판 vs 라스/어빌/귀중품 제작 통합 비교)</span></div>
+    <div class="card-title">📊 최적화 결과 <span style="font-size:11px;color:var(--muted);font-weight:500">(직판 vs 라스/어빌/귀중품 통합 비교)</span></div>
     <div id="oRes"><div class="empty-msg">값을 입력하면 계산됩니다</div></div>
-  </div>
-</div>
-
-<!-- ══ TAB 3: 재료 가격 ══ -->
-<div id="t3" class="panel" style="display:none">
-  <div class="card">
-    <div class="card-title">📦 바닐라 재료 세트(64개)당 가격</div>
-    <div class="grid2">
-      <div class="field"><label>조약돌</label><input id="vCo" type="number" placeholder="0" oninput="cv()"></div>
-      <div class="field"><label>심층암 조약돌</label><input id="vDc" type="number" placeholder="0" oninput="cv()"></div>
-      <div class="field"><label>구리 블럭</label><input id="vCu" type="number" placeholder="0" oninput="cv()"></div>
-      <div class="field"><label>철 블럭</label><input id="vIr" type="number" placeholder="0" oninput="cv()"></div>
-      <div class="field"><label>금 블럭</label><input id="vGo" type="number" placeholder="0" oninput="cv()"></div>
-      <div class="field"><label>다이아 블럭</label><input id="vDi" type="number" placeholder="0" oninput="cv()"></div>
-      <div class="field"><label>레드스톤 블럭</label><input id="vRe" type="number" placeholder="0" oninput="cv()"></div>
-      <div class="field"><label>청금석 블럭</label><input id="vLa" type="number" placeholder="0" oninput="cv()"></div>
-      <div class="field"><label>자수정 블럭</label><input id="vAm" type="number" placeholder="0" oninput="cv()"></div>
-    </div>
-  </div>
-  <div class="card">
-    <div class="card-title">📊 가격 현황</div>
-    <div id="vRes"><div class="empty-msg">재료 가격 입력 후 계산됩니다</div></div>
   </div>
 </div>
 
 </div><!-- /wrap -->
 
 <script type="module">
-  import { sw,cs,ct,co,cv,onSkillChange,onEngravingChange,init } from './app.js';
-  window.sw=sw; window.cs=cs; window.ct=ct; window.co=co; window.cv=cv;
+  import { sw,cs,ct,co,onSkillChange,onEngravingChange,init } from './app.js';
+  window.sw=sw; window.cs=cs; window.ct=ct; window.co=co;
   window.onSkillChange=onSkillChange; window.onEngravingChange=onEngravingChange;
   document.addEventListener('DOMContentLoaded', init);
 </script>

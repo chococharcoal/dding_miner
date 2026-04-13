@@ -67,7 +67,7 @@ export function getENG() {
 /* ─── 탭 ─── */
 export function sw(i,el){
   document.querySelectorAll('.tab').forEach(t=>t.classList.remove('on'));
-  for(let k=0;k<4;k++){const p=document.getElementById('t'+k);if(p)p.style.display='none';}
+  for(let k=0;k<3;k++){const p=document.getElementById('t'+k);if(p)p.style.display='none';}
   el.classList.add('on');
   document.getElementById('t'+i).style.display='block';
 }
@@ -296,7 +296,7 @@ export function cs() {
   const rawGR = gi('gemPriceR')   || DEFAULT_PRICES.gem.rifton;
   const rawGS = gi('gemPriceS')   || DEFAULT_PRICES.gem.serent;
   const spPrice    = gi('skillPulsePrice');
-  const artPtPrice = gi('artifactPtPrice');
+  const artPtPrice = gi('artifactPtPrice') / 100; // 입력: 원/100pt → 계산: 원/pt
 
   const bC = rawIC*(1+sk.ib), bR = rawIR*(1+sk.ib), bS = rawIS*(1+sk.ib);
 
@@ -467,8 +467,57 @@ export function ct() {
 /* ════════════════════════════════════════
    TAB 2: 주괴 & 귀중품 통합 최적화
 ════════════════════════════════════════ */
+
+// 수량을 "X상자 Y세트 Z개" 또는 "X묶음" 형태로 포맷
+// bundleSize: 묶음 단위가 SET_SIZE(64)와 다를 때 사용
+function fmtQtyLabel(n, unit='개') {
+  n = Math.ceil(n); // 올림 (재료는 부족하면 안 됨)
+  if(n <= 0) return `0${unit}`;
+  const boxes = Math.floor(n / BOX_SIZE);
+  const rem   = n % BOX_SIZE;
+  const sets  = Math.floor(rem / SET_SIZE);
+  const items = rem % SET_SIZE;
+  const parts = [];
+  if(boxes > 0) parts.push(boxes + '상자');
+  if(sets  > 0) parts.push(sets  + '세트');
+  if(items > 0) parts.push(items + unit);
+  return parts.join(' ') || `0${unit}`;
+}
+
+// 재료 chip — 색상 + 수량 표시
+const MAT_META = {
+  cobblestone:           {name:'조약돌 묶음',    color:'#8a7060', unit:'묶음', perUnit:64},
+  deepslate_cobblestone: {name:'심층암 조약돌 묶음', color:'#5a5570', unit:'묶음', perUnit:64},
+  copper:                {name:'구리 블럭',      color:'#c87941', unit:'개',   perUnit:1},
+  iron:                  {name:'철 블럭',        color:'#a0a0a0', unit:'개',   perUnit:1},
+  gold:                  {name:'금 블럭',        color:'#d4a020', unit:'개',   perUnit:1},
+  diamond:               {name:'다이아 블럭',    color:'#38c8d0', unit:'개',   perUnit:1},
+  redstone:              {name:'레드스톤 블럭',  color:'#d94f3d', unit:'개',   perUnit:1},
+  lapis:                 {name:'청금석 블럭',    color:'#3d6fd4', unit:'개',   perUnit:1},
+  amethyst:              {name:'자수정 블럭',    color:'#9b6dd4', unit:'개',   perUnit:1},
+  topaz:                 {name:'토파즈 블럭',    color:'#d4a020', unit:'개',   perUnit:1},
+  sapphire:              {name:'사파이어 블럭',  color:'#3d6fd4', unit:'개',   perUnit:1},
+  platinum:              {name:'플레티넘 블럭',  color:'#9ab0c8', unit:'개',   perUnit:1},
+  stalactite:            {name:'뾰족한 점적석',  color:'#a0c8a0', unit:'개',   perUnit:1},
+  tuff:                  {name:'응회암',         color:'#8a9a7a', unit:'개',   perUnit:1},
+  glow_lichen:           {name:'발광이끼',       color:'#70c8a0', unit:'개',   perUnit:1},
+};
+
+function matChipQty(matKey, totalQty) {
+  const m = MAT_META[matKey] || {name:matKey, color:'#888', unit:'개', perUnit:1};
+  // 묶음 단위면 묶음 수로 변환해서 표시
+  let displayStr;
+  if(m.unit === '묶음') {
+    const bundles = Math.ceil(totalQty / m.perUnit);
+    displayStr = fmtQtyLabel(bundles, '묶음');
+  } else {
+    displayStr = fmtQtyLabel(totalQty, m.unit);
+  }
+  return `<span class="mat-chip" style="background:${m.color}18;color:${m.color};border-color:${m.color}55">${m.name} ${displayStr}</span>`;
+}
+
 export function co() {
-  const {ib,fr,pb,il,fl,pl}=getSK();
+  const {ib,fr,pb}=getSK();
 
   const iCo=gi('iCo'),iRi=gi('iRi'),iSe=gi('iSe');
   const cP=(gi('oCo')||DEFAULT_PRICES.ingot.corum)*(1+ib);
@@ -481,50 +530,61 @@ export function co() {
   const ctL3=(gi('ctL3')||RECIPES.LS3.craft_time_sec)*(1-fr);
   const ctAb=(gi('ctAb')||RECIPES.ABIL.craft_time_sec)*(1-fr);
 
-  // 바닐라 원가 (라스용)
-  const vp={
-    cobblestone:gi('vCo')/SET_SIZE, deepslate_cobblestone:gi('vDc')/SET_SIZE,
-    copper:gi('vCu')/SET_SIZE, iron:gi('vIr')/SET_SIZE, gold:gi('vGo')/SET_SIZE,
-    diamond:gi('vDi')/SET_SIZE, redstone:gi('vRe')/SET_SIZE,
-    lapis:gi('vLa')/SET_SIZE, amethyst:gi('vAm')/SET_SIZE,
+  // 바닐라 원가 (개당)
+  // 조약돌/심층암: 묶음 단위 입력(=64개 가격), 나머지는 세트(=64개 가격)
+  // 어차피 둘 다 64개당 가격이므로 동일하게 /SET_SIZE
+  const vp = {
+    cobblestone:           gi('vCo') / SET_SIZE,
+    deepslate_cobblestone: gi('vDc') / SET_SIZE,
+    copper:                gi('vCu') / SET_SIZE,
+    iron:                  gi('vIr') / SET_SIZE,
+    gold:                  gi('vGo') / SET_SIZE,
+    diamond:               gi('vDi') / SET_SIZE,
+    redstone:              gi('vRe') / SET_SIZE,
+    lapis:                 gi('vLa') / SET_SIZE,
+    amethyst:              gi('vAm') / SET_SIZE,
   };
-  const vc=type=>Object.entries(RECIPES[type].vanilla||{}).reduce((s,[m,q])=>s+q*(vp[m]||0),0);
+  const vc = type => Object.entries(RECIPES[type].vanilla||{}).reduce((s,[m,q])=>s+q*(vp[m]||0),0);
 
   // 귀중품 재료가 (개당)
-  const pvp={
-    topaz:gi('vTopaz'), sapphire:gi('vSapphire'), platinum:gi('vPlatinum'),
-    redstone:gi('pRe')/SET_SIZE, lapis:gi('pLa')/SET_SIZE, gold:gi('pGo')/SET_SIZE,
-    stalactite:gi('vStalactite'), tuff:gi('vTuff'), glow_lichen:gi('vGlowLichen'),
+  const pvp = {
+    topaz:       gi('vTopaz'),
+    sapphire:    gi('vSapphire'),
+    platinum:    gi('vPlatinum'),
+    redstone:    gi('pRe') / SET_SIZE,
+    lapis:       gi('pLa') / SET_SIZE,
+    gold:        gi('pGo') / SET_SIZE,
+    stalactite:  gi('vStalactite'),
+    tuff:        gi('vTuff'),
+    glow_lichen: gi('vGlowLichen'),
   };
 
-  const AP=PRECIOUS.APPRAISAL;
-  const DOC=PRECIOUS.DOC_PRICE;
+  const AP  = PRECIOUS.APPRAISAL;
+  const DOC = PRECIOUS.DOC_PRICE;
 
-  // 귀중품별 기댓값 판매가 & 원가 & 순이익
+  // 귀중품별 기댓값
   const precItems = Object.entries(PRECIOUS.ITEMS).map(([key,item])=>{
-    const rec=RECIPES[item.recipe];
-    const iPrice=item.ingotType==='corum'?cP:item.ingotType==='rifton'?rP:sP;
-    const ingotCnt=rec.ingot_corum||rec.ingot_rifton||rec.ingot_serent||0;
-    const ingotCost=ingotCnt*iPrice;
-    const vanCost=Object.entries(rec.vanilla||{}).reduce((s,[m,q])=>s+q*(pvp[m]||0),0)+(rec.doc||0)*DOC;
-    const totalCost=ingotCost+vanCost;
-    const avgSell=(item.prices.LOW*AP.LOW.pct/100+item.prices.GOOD*AP.GOOD.pct/100+item.prices.ROYAL*AP.ROYAL.pct/100)*(1+pb);
-    const netPerItem=avgSell-totalCost;
-    // 사용 주괴 종류
-    const ingotKey=item.ingotType==='corum'?'C':item.ingotType==='rifton'?'R':'S';
+    const rec = RECIPES[item.recipe];
+    const iPrice = item.ingotType==='corum'?cP : item.ingotType==='rifton'?rP : sP;
+    const ingotCnt = rec.ingot_corum||rec.ingot_rifton||rec.ingot_serent||0;
+    const ingotCost = ingotCnt * iPrice;
+    const vanCost = Object.entries(rec.vanilla||{}).reduce((s,[m,q])=>s+q*(pvp[m]||0),0)+(rec.doc||0)*DOC;
+    const totalCost = ingotCost + vanCost;
+    const avgSell = (item.prices.LOW*AP.LOW.pct/100+item.prices.GOOD*AP.GOOD.pct/100+item.prices.ROYAL*AP.ROYAL.pct/100)*(1+pb);
+    const netPerItem = avgSell - totalCost;
+    const ingotKey = item.ingotType==='corum'?'C':item.ingotType==='rifton'?'R':'S';
     return {key,item,rec,ingotCnt,ingotKey,totalCost,avgSell,netPerItem,ingotCost,vanCost};
   });
 
-  // 순이익 계산
-  const rawSell=iCo*cP+iRi*rP+iSe*sP;
-  const netLS1=oL1-RECIPES.LS1.ingot_corum*cP-vc('LS1');
-  const netLS2=oL2-RECIPES.LS2.ingot_rifton*rP-vc('LS2');
-  const netLS3=oL3-RECIPES.LS3.ingot_serent*sP-vc('LS3');
-  const netAbil=oAb-(cP+rP+sP);
+  // 개당 순이익
+  const rawSell = iCo*cP + iRi*rP + iSe*sP;
+  const netLS1  = oL1 - RECIPES.LS1.ingot_corum  * cP - vc('LS1');
+  const netLS2  = oL2 - RECIPES.LS2.ingot_rifton * rP - vc('LS2');
+  const netLS3  = oL3 - RECIPES.LS3.ingot_serent * sP - vc('LS3');
+  const netAbil = oAb - (cP + rP + sP);
 
-  // 모든 제작 옵션 통합 (라스 + 어빌 + 귀중품)
-  // 귀중품은 주괴 32개씩 소모
-  const allOptions=[
+  // 전체 옵션 합산
+  const allOptions = [
     {key:'LS1',  label:'하급 라이프스톤', net:netLS1,  sell:oL1, iC:1, iR:0, iS:0, ct:ctL1, type:'ls'},
     {key:'LS2',  label:'중급 라이프스톤', net:netLS2,  sell:oL2, iC:0, iR:2, iS:0, ct:ctL2, type:'ls'},
     {key:'LS3',  label:'상급 라이프스톤', net:netLS3,  sell:oL3, iC:0, iR:0, iS:3, ct:ctL3, type:'ls'},
@@ -538,7 +598,7 @@ export function co() {
     })),
   ].filter(c=>c.net>0&&c.sell>0).sort((a,b)=>b.net-a.net);
 
-  let remCo=iCo,remRi=iRi,remSe=iSe;
+  let remCo=iCo, remRi=iRi, remSe=iSe;
   const craftResult=[];
   for(const c of allOptions){
     const maxN=Math.min(
@@ -546,132 +606,110 @@ export function co() {
       c.iR>0?Math.floor(remRi/c.iR):Infinity,
       c.iS>0?Math.floor(remSe/c.iS):Infinity,
     );
-    if(maxN<=0)continue;
-    craftResult.push({...c,count:maxN});
+    if(maxN<=0) continue;
+    craftResult.push({...c, count:maxN});
     remCo-=c.iC*maxN; remRi-=c.iR*maxN; remSe-=c.iS*maxN;
   }
 
-  const remSell=remCo*cP+remRi*rP+remSe*sP;
-  let craftRev=remSell,craftTime=0;
-
-  const matNames={
-    cobblestone:'조약돌',deepslate_cobblestone:'심층암 조약돌',
-    copper:'구리 블럭',iron:'철 블럭',gold:'금 블럭',
-    diamond:'다이아 블럭',redstone:'레드스톤 블럭',lapis:'청금석 블럭',amethyst:'자수정 블럭',
-    topaz:'토파즈 블럭',sapphire:'사파이어 블럭',platinum:'플레티넘 블럭',
-    stalactite:'점적석',tuff:'응회암',glow_lichen:'발광이끼',
-  };
+  const remSell = remCo*cP + remRi*rP + remSe*sP;
+  let craftRev=remSell, craftTime=0;
 
   const craftLines=[];
   for(const c of craftResult){
-    const rev=c.count*(c.type==='precious'?c.extra.avgSell:c.sell);
-    const t=c.count*c.ct;
-    craftRev+=rev; craftTime+=t;
+    const rev = c.count * (c.type==='precious' ? c.extra.avgSell : c.sell);
+    const t   = c.count * c.ct;
+    craftRev += rev; craftTime += t;
 
-    let matStr='';
-    if(c.type==='ls'){
-      const mats=Object.entries(RECIPES[c.key].vanilla||{}).map(([m,q])=>`<span class="mat-chip">${matNames[m]||m} ${fmtQty(q*c.count)}</span>`);
-      if(mats.length) matStr=`<div class="mat-row">${mats.join('')}</div>`;
+    // 재료 수량 계산 (올림 적용 — 부족하면 안 됨)
+    let matChips = '';
+    if(c.type === 'ls') {
+      const chips = Object.entries(RECIPES[c.key].vanilla||{})
+        .filter(([,q])=>q>0)
+        .map(([m,q]) => matChipQty(m, q * c.count));
+      matChips = chips.join('');
     } else {
-      const rec=c.extra.rec;
-      const mats=Object.entries(rec.vanilla||{}).map(([m,q])=>`<span class="mat-chip">${matNames[m]||m} ${q*c.count}개</span>`);
-      if(rec.doc) mats.push(`<span class="mat-chip">증서 ${rec.doc*c.count}개 (고정 ${f(DOC*rec.doc*c.count)}원)</span>`);
-      if(mats.length) matStr=`<div class="mat-row">${mats.join('')}</div>`;
+      const rec = c.extra.rec;
+      const chips = Object.entries(rec.vanilla||{})
+        .filter(([,q])=>q>0)
+        .map(([m,q]) => matChipQty(m, q * c.count));
+      if(rec.doc) chips.push(`<span class="mat-chip" style="background:#ff980018;color:#e07b2a;border-color:#e07b2a55">증서 ${c.count}개 (${f(DOC*c.count)}원 고정)</span>`);
+      matChips = chips.join('');
     }
 
-    const precBadge=c.type==='precious'?bdg('bpu','귀중품'):'';
+    const precBadge = c.type==='precious' ? bdg('bpu','귀중품') : '';
+    const countLabel = fmtQtyLabel(c.count, '개');
+
     craftLines.push(`
       <div class="craft-item">
         <div class="rrow">
           <span class="rl">${precBadge} ${c.label}</span>
-          <span class="rv">${f(c.count)}개 → <b class="g">${f(rev)}원</b></span>
+          <span class="rv">${countLabel} → <b class="g">${f(rev)}원</b></span>
         </div>
-        ${c.type==='precious'?`<div class="appr-row"><span>낮은품질${f(c.extra.item.prices.LOW*(1+pb))}원</span><span>우수${f(c.extra.item.prices.GOOD*(1+pb))}원</span><span>황실${f(c.extra.item.prices.ROYAL*(1+pb))}원</span><span class="g">기댓값${f(c.extra.avgSell)}원</span></div>`:''}
-        ${matStr}
-        ${t>0?`<div class="craft-time">⏱ ${fmtTime(t)}</div>`:''}
+        ${c.type==='precious' ? `<div class="appr-row">
+          <span>낮은품질 ${f(c.extra.item.prices.LOW*(1+pb))}원</span>
+          <span>우수 ${f(c.extra.item.prices.GOOD*(1+pb))}원</span>
+          <span>황실 ${f(c.extra.item.prices.ROYAL*(1+pb))}원</span>
+          <span class="g">기댓값 ${f(c.extra.avgSell)}원</span>
+        </div>` : ''}
+        ${matChips ? `<div class="mat-row">${matChips}</div>` : ''}
+        ${t>0 ? `<div class="craft-time">⏱ ${fmtTime(t)}</div>` : ''}
       </div>`);
   }
 
-  const isRaw=rawSell>=craftRev;
-  const iBdg=ib>0?bdg('bg',`주괴 좀 사 주괴 +${Math.round(ib*100)}%`):'';
-  const fBdg=fr>0?bdg('bg',`용광로 -${Math.round(fr*100)}%`):'';
-  const pBdg=pb>0?bdg('bpu',`귀하신 몸값 +${Math.round(pb*100)}%`):'';
+  const isRaw = rawSell >= craftRev;
+  const iBdg  = ib>0 ? bdg('bg',`주괴 좀 사 주괴 +${Math.round(ib*100)}%`) : '';
+  const fBdg  = fr>0 ? bdg('bg',`용광로 -${Math.round(fr*100)}%`) : '';
+  const pBdg  = pb>0 ? bdg('bpu',`귀하신 몸값 +${Math.round(pb*100)}%`) : '';
+
+  const CC='#e07b2a', CR='#3a9e68', CS='#d94f3d';
 
   document.getElementById('oRes').innerHTML=`
   <div class="rsec">
-    ${row('보유 주괴',`코룸 ${f(iCo)} · 리프톤 ${f(iRi)} · 세렌트 ${f(iSe)}`)}
+    <div class="rrow">
+      <span class="rl">보유 주괴</span>
+      <span class="rv">
+        ${iCo>0?`<span style="color:${CC}">코룸 ${f(iCo)}개</span> `:''}
+        ${iRi>0?`<span style="color:${CR}">리프톤 ${f(iRi)}개</span> `:''}
+        ${iSe>0?`<span style="color:${CS}">세렌트 ${f(iSe)}개</span>`:''}
+      </span>
+    </div>
     ${row(`전량 직판 수익 ${iBdg}`,`${f(rawSell)}원`)}
   </div>
   <div class="rsec">
     <div class="rsec-title">📊 개당 순이익</div>
-    ${row('하급 라스',`${f(netLS1)}원`,netLS1>=0?'g':'r')}
-    ${row('중급 라스',`${f(netLS2)}원`,netLS2>=0?'g':'r')}
-    ${row('상급 라스',`${f(netLS3)}원`,netLS3>=0?'g':'r')}
-    ${row('어빌리티 스톤',`${f(netAbil)}원`,netAbil>=0?'g':'r')}
-    ${precItems.map(p=>`${row(`${p.item.name} ${pBdg}`,`${f(p.netPerItem)}원`,p.netPerItem>=0?'g':'r')}`).join('')}
+    ${oL1>0?row('하급 라스',`${f(netLS1)}원`,netLS1>=0?'g':'r'):''}
+    ${oL2>0?row('중급 라스',`${f(netLS2)}원`,netLS2>=0?'g':'r'):''}
+    ${oL3>0?row('상급 라스',`${f(netLS3)}원`,netLS3>=0?'g':'r'):''}
+    ${oAb>0?row('어빌리티 스톤',`${f(netAbil)}원`,netAbil>=0?'g':'r'):''}
+    ${precItems.map(p=>row(`${p.item.name} ${pBdg}`,`${f(p.netPerItem)}원`,p.netPerItem>=0?'g':'r')).join('')}
   </div>
   <div class="rsec">
-    ${row('최적 전략','','')}
     <div class="rrow" style="justify-content:center;padding:4px 0">
-      ${isRaw?'<span class="bdg br" style="font-size:12px;padding:4px 12px">💰 주괴 직판 권장</span>':'<span class="bdg bg" style="font-size:12px;padding:4px 12px">🔨 제작 후 판매 권장</span>'}
+      ${isRaw
+        ?'<span class="bdg br" style="font-size:12px;padding:4px 14px">💰 주괴 직판 권장</span>'
+        :'<span class="bdg bg" style="font-size:12px;padding:4px 14px">🔨 제작 후 판매 권장</span>'}
     </div>
   </div>
-  ${!isRaw&&craftLines.length?`
+  ${!isRaw && craftLines.length ? `
   <div class="rsec">
     <div class="rsec-title">🔨 최적 제작 계획 ${fBdg}</div>
     ${craftLines.join('')}
-    ${remCo+remRi+remSe>0?`
+    ${remCo+remRi+remSe > 0 ? `
     <div class="rrow" style="margin-top:6px">
       <span class="rl">남은 주괴 직판</span>
-      <span class="rv">코${f(remCo)}/리${f(remRi)}/세${f(remSe)} → ${f(remSell)}원</span>
-    </div>`:''}
-    ${craftTime>0?row('총 제작 시간',fmtTime(craftTime),'b'):''}
-  </div>`:''}
+      <span class="rv">
+        ${remCo>0?`<span style="color:${CC}">코룸 ${f(remCo)}개</span> `:''}
+        ${remRi>0?`<span style="color:${CR}">리프톤 ${f(remRi)}개</span> `:''}
+        ${remSe>0?`<span style="color:${CS}">세렌트 ${f(remSe)}개</span> `:''}
+        → ${f(remSell)}원
+      </span>
+    </div>` : ''}
+    ${craftTime>0 ? row('총 제작 시간',fmtTime(craftTime),'b') : ''}
+  </div>` : ''}
   <div class="result-box">
     <div class="rb-label">최종 예상 수익</div>
     <div class="rb-value">${f(isRaw?rawSell:craftRev)}원</div>
   </div>`;
-}
-
-/* ════════════════════════════════════════
-   TAB 3: 재료 가격
-════════════════════════════════════════ */
-export function cv() {
-  const MAT_COLOR = {
-    cobblestone:           {name:'조약돌',        color:'#8a7060'},
-    deepslate_cobblestone: {name:'심층암 조약돌',  color:'#5a5570'},
-    copper:                {name:'구리 블럭',      color:'#c87941'},
-    iron:                  {name:'철 블럭',        color:'#a0a0a0'},
-    gold:                  {name:'금 블럭',        color:'#d4a020'},
-    diamond:               {name:'다이아 블럭',    color:'#38c8d0'},
-    redstone:              {name:'레드스톤 블럭',  color:'#d94f3d'},
-    lapis:                 {name:'청금석 블럭',    color:'#3d6fd4'},
-    amethyst:              {name:'자수정 블럭',    color:'#9b6dd4'},
-  };
-  const idMap = {
-    cobblestone:'vCo', deepslate_cobblestone:'vDc', copper:'vCu',
-    iron:'vIr', gold:'vGo', diamond:'vDi', redstone:'vRe', lapis:'vLa', amethyst:'vAm',
-  };
-
-  const items = Object.entries(MAT_COLOR)
-    .map(([key,{name,color}])=>({key,name,color,v:gi(idMap[key])}))
-    .filter(x=>x.v>0);
-
-  if(!items.length){
-    document.getElementById('vRes').innerHTML='<div class="empty-msg">재료 가격 입력 후 계산됩니다</div>';
-    co(); return;
-  }
-
-  document.getElementById('vRes').innerHTML = items.map(x=>`
-    <div class="rrow">
-      <span class="rl" style="color:${x.color};font-weight:800">${x.name}</span>
-      <span class="rv" style="color:${x.color}">${f(x.v)}원/세트 <small style="color:var(--muted);font-weight:500">(개당 ${(x.v/SET_SIZE).toFixed(1)}원)</small></span>
-    </div>`).join('')+`
-    <div class="rsec"><div class="rrow">
-      <span class="rl">기준</span>
-      <span style="font-size:11px;color:var(--muted)">세트가 ÷ 64 = 개당가</span>
-    </div></div>`;
-  co();
 }
 
 /* ─── 초기화 ─── */
