@@ -419,7 +419,6 @@ export function cs() {
         <div class="rb-value">${f(totalRev)}원</div>
         <div class="rb-sub" style="margin-top:4px">주괴 ${f(m.totalIngotAll)}개</div>
       </div>
-      <div class="rb-divider"></div>
       <div>
         <div class="rb-label">🎯 80% 확률로 최소</div>
         <div class="rb-value rb-floor">${f(totalRev80)}원</div>
