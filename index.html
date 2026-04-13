@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>⛏ 광부 계산기</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Jua&family=Noto+Sans+KR:wght@500;700;900&display=swap" rel="stylesheet">
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
@@ -35,7 +36,7 @@
 }
 
 body{
-  font-family:'Noto Sans KR',sans-serif;
+  font-family:'Noto Sans KR','Apple SD Gothic Neo','Malgun Gothic',sans-serif;
   font-weight:500;
   background:var(--bg);
   color:var(--text);
@@ -76,9 +77,9 @@ body{
   background:var(--bg);border:1px solid var(--border);border-radius:var(--rs);
   padding:8px 10px;display:flex;flex-direction:column;gap:3px
 }
-.skill-name{font-family:'Jua',sans-serif;font-size:13px;color:var(--text)}
+.skill-name{font-family:'Jua',sans-serif;font-size:13px;color:var(--text);font-weight:900}
 .skill-row select{
-  font-family:'Noto Sans KR',sans-serif;font-weight:500;font-size:12px;
+  font-family:'Noto Sans KR','Apple SD Gothic Neo','Malgun Gothic',sans-serif;font-weight:700;font-size:12px;
   border:1.5px solid var(--border2);border-radius:6px;padding:4px 6px;
   background:var(--surface);color:var(--text);cursor:pointer;outline:none
 }
@@ -117,7 +118,7 @@ body{
 .field{display:flex;flex-direction:column;gap:3px}
 .field label{font-size:11px;font-weight:700;color:var(--muted)}
 .field input,.field select{
-  font-family:'Noto Sans KR',sans-serif;font-weight:500;font-size:13px;
+  font-family:'Noto Sans KR','Apple SD Gothic Neo','Malgun Gothic',sans-serif;font-weight:700;font-size:13px;
   border:1.5px solid var(--border);border-radius:var(--rs);padding:7px 10px;
   background:var(--bg);color:var(--text);outline:none;width:100%;
   transition:border-color .15s,box-shadow .15s
@@ -146,8 +147,8 @@ body{
 }
 .rrow:last-child{border-bottom:none}
 .rrow-strong{border-top:1px solid var(--border2);margin-top:4px;padding-top:6px;font-size:13px}
-.rl{color:var(--muted);flex-shrink:0;font-weight:500}
-.rv{font-weight:700;text-align:right}
+.rl{color:var(--muted);flex-shrink:0;font-weight:700}
+.rv{font-weight:900;text-align:right}
 .rv small{font-size:10px;font-weight:500}
 .rsec{background:var(--bg);border-radius:var(--rs);padding:8px 10px;margin:6px 0;border:1px solid var(--border)}
 .rsec-title{font-family:'Jua',sans-serif;font-size:12px;color:var(--muted);margin-bottom:5px}
