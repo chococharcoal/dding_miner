@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
-<title>⛏ 광부 계산기</title>
+<title>⛏ 채광전문가 계산기</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Jua&family=Noto+Sans+KR:wght@500;700;900&display=swap" rel="stylesheet">
@@ -66,10 +66,19 @@ body{
   background:var(--bg);
   color:var(--text);
   min-height:100vh;
-  width:100%;
   background-image:
     radial-gradient(circle at 10% 15%,rgba(240,160,60,.07) 0%,transparent 55%),
     radial-gradient(circle at 90% 85%,rgba(224,123,42,.05) 0%,transparent 55%);
+}
+
+/* ─ 래퍼 ─ */
+.wrap{
+  width:100%;
+  max-width:1200px;
+  margin-left:auto;
+  margin-right:auto;
+  padding:0 24px 60px;
+  box-sizing:border-box;
 }
 
 /* ─ 헤더 ─ */
@@ -83,24 +92,15 @@ body{
 .bounce{display:inline-block;animation:bounce 2s ease-in-out infinite}
 @keyframes bounce{0%,100%{transform:translateY(0)}50%{transform:translateY(-5px)}}
 
-/* ─ 래퍼 ─ */
-.wrap{
-  width:100%;
-  max-width:1200px;
-  margin:0 auto;
-  padding:0 24px 60px;
-  box-sizing:border-box;
-}
-
 /* ─ PC 레이아웃: 스킬 사이드바 + 메인 콘텐츠 ─ */
 .pc-layout{display:block}
 .pc-sidebar{margin-bottom:14px}
 .pc-main{}
 
-@media(min-width:900px){
+@media(min-width:768px){
   .pc-layout{
     display:grid;
-    grid-template-columns:340px 1fr;
+    grid-template-columns:320px 1fr;
     gap:24px;
     align-items:start;
   }
@@ -124,7 +124,7 @@ body{
   margin:14px 0 8px;padding-bottom:5px;border-bottom:1px dashed var(--border2);text-transform:uppercase}
 .skill-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}
 @media(max-width:700px){.skill-grid{grid-template-columns:1fr 1fr}}
-@media(max-width:500px){.skill-grid{grid-template-columns:1fr}}
+@media(max-width:480px){.skill-grid{grid-template-columns:1fr}}
 .skill-row{
   background:var(--bg);border:1px solid var(--border);border-radius:var(--rs);
   padding:10px 12px;display:flex;flex-direction:column;gap:4px
@@ -282,7 +282,7 @@ body{
 
 <!-- 헤더 -->
 <div class="header">
-  <div class="header-title"><span class="bounce">⛏</span> 광부 계산기 <em>✨</em></div>
+  <div class="header-title"><span class="bounce">⛏</span> 채광전문가 계산기 <em>✨</em></div>
   <div class="header-sub">채굴 수익부터 귀중품까지, 한눈에!</div>
 </div>
 
@@ -302,30 +302,30 @@ body{
     <div class="skill-row">
       <span class="skill-name">💎 주괴 좀 사 주괴</span>
       <select id="skillIngotSell" onchange="onSkillChange()">
-        <option value="0">0랩 — 기본</option>
-        <option value="1">1랩 — +5%</option><option value="2">2랩 — +7%</option>
-        <option value="3">3랩 — +10%</option><option value="4">4랩 — +20%</option>
-        <option value="5">5랩 — +30%</option><option value="6">6랩 — +50%</option>
+        <option value="0">0레벨 — 기본</option>
+        <option value="1">1레벨 — +5%</option><option value="2">2레벨 — +7%</option>
+        <option value="3">3레벨 — +10%</option><option value="4">4레벨 — +20%</option>
+        <option value="5">5레벨 — +30%</option><option value="6">6레벨 — +50%</option>
       </select>
       <span class="skill-info" id="skillIngotSellInfo">기본</span>
     </div>
     <div class="skill-row">
       <span class="skill-name">✨ 반짝반짝 눈이 부셔</span>
       <select id="skillGemSell" onchange="onSkillChange()">
-        <option value="0">0랩 — 기본</option>
-        <option value="1">1랩 — +5%</option><option value="2">2랩 — +7%</option>
-        <option value="3">3랩 — +10%</option><option value="4">4랩 — +20%</option>
-        <option value="5">5랩 — +30%</option><option value="6">6랩 — +50%</option>
+        <option value="0">0레벨 — 기본</option>
+        <option value="1">1레벨 — +5%</option><option value="2">2레벨 — +7%</option>
+        <option value="3">3레벨 — +10%</option><option value="4">4레벨 — +20%</option>
+        <option value="5">5레벨 — +30%</option><option value="6">6레벨 — +50%</option>
       </select>
       <span class="skill-info" id="skillGemSellInfo">기본</span>
     </div>
     <div class="skill-row">
       <span class="skill-name">👑 귀하신 몸값</span>
       <select id="skillPrecious" onchange="onSkillChange()">
-        <option value="0">0랩 — 기본</option>
-        <option value="1">1랩 — +5%</option><option value="2">2랩 — +7%</option>
-        <option value="3">3랩 — +10%</option><option value="4">4랩 — +15%</option>
-        <option value="5">5랩 — +20%</option><option value="6">6랩 — +30%</option>
+        <option value="0">0레벨 — 기본</option>
+        <option value="1">1레벨 — +5%</option><option value="2">2레벨 — +7%</option>
+        <option value="3">3레벨 — +10%</option><option value="4">4레벨 — +15%</option>
+        <option value="5">5레벨 — +20%</option><option value="6">6레벨 — +30%</option>
       </select>
       <span class="skill-info" id="skillPreciousInfo">기본</span>
     </div>
@@ -336,10 +336,10 @@ body{
     <div class="skill-row">
       <span class="skill-name">🔥 초고속 용광로</span>
       <select id="skillFurnace" onchange="onSkillChange()">
-        <option value="0">0랩 — 기본</option>
-        <option value="1">1랩 — -10%</option><option value="2">2랩 — -30%</option>
-        <option value="3">3랩 — -40%</option><option value="4">4랩 — -60%</option>
-        <option value="5">5랩 — -80%</option>
+        <option value="0">0레벨 — 기본</option>
+        <option value="1">1레벨 — -10%</option><option value="2">2레벨 — -30%</option>
+        <option value="3">3레벨 — -40%</option><option value="4">4레벨 — -60%</option>
+        <option value="5">5레벨 — -80%</option>
       </select>
       <span class="skill-info" id="skillFurnaceInfo">기본</span>
     </div>
@@ -350,45 +350,45 @@ body{
     <div class="skill-row">
       <span class="skill-name">🐾 코비타임</span>
       <select id="skillCobby" onchange="onSkillChange()">
-        <option value="0">0랩 — 기본</option>
-        <option value="1">1랩 — +1%</option><option value="2">2랩 — +1.5%</option>
-        <option value="3">3랩 — +2%</option><option value="4">4랩 — +2.5%</option>
-        <option value="5">5랩 — +3%</option><option value="6">6랩 — +4%</option>
-        <option value="7">7랩 — +5%</option>
+        <option value="0">0레벨 — 기본</option>
+        <option value="1">1레벨 — +1%</option><option value="2">2레벨 — +1.5%</option>
+        <option value="3">3레벨 — +2%</option><option value="4">4레벨 — +2.5%</option>
+        <option value="5">5레벨 — +3%</option><option value="6">6레벨 — +4%</option>
+        <option value="7">7레벨 — +5%</option>
       </select>
       <span class="skill-info" id="skillCobbyInfo">기본</span>
     </div>
     <div class="skill-row">
       <span class="skill-name">💫 반짝임의 시작</span>
       <select id="skillSparkle" onchange="onSkillChange()">
-        <option value="0">0랩 — 기본</option>
-        <option value="1">1랩 — 3% / 1개</option>
-        <option value="2">2랩 — 7% / 1개</option>
-        <option value="3">3랩 — 10% / 2개</option>
+        <option value="0">0레벨 — 기본</option>
+        <option value="1">1레벨 — 3% / 1개</option>
+        <option value="2">2레벨 — 7% / 1개</option>
+        <option value="3">3레벨 — 10% / 2개</option>
       </select>
       <span class="skill-info" id="skillSparkleInfo">기본</span>
     </div>
     <div class="skill-row">
       <span class="skill-name">🍀 럭키히트</span>
       <select id="skillLucky" onchange="onSkillChange()">
-        <option value="0">0랩 — 기본</option>
-        <option value="1">1랩 — 1%/+1개</option><option value="2">2랩 — 2%/+2개</option>
-        <option value="3">3랩 — 3%/+3개</option><option value="4">4랩 — 4%/+4개</option>
-        <option value="5">5랩 — 5%/+6개</option><option value="6">6랩 — 6%/+8개</option>
-        <option value="7">7랩 — 7%/+10개</option><option value="8">8랩 — 8%/+12개</option>
-        <option value="9">9랩 — 10%/+16개</option><option value="10">10랩 — 15%/+20개</option>
+        <option value="0">0레벨 — 기본</option>
+        <option value="1">1레벨 — 1%/+1개</option><option value="2">2레벨 — 2%/+2개</option>
+        <option value="3">3레벨 — 3%/+3개</option><option value="4">4레벨 — 4%/+4개</option>
+        <option value="5">5레벨 — 5%/+6개</option><option value="6">6레벨 — 6%/+8개</option>
+        <option value="7">7레벨 — 7%/+10개</option><option value="8">8레벨 — 8%/+12개</option>
+        <option value="9">9레벨 — 10%/+16개</option><option value="10">10레벨 — 15%/+20개</option>
       </select>
       <span class="skill-info" id="skillLuckyInfo">기본</span>
     </div>
     <div class="skill-row">
       <span class="skill-name">🔥 불붙은 곡괭이</span>
       <select id="skillFirePick" onchange="onSkillChange()">
-        <option value="0">0랩 — 기본</option>
-        <option value="1">1랩 — 1%</option><option value="2">2랩 — 2%</option>
-        <option value="3">3랩 — 3%</option><option value="4">4랩 — 4%</option>
-        <option value="5">5랩 — 5%</option><option value="6">6랩 — 6%</option>
-        <option value="7">7랩 — 7%</option><option value="8">8랩 — 8%</option>
-        <option value="9">9랩 — 9%</option><option value="10">10랩 — 15%</option>
+        <option value="0">0레벨 — 기본</option>
+        <option value="1">1레벨 — 1%</option><option value="2">2레벨 — 2%</option>
+        <option value="3">3레벨 — 3%</option><option value="4">4레벨 — 4%</option>
+        <option value="5">5레벨 — 5%</option><option value="6">6레벨 — 6%</option>
+        <option value="7">7레벨 — 7%</option><option value="8">8레벨 — 8%</option>
+        <option value="9">9레벨 — 9%</option><option value="10">10레벨 — 15%</option>
       </select>
       <span class="skill-info" id="skillFirePickInfo">기본</span>
     </div>
@@ -397,7 +397,7 @@ body{
   <div class="skill-sec">🪨 각인석</div>
   <div class="skill-grid">
     <div class="skill-row">
-      <span class="skill-name">🪨 광물행운</span>
+      <span class="skill-name">🪨 광물 행운</span>
       <select id="engOreLuck" onchange="onEngravingChange()">
         <option value="0">없음</option>
         <option value="1">1강 — 25%/+1개</option><option value="2">2강 — 50%/+1개</option>
@@ -406,7 +406,7 @@ body{
       <span class="skill-info" id="engOreLuckInfo">없음</span>
     </div>
     <div class="skill-row">
-      <span class="skill-name">🗿 유물탐색</span>
+      <span class="skill-name">🗿 유물 탐색</span>
       <select id="engRelic" onchange="onEngravingChange()">
         <option value="0">없음</option>
         <option value="1">1강 — +1%</option><option value="2">2강 — +3%</option>
@@ -434,7 +434,7 @@ body{
       <span class="skill-info" id="engGemCobbyInfo">없음</span>
     </div>
     <div class="skill-row">
-      <span class="skill-name">🚂 광산수레</span>
+      <span class="skill-name">🚂 광산 수레</span>
       <select id="engCart" onchange="onEngravingChange()">
         <option value="0">없음</option>
         <option value="1">1강 — 0.5%</option><option value="2">2강 — 1%</option>
@@ -444,7 +444,7 @@ body{
       <span class="skill-info" id="engCartInfo">없음</span>
     </div>
     <div class="skill-row">
-      <span class="skill-name">🎲 광부룰렛</span>
+      <span class="skill-name">🎲 광부 룰렛</span>
       <select id="engRoulette" onchange="onEngravingChange()">
         <option value="0">없음</option>
         <option value="1">1강 — 0.5%</option><option value="2">2강 — 1%</option>
@@ -461,7 +461,7 @@ body{
 <div class="pc-main">
 <div style="display:flex;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:14px">
   <div class="tab on"  onclick="sw(0,this)">⛏ 채굴 수익</div>
-  <div class="tab"     onclick="sw(1,this)">🔥 강화횃불</div>
+  <div class="tab"     onclick="sw(1,this)">🔥 강화 횃불</div>
   <div class="tab"     onclick="sw(2,this)">⚖ 수익 최적화</div>
   <button class="reset-btn" onclick="resetAll()">🗑 초기화</button>
 </div>
@@ -496,7 +496,7 @@ body{
   </div>
 
   <div class="card">
-    <div class="card-title">💰 판매가 입력</div>
+    <div class="card-title">💰 판매가 (원/개)</div>
     <div class="sec-label">주괴 (원/개)</div>
     <div class="grid3">
       <div class="field"><label>코룸 주괴</label><input id="ingotPriceC" type="number" inputmode="numeric" placeholder="3500" oninput="cs()"></div>
