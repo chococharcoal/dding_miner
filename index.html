@@ -4,44 +4,57 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>⛏ 채광전문가 계산기</title>
+
+<!-- 구글 폰트: Jua(제목용), Noto Sans KR(본문용) -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Jua&family=Noto+Sans+KR:wght@500;700;900&display=swap" rel="stylesheet">
+
 <style>
 
-/* ════ 리셋 & 폰트 ════ */
+/* ════════════════════════════════════════
+   리셋 & 폰트
+   모든 요소의 기본 여백 제거, 폰트 통일
+════════════════════════════════════════ */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 *, input, select, button, textarea {
   font-family: 'Noto Sans KR', 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif !important;
   font-weight: 700;
 }
 
-/* ════ 변수 ════ */
+/* ════════════════════════════════════════
+   CSS 변수 — 색상·크기 토큰
+   수정 시 이 블록만 바꾸면 전체 반영됨
+════════════════════════════════════════ */
 :root {
-  --bg:      #f7f3ee;
-  --surf:    #ffffff;
-  --bdr:     #e8ddd0;
-  --bdr2:    #d4c4b0;
-  --txt:     #2d1f12;
-  --muted:   #8a7060;
+  /* 배경·표면 */
+  --bg:      #f7f3ee;   /* 전체 배경 (따뜻한 크림) */
+  --surf:    #ffffff;   /* 카드·패널 배경 */
+  /* 테두리 */
+  --bdr:     #e8ddd0;   /* 기본 테두리 */
+  --bdr2:    #d4c4b0;   /* 강조 테두리 */
+  /* 텍스트 */
+  --txt:     #2d1f12;   /* 기본 텍스트 */
+  --muted:   #8a7060;   /* 보조 텍스트·라벨 */
+  /* 강조색 (주황) */
   --acc:     #e07b2a;
   --acc2:    #f5a623;
-  --grn:     #3a9e68;
-  --grn-bg:  #edf8f2;
-  --red:     #d94f3d;
-  --red-bg:  #fef0ee;
-  --blu:     #3d6fd4;
-  --blu-bg:  #eef3fd;
-  --pur:     #7c52c8;
-  --pur-bg:  #f3effe;
-  --ylw:     #c89c00;
-  --ylw-bg:  #fffbe8;
-  --r:  12px;
-  --rs: 8px;
-  --sh: 0 2px 10px rgba(180,130,80,.10);
+  /* 상태색 */
+  --grn:     #3a9e68;  --grn-bg:  #edf8f2;  /* 이익·성공 */
+  --red:     #d94f3d;  --red-bg:  #fef0ee;  /* 손실·위험 */
+  --blu:     #3d6fd4;  --blu-bg:  #eef3fd;  /* 정보·시간 */
+  --pur:     #7c52c8;  --pur-bg:  #f3effe;  /* 귀중품 */
+  --ylw:     #c89c00;  --ylw-bg:  #fffbe8;  /* 선택옵션 */
+  /* 크기 */
+  --r:  12px;  /* 카드 border-radius */
+  --rs: 8px;   /* 소형 border-radius */
+  --sh: 0 2px 10px rgba(180,130,80,.10);  /* 카드 그림자 */
 }
 
-/* ════ 배경 ════ */
+/* ════════════════════════════════════════
+   배경
+   전체 높이 채우기 + 은은한 그라디언트
+════════════════════════════════════════ */
 html, body {
   min-height: 100vh;
   background: var(--bg)
@@ -50,10 +63,15 @@ html, body {
   color: var(--txt);
 }
 
-/* ════ 페이지 래퍼 ════ */
+/* ════════════════════════════════════════
+   페이지 래퍼
+   모바일: 전체 너비. PC: 아래 미디어쿼리에서 처리
+════════════════════════════════════════ */
 .page { padding: 0 0 60px; }
 
-/* ════ 헤더 ════ */
+/* ════════════════════════════════════════
+   헤더
+════════════════════════════════════════ */
 .hdr { text-align: center; padding: 22px 16px 16px; }
 .hdr-title {
   font-family: 'Jua', sans-serif !important;
@@ -61,22 +79,28 @@ html, body {
 }
 .hdr-title em { color: var(--txt); font-style: normal; }
 .hdr-sub { font-size: 12px; color: var(--muted); margin-top: 3px; font-weight: 500; }
+
+/* 제목 아이콘 위아래 바운스 애니메이션 */
 .bounce { display: inline-block; animation: bounce 2s ease-in-out infinite; }
 @keyframes bounce { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-5px)} }
 
-/* ════ 레이아웃 ════ */
+/* ════════════════════════════════════════
+   레이아웃
+   모바일: 세로 단일 컬럼
+   PC(860px+): 사이드바 fixed 고정 + 메인 가운데
+════════════════════════════════════════ */
 .layout { display: block; padding: 0 16px; }
 
 @media (min-width: 860px) {
   .layout { display: block; padding: 0; }
 
-  /* 사이드바: 왼쪽에 fixed 고정 */
+  /* 사이드바: 왼쪽 벽에 fixed 고정, 스크롤해도 따라옴 */
   .sidebar {
     position: fixed;
     top: 0; left: 0;
-    width: 280px;
+    width: 360px;
     height: 100vh;
-    overflow-y: auto;
+    overflow-y: auto;       /* 내용 넘치면 자체 스크롤 */
     padding: 16px 12px;
     background: var(--bg);
     border-right: 1.5px solid var(--bdr);
@@ -84,18 +108,19 @@ html, body {
     z-index: 100;
   }
 
-  /* 헤더: 전체 화면 기준 가운데 (사이드바 무시) */
-  .hdr {
-    padding: 22px 16px 16px 296px;
-  }
+  /* 헤더: 사이드바(360px) + 여백(16px) 만큼 왼쪽 띄워서
+     메인과 같은 기준으로 가운데 정렬 */
+  .hdr { padding: 22px 16px 16px 376px; }
 
-  /* 메인: 전체 화면 기준 가운데, 사이드바 침범 방지용 왼쪽 여백만 */
+  /* 메인: 사이드바 영역 침범 방지를 위해 padding-left 확보,
+     나머지 공간에서 flex + align-items:center로 가운데 정렬 */
   .main {
-    padding: 0 16px 0 296px;
+    padding: 0 16px 0 376px;
     display: flex;
     flex-direction: column;
     align-items: center;
   }
+  /* 메인 내부 요소 최대 너비 제한 */
   .main > * {
     width: 100%;
     max-width: 700px;
@@ -103,17 +128,20 @@ html, body {
   }
 }
 
-/* ════ 스킬 패널 ════ */
+/* ════════════════════════════════════════
+   스킬 패널 (사이드바 내부)
+════════════════════════════════════════ */
 .skpanel {
   background: var(--surf);
   border: 1.5px solid var(--bdr);
   border-radius: var(--r);
   padding: 14px;
   box-shadow: var(--sh);
-  margin-bottom: 14px;
+  margin-bottom: 14px;   /* 모바일에서 아래 여백 */
 }
 @media (min-width: 860px) { .skpanel { margin-bottom: 0; } }
 
+/* 패널 제목 — 클릭하면 접기/펼치기 */
 .skpanel-title {
   font-family: 'Jua', sans-serif !important;
   font-size: 15px; color: var(--acc);
@@ -122,53 +150,67 @@ html, body {
   margin-bottom: 10px;
 }
 .skpanel-title:hover { color: var(--acc2); }
+
+/* 토글 화살표 — collapsed 시 90도 회전 */
 .toggle-arrow { font-size: 11px; margin-left: auto; transition: transform .2s; }
 .skpanel.collapsed .toggle-arrow { transform: rotate(-90deg); }
 .skpanel.collapsed .skbody { display: none; }
 
+/* 섹션 구분선 (판매 보너스 / 채굴 드랍 / 각인석) */
 .sksec {
-  font-size: 10px; font-weight: 700; color: var(--muted);
+  font-size: 11px; font-weight: 700; color: var(--muted);
   letter-spacing: .5px; text-transform: uppercase;
-  margin: 10px 0 6px;
+  margin: 12px 0 7px;
   padding-bottom: 4px; border-bottom: 1px dashed var(--bdr2);
 }
 
-/* 스킬 그리드 — 2열, 같은 행 높이 맞춤 */
-.skgrid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 5px;
-}
+/* 스킬 카드 2열 그리드 */
+.skgrid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+
+/* 개별 스킬 카드 */
 .skrow {
   background: var(--bg);
   border: 1px solid var(--bdr);
   border-radius: var(--rs);
-  padding: 7px 9px;
-  display: flex; flex-direction: column; gap: 3px;
+  padding: 9px 11px;
+  display: flex; flex-direction: column; gap: 4px;
 }
+
+/* 스킬 이름 — 한 줄 넘치면 말줄임 */
 .skname {
   font-family: 'Jua', sans-serif !important;
-  font-size: 11px; color: var(--txt);
+  font-size: 13px; color: var(--txt);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
-.skrow select { display: none; }
-.field select { display: none; }
-.skinfo { font-size: 10px; color: var(--muted); font-weight: 500; min-height: 13px; }
 
-/* ── 커스텀 드롭다운 ── */
+/* 원본 select는 숨김 — 커스텀 드롭다운으로 대체 */
+.skrow select { display: none; }
+.field select  { display: none; }
+
+/* 스킬 현재 레벨 설명 텍스트 */
+.skinfo { font-size: 11px; color: var(--muted); font-weight: 500; min-height: 14px; }
+
+/* ════════════════════════════════════════
+   커스텀 드롭다운
+   원본 <select>를 숨기고 JS로 생성한 .cdd로 대체
+   .skrow 안: 스킬 패널용 / .field 안: 메인 탭용
+════════════════════════════════════════ */
 .cdd { position: relative; width: 100%; }
 
-/* skrow 안 드롭다운 (작은 버전) */
+/* 스킬 패널 내 드롭다운 트리거 */
 .skrow .cdd-trigger {
   display: flex; align-items: center; justify-content: space-between; gap: 4px;
-  padding: 4px 7px;
-  border: 1.5px solid var(--bdr2); border-radius: 5px;
+  padding: 7px 10px;
+  border: 1.5px solid var(--bdr2); border-radius: var(--rs);
   background: var(--surf); color: var(--txt);
-  font-size: 11px !important; font-weight: 700 !important;
+  font-size: 13px !important; font-weight: 700 !important;
   cursor: pointer; user-select: none; line-height: 1.4;
 }
 .skrow .cdd-trigger:hover { border-color: var(--acc); }
 
-/* field 안 드롭다운 (일반 크기) */
+/* 메인 탭 내 드롭다운 트리거 (필드 스타일과 동일) */
 .field .cdd-trigger {
   display: flex; align-items: center; justify-content: space-between; gap: 4px;
   padding: 7px 10px;
@@ -180,11 +222,12 @@ html, body {
 }
 .field .cdd-trigger:hover { border-color: var(--acc); }
 
-/* 공통 */
+/* 공통: 열림 상태 강조 + 화살표 회전 */
 .cdd-trigger .cdd-arrow { font-size: 9px; color: var(--muted); flex-shrink: 0; transition: transform .15s; }
-.cdd.open .cdd-trigger { border-color: var(--acc); box-shadow: 0 0 0 2px rgba(224,123,42,.15); }
-.cdd.open .cdd-arrow { transform: rotate(180deg); }
+.cdd.open .cdd-trigger  { border-color: var(--acc); box-shadow: 0 0 0 2px rgba(224,123,42,.15); }
+.cdd.open .cdd-arrow    { transform: rotate(180deg); }
 
+/* 드롭다운 메뉴 — 닫힘 기본, .open 클래스로 표시 */
 .cdd-menu {
   display: none;
   position: absolute;
@@ -200,6 +243,7 @@ html, body {
 }
 .cdd.open .cdd-menu { display: block; }
 
+/* 드롭다운 개별 항목 */
 .cdd-item {
   padding: 6px 10px;
   font-size: 12px !important; font-weight: 700 !important;
@@ -208,12 +252,14 @@ html, body {
   border-bottom: 1px solid var(--bdr);
   line-height: 1.4;
 }
-.skrow .cdd-item { font-size: 11px !important; }
+.skrow .cdd-item   { font-size: 12px !important; }
 .cdd-item:last-child { border-bottom: none; }
-.cdd-item:hover { background: var(--ylw-bg); color: var(--acc); }
-.cdd-item.selected { background: var(--acc); color: #fff; }
+.cdd-item:hover    { background: var(--ylw-bg); color: var(--acc); }
+.cdd-item.selected { background: var(--acc); color: #fff; }  /* 선택된 항목 강조 */
 
-/* ════ 탭바 ════ */
+/* ════════════════════════════════════════
+   탭바 — 탭 버튼 + 초기화 버튼
+════════════════════════════════════════ */
 .tabbar {
   display: flex; align-items: center; flex-wrap: wrap;
   gap: 7px; margin-bottom: 12px;
@@ -226,7 +272,9 @@ html, body {
   cursor: pointer; transition: all .15s; white-space: nowrap;
 }
 .tab:hover { border-color: var(--acc); color: var(--acc); }
-.tab.on { background: var(--acc); border-color: var(--acc); color: #fff; box-shadow: 0 3px 10px rgba(224,123,42,.3); }
+.tab.on    { background: var(--acc); border-color: var(--acc); color: #fff; box-shadow: 0 3px 10px rgba(224,123,42,.3); }
+
+/* 초기화 버튼 — 탭바 오른쪽 끝 */
 .reset-btn {
   margin-left: auto;
   font-family: 'Jua', sans-serif !important;
@@ -238,7 +286,11 @@ html, body {
 }
 .reset-btn:hover { border-color: var(--red); color: var(--red); background: var(--red-bg); }
 
-/* ════ 패널/카드 ════ */
+/* ════════════════════════════════════════
+   패널·카드
+   패널: 탭별 콘텐츠 영역
+   카드: 개별 입력 섹션
+════════════════════════════════════════ */
 .panel { display: flex; flex-direction: column; gap: 12px; }
 .card {
   background: var(--surf);
@@ -247,6 +299,7 @@ html, body {
   padding: 15px 16px;
   box-shadow: var(--sh);
 }
+/* 카드 타이틀 — 왼쪽에 주황 세로선 */
 .card-title {
   font-family: 'Jua', sans-serif !important;
   font-size: 14px; color: var(--txt);
@@ -259,13 +312,18 @@ html, body {
   background: var(--acc); border-radius: 2px;
 }
 
-/* ════ 그리드 ════ */
+/* ════════════════════════════════════════
+   그리드
+   g2: 2열, g3: 3열 (좁은 화면에서 축소)
+════════════════════════════════════════ */
 .g2 { display: grid; grid-template-columns: 1fr 1fr; gap: 9px; }
 .g3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 9px; }
 @media (max-width: 500px) { .g3 { grid-template-columns: 1fr 1fr; } }
 @media (max-width: 340px) { .g2, .g3 { grid-template-columns: 1fr; } }
 
-/* ════ 필드 ════ */
+/* ════════════════════════════════════════
+   필드 — 라벨 + 입력칸 세트
+════════════════════════════════════════ */
 .field { display: flex; flex-direction: column; gap: 3px; }
 .field label { font-size: 11px; font-weight: 700; color: var(--muted); }
 .field input, .field select {
@@ -282,15 +340,20 @@ html, body {
   background: var(--surf);
 }
 .field input::placeholder { color: #c0aa90; font-weight: 500; }
+
+/* "선택" 뱃지 — 선택 입력임을 표시 */
 .opt {
   font-size: 9px; font-weight: 700;
   background: var(--ylw-bg); color: var(--ylw);
   border: 1px solid currentColor; border-radius: 4px; padding: 0 4px;
   vertical-align: middle;
 }
+/* 필드 하단 안내 텍스트 */
 .fnote { font-size: 10px; color: var(--muted); font-weight: 500; margin-top: 3px; }
 
-/* ════ 구분 라벨 ════ */
+/* ════════════════════════════════════════
+   구분 라벨 — 카드 내 섹션 구분선
+════════════════════════════════════════ */
 .slabel {
   font-family: 'Jua', sans-serif !important;
   font-size: 12px; color: var(--acc);
@@ -299,33 +362,43 @@ html, body {
 }
 .slabel::after { content: ''; flex: 1; height: 1px; background: var(--bdr2); }
 
-/* ════ 결과 행 ════ */
+/* ════════════════════════════════════════
+   결과 행 — 계산 결과 목록
+════════════════════════════════════════ */
 .rrow {
   display: flex; justify-content: space-between; align-items: center;
   padding: 5px 0; border-bottom: 1px dashed var(--bdr);
   gap: 8px; font-size: 12px;
 }
-.rrow:last-child { border-bottom: none; }
-.rrow-strong { border-top: 1px solid var(--bdr2); margin-top: 4px; padding-top: 6px; font-size: 13px; }
-.rl { color: var(--muted); flex-shrink: 0; font-weight: 700; }
-.rv { font-weight: 900; text-align: right; }
+.rrow:last-child  { border-bottom: none; }
+.rrow-strong      { border-top: 1px solid var(--bdr2); margin-top: 4px; padding-top: 6px; font-size: 13px; }
+.rl   { color: var(--muted); flex-shrink: 0; font-weight: 700; }  /* 왼쪽 라벨 */
+.rv   { font-weight: 900; text-align: right; }                    /* 오른쪽 값 */
 .rv small { font-size: 10px; font-weight: 500; }
+
+/* 결과 그룹 박스 */
 .rsec { background: var(--bg); border-radius: var(--rs); padding: 8px 10px; margin: 6px 0; border: 1px solid var(--bdr); }
 .rsec-title { font-family: 'Jua', sans-serif !important; font-size: 12px; color: var(--muted); margin-bottom: 5px; }
-.g  { color: var(--grn); }
-.r  { color: var(--red); }
-.b  { color: var(--blu); }
-.p  { color: var(--acc); }
+
+/* 값 색상 유틸리티 */
+.g { color: var(--grn); }   /* 이익 */
+.r { color: var(--red); }   /* 손실 */
+.b { color: var(--blu); }   /* 정보 */
+.p { color: var(--acc); }   /* 강조 */
 .muted { color: var(--muted); }
 
-/* ════ 배지 ════ */
+/* ════════════════════════════════════════
+   배지 — 스킬·각인 효과 표시용 인라인 태그
+════════════════════════════════════════ */
 .bdg { display: inline-block; font-size: 10px; font-weight: 700; padding: 1px 6px; border-radius: 20px; vertical-align: middle; }
-.bg  { background: var(--grn-bg); color: var(--grn); border: 1px solid var(--grn); }
-.br  { background: var(--red-bg); color: var(--red); border: 1px solid var(--red); }
-.bb  { background: var(--blu-bg); color: var(--blu); border: 1px solid var(--blu); }
-.bpu { background: var(--pur-bg); color: var(--pur); border: 1px solid var(--pur); }
+.bg  { background: var(--grn-bg); color: var(--grn); border: 1px solid var(--grn); }  /* 초록 */
+.br  { background: var(--red-bg); color: var(--red); border: 1px solid var(--red); }  /* 빨강 */
+.bb  { background: var(--blu-bg); color: var(--blu); border: 1px solid var(--blu); }  /* 파랑 */
+.bpu { background: var(--pur-bg); color: var(--pur); border: 1px solid var(--pur); }  /* 보라 */
 
-/* ════ 결과 박스 ════ */
+/* ════════════════════════════════════════
+   결과 박스 — 최종 수익 하이라이트
+════════════════════════════════════════ */
 .result-box {
   background: linear-gradient(135deg, #fff9f2, #fff4e0);
   border: 2px solid var(--acc2); border-radius: var(--rs);
@@ -333,18 +406,23 @@ html, body {
 }
 .rb-label { font-size: 11px; color: var(--muted); font-weight: 700; margin-bottom: 3px; }
 .rb-value { font-family: 'Jua', sans-serif !important; font-size: 22px; color: var(--acc); }
-.rb-floor { color: var(--grn); }
+.rb-floor { color: var(--grn); }   /* 80% 확률 보정값 — 초록 */
 .rb-sub   { display: block; font-size: 10px; color: var(--muted); font-weight: 500; margin-top: 2px; }
 
-/* ════ 제작 아이템 ════ */
+/* ════════════════════════════════════════
+   제작 아이템 — 수익 최적화 탭 결과
+════════════════════════════════════════ */
 .craft-item { background: var(--surf); border: 1px solid var(--bdr); border-radius: var(--rs); padding: 8px 10px; margin-bottom: 6px; }
-.mat-row  { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 4px; }
-.mat-chip { font-size: 10px; font-weight: 700; background: var(--grn-bg); color: var(--grn); border: 1px solid var(--grn); border-radius: 4px; padding: 1px 6px; }
+.mat-row    { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 4px; }
+.mat-chip   { font-size: 10px; font-weight: 700; background: var(--grn-bg); color: var(--grn); border: 1px solid var(--grn); border-radius: 4px; padding: 1px 6px; }
 .craft-time { font-size: 10px; color: var(--blu); font-weight: 700; margin-top: 3px; }
-.appr-row { display: flex; flex-wrap: wrap; gap: 6px; font-size: 10px; color: var(--muted); font-weight: 500; margin-top: 3px; }
-.appr-row span:last-child { font-weight: 700; color: var(--grn); }
+.appr-row   { display: flex; flex-wrap: wrap; gap: 6px; font-size: 10px; color: var(--muted); font-weight: 500; margin-top: 3px; }
+.appr-row span:last-child { font-weight: 700; color: var(--grn); }  /* 기댓값 강조 */
 
+/* 빈 결과 안내 */
 .empty-msg { color: var(--muted); font-size: 12px; text-align: center; padding: 14px 0; font-weight: 500; }
+
+/* 스크롤바 스타일 */
 ::-webkit-scrollbar { width: 5px; }
 ::-webkit-scrollbar-thumb { background: var(--bdr2); border-radius: 3px; }
 
@@ -353,23 +431,34 @@ html, body {
 <body>
 <div class="page">
 
-<!-- 헤더 -->
+<!-- ══════════════════════════════
+     헤더
+══════════════════════════════ -->
 <div class="hdr">
   <div class="hdr-title"><span class="bounce">⛏</span> 채광전문가 계산기 <em>✨</em></div>
   <div class="hdr-sub">채굴 수익부터 귀중품까지, 한눈에!</div>
 </div>
 
+<!-- ══════════════════════════════
+     전체 레이아웃
+     .sidebar: 스킬 패널 (PC에서 fixed)
+     .main:    탭 + 콘텐츠 (가운데 정렬)
+══════════════════════════════ -->
 <div class="layout">
 
-<!-- ══ 사이드바 ══ -->
+<!-- ── 사이드바: 스킬 & 각인석 패널 ── -->
 <div class="sidebar">
 <div class="skpanel" id="skillPanel">
+
+  <!-- 패널 제목 — 클릭 시 접기/펼치기 -->
   <div class="skpanel-title" onclick="toggleSkillPanel()">
     ⚡ 스킬 &amp; 각인석 설정
     <span class="toggle-arrow">▼</span>
   </div>
+
   <div class="skbody">
 
+    <!-- 판매 보너스 스킬 -->
     <div class="sksec">💰 판매 보너스</div>
     <div class="skgrid">
       <div class="skrow">
@@ -414,6 +503,7 @@ html, body {
       </div>
     </div>
 
+    <!-- 채굴 드랍 스킬 -->
     <div class="sksec">⛏ 채굴 드랍</div>
     <div class="skgrid">
       <div class="skrow">
@@ -463,6 +553,7 @@ html, body {
       </div>
     </div>
 
+    <!-- 각인석 -->
     <div class="sksec">🪨 각인석</div>
     <div class="skgrid">
       <div class="skrow">
@@ -528,10 +619,10 @@ html, body {
 </div><!-- /skpanel -->
 </div><!-- /sidebar -->
 
-<!-- ══ 메인 ══ -->
+<!-- ── 메인: 탭 + 콘텐츠 ── -->
 <div class="main">
 
-  <!-- 탭바 -->
+  <!-- 탭 선택 버튼 + 초기화 -->
   <div class="tabbar">
     <div class="tab on" onclick="sw(0,this)">⛏ 채굴 수익</div>
     <div class="tab"    onclick="sw(1,this)">🔥 강화 횃불</div>
@@ -539,8 +630,10 @@ html, body {
     <button class="reset-btn" onclick="resetAll()">🗑 초기화</button>
   </div>
 
-  <!-- TAB 0 -->
+  <!-- ══ TAB 0: 채굴 수익 ══ -->
   <div id="t0" class="panel">
+
+    <!-- 곡괭이 강화 단계 + 스태미나 입력 -->
     <div class="card">
       <div class="card-title">⛏ 곡괭이 &amp; 스테미나</div>
       <div class="g2">
@@ -568,6 +661,7 @@ html, body {
       </div>
     </div>
 
+    <!-- 판매가 입력 — 주괴/보석/기타 -->
     <div class="card">
       <div class="card-title">💰 판매가 (원/개)</div>
       <div class="slabel">주괴</div>
@@ -589,14 +683,17 @@ html, body {
       </div>
     </div>
 
+    <!-- 채굴 수익 계산 결과 (app.js cs() 함수가 채워줌) -->
     <div class="card">
       <div class="card-title">📊 계산 결과</div>
       <div id="sRes"><div class="empty-msg">값을 입력하면 계산됩니다</div></div>
     </div>
   </div>
 
-  <!-- TAB 1 -->
+  <!-- ══ TAB 1: 강화 횃불 ══ -->
   <div id="t1" class="panel" style="display:none">
+
+    <!-- 재료 가격 (세트=64개 기준) -->
     <div class="card">
       <div class="card-title">🪵 재료 가격 (원/세트)</div>
       <div class="g2">
@@ -604,12 +701,16 @@ html, body {
         <div class="field"><label>원목</label><input id="tWoodPrice" type="number" inputmode="numeric" placeholder="0" oninput="ct()"></div>
       </div>
     </div>
+
+    <!-- 제작 계획 — 횃불 수량(텍스트 파싱 지원) + 판매가 -->
     <div class="card">
       <div class="card-title">📋 제작 계획</div>
       <div class="g2">
         <div class="field">
           <label>만들 횃불 수</label>
+          <!-- "n상자 n세트 n개" 형식 또는 순수 숫자 입력 가능 -->
           <input id="tWantCount" type="text" placeholder="예) 2상자 3세트 5개" oninput="ct()" style="font-size:12px">
+          <!-- 파싱된 총 개수 실시간 표시 -->
           <span id="tWantCountParsed" style="font-size:10px;color:var(--muted);min-height:14px;display:block;margin-top:2px"></span>
         </div>
         <div class="field">
@@ -618,14 +719,18 @@ html, body {
         </div>
       </div>
     </div>
+
+    <!-- 강화 횃불 계산 결과 (app.js ct() 함수가 채워줌) -->
     <div class="card">
       <div class="card-title">📊 계산 결과</div>
       <div id="tRes"><div class="empty-msg">값을 입력하면 계산됩니다</div></div>
     </div>
   </div>
 
-  <!-- TAB 2 -->
+  <!-- ══ TAB 2: 수익 최적화 ══ -->
   <div id="t2" class="panel" style="display:none">
+
+    <!-- 보유 주괴 수량 — "n세트 n개" 또는 숫자 입력 -->
     <div class="card">
       <div class="card-title">📦 보유 주괴</div>
       <div class="g3">
@@ -647,6 +752,7 @@ html, body {
       </div>
     </div>
 
+    <!-- 주괴 직판 단가 -->
     <div class="card">
       <div class="card-title">💰 주괴 단가 (원/개)</div>
       <div class="g3">
@@ -656,6 +762,7 @@ html, body {
       </div>
     </div>
 
+    <!-- 라이프스톤 / 어빌리티 스톤 판매가 -->
     <div class="card">
       <div class="card-title">🏪 라이프스톤 / 어빌리티 스톤 (원/개)</div>
       <div class="g2">
@@ -666,6 +773,8 @@ html, body {
       </div>
     </div>
 
+    <!-- 바닐라 재료 가격
+         조약돌: 묶음(64개)당 / 블럭류: 세트(64개)당 -->
     <div class="card">
       <div class="card-title">📦 바닐라 재료 가격</div>
       <div class="slabel">묶음(64개)당 — 조약돌 계열</div>
@@ -685,6 +794,9 @@ html, body {
       </div>
     </div>
 
+    <!-- 귀중품 재료 가격
+         특수 블럭: 개당 / 기타(점적석 등): 세트당
+         레드스톤·청금석·금은 위 바닐라 재료와 공유 -->
     <div class="card">
       <div class="card-title">👑 귀중품 재료 가격</div>
       <div class="slabel">특수 블럭 (원/개)</div>
@@ -702,6 +814,7 @@ html, body {
       <div class="fnote" style="margin-top:6px">📌 레드스톤·청금석·금 블럭은 위 바닐라 재료 가격을 공유합니다 · 증서는 개당 10,000원 고정</div>
     </div>
 
+    <!-- 최적화 결과 (app.js co() 함수가 채워줌) -->
     <div class="card">
       <div class="card-title">📊 최적화 결과 <span style="font-size:11px;color:var(--muted);font-weight:500">(직판 vs 라스/어빌/귀중품 통합 비교)</span></div>
       <div id="oRes"><div class="empty-msg">값을 입력하면 계산됩니다</div></div>
@@ -712,60 +825,90 @@ html, body {
 </div><!-- /layout -->
 </div><!-- /page -->
 
+<!-- ══════════════════════════════════════════
+     스크립트
+     app.js에서 계산 함수를 import해서 window에 노출
+     localStorage로 입력값 자동 저장/복원
+     커스텀 드롭다운 초기화
+══════════════════════════════════════════ -->
 <script type="module">
-  import { sw,cs,ct,co,onSkillChange,onEngravingChange,init } from './app.js';
-  window.sw=sw; window.cs=cs; window.ct=ct; window.co=co;
-  window.onSkillChange=onSkillChange; window.onEngravingChange=onEngravingChange;
+  import { sw, cs, ct, co, onSkillChange, onEngravingChange, init } from './app.js';
 
+  /* app.js 함수를 전역으로 노출 (HTML onclick 속성에서 호출) */
+  window.sw = sw; window.cs = cs; window.ct = ct; window.co = co;
+  window.onSkillChange = onSkillChange; window.onEngravingChange = onEngravingChange;
+
+  /* ── localStorage 저장 대상 ID 목록 ──
+     여기 없는 항목은 새로고침 시 초기화됨
+     tWantCount(횃불 수량)는 의도적으로 제외 */
   const SAVE_IDS = [
+    // 스킬 레벨
     'skillIngotSell','skillGemSell','skillPrecious','skillFurnace',
     'skillCobby','skillSparkle','skillLucky','skillFirePick',
+    // 각인석 레벨
     'engOreLuck','engRelic','engCobby','engGemCobby','engCart','engRoulette',
+    // 채굴 설정
     'pickaxeLevel','totalStamina','oreType',
+    // 판매가 — 주괴·보석·기타
     'ingotPriceC','ingotPriceR','ingotPriceS',
     'gemPriceC','gemPriceR','gemPriceS',
     'skillPulsePrice','artifactPtPrice',
+    // 수익 최적화 — 라이프스톤/어빌 가격
     'oL1','oL2','oL3','oAb',
+    // 수익 최적화 — 보유 주괴 & 단가
     'iCo','iRi','iSe','oCo','oRi','oSe',
+    // 바닐라 재료 가격
     'vCo','vDc','vCu','vIr','vGo','vDi','vRe','vLa','vAm',
+    // 귀중품 재료 가격
     'vTopaz','vSapphire','vPlatinum','vStalactite','vTuff','vGlowLichen',
+    // 강화 횃불 재료·판매가
     'tCharcoalPrice','tWoodPrice','tSellPrice',
   ];
-  const KEY = 'miner_calc_v1';
+  const KEY = 'miner_calc_v1'; // localStorage 키 (버전 바뀌면 숫자 올릴 것)
 
+  /* 모든 입력값을 localStorage에 JSON으로 저장 */
   function saveAll() {
     const d = {};
-    SAVE_IDS.forEach(id => { const e=document.getElementById(id); if(e) d[id]=e.value; });
+    SAVE_IDS.forEach(id => { const e = document.getElementById(id); if (e) d[id] = e.value; });
     localStorage.setItem(KEY, JSON.stringify(d));
   }
+
+  /* localStorage에서 값을 읽어 입력칸에 복원 */
   function loadAll() {
     try {
-      const d = JSON.parse(localStorage.getItem(KEY)||'{}');
-      SAVE_IDS.forEach(id => { const e=document.getElementById(id); if(e&&d[id]!==undefined) e.value=d[id]; });
-    } catch(e) {}
+      const d = JSON.parse(localStorage.getItem(KEY) || '{}');
+      SAVE_IDS.forEach(id => { const e = document.getElementById(id); if (e && d[id] !== undefined) e.value = d[id]; });
+    } catch(e) { /* 파싱 실패 시 무시 */ }
   }
 
+  /* 스킬 패널 접기/펼치기 토글 */
   window.toggleSkillPanel = () => document.getElementById('skillPanel').classList.toggle('collapsed');
 
+  /* 전체 초기화 — localStorage 삭제 + 모든 입력 리셋 */
   window.resetAll = () => {
     if (!confirm('입력된 값을 모두 초기화할까요?')) return;
     localStorage.removeItem(KEY);
     SAVE_IDS.forEach(id => {
       const e = document.getElementById(id);
       if (!e) return;
-      if (e.tagName==='SELECT') e.selectedIndex=0; else e.value='';
+      if (e.tagName === 'SELECT') e.selectedIndex = 0; else e.value = '';
     });
     syncDropdownLabels();
     init();
   };
 
-  /* ── 커스텀 드롭다운 초기화 ── */
+  /* ── 커스텀 드롭다운 초기화 ──
+     .skrow select, .field select를 숨기고
+     클릭형 .cdd 드롭다운으로 교체 */
   function initCustomDropdowns() {
     document.querySelectorAll('.skrow select, .field select').forEach(sel => {
       if (sel.previousElementSibling?.classList.contains('cdd')) return; // 중복 방지
+
+      /* 래퍼 */
       const cdd = document.createElement('div');
       cdd.className = 'cdd';
 
+      /* 트리거 (클릭하면 메뉴 열림) */
       const trigger = document.createElement('div');
       trigger.className = 'cdd-trigger';
       const label = document.createElement('span');
@@ -777,6 +920,7 @@ html, body {
       trigger.appendChild(label);
       trigger.appendChild(arrow);
 
+      /* 메뉴 — 원본 option 목록으로 생성 */
       const menu = document.createElement('div');
       menu.className = 'cdd-menu';
       Array.from(sel.options).forEach((opt, i) => {
@@ -785,16 +929,17 @@ html, body {
         item.textContent = opt.text;
         item.dataset.value = opt.value;
         item.addEventListener('click', () => {
-          sel.value = opt.value;
-          label.textContent = opt.text;
+          sel.value = opt.value;                          // 원본 select 값 동기화
+          label.textContent = opt.text;                  // 트리거 라벨 업데이트
           menu.querySelectorAll('.cdd-item').forEach(el => el.classList.remove('selected'));
           item.classList.add('selected');
           cdd.classList.remove('open');
-          sel.dispatchEvent(new Event('change', { bubbles: true }));
+          sel.dispatchEvent(new Event('change', { bubbles: true })); // onchange 트리거
         });
         menu.appendChild(item);
       });
 
+      /* 트리거 클릭 — 열기/닫기, 다른 드롭다운 닫기 */
       trigger.addEventListener('click', e => {
         e.stopPropagation();
         const isOpen = cdd.classList.contains('open');
@@ -804,19 +949,20 @@ html, body {
 
       cdd.appendChild(trigger);
       cdd.appendChild(menu);
-      sel.parentNode.insertBefore(cdd, sel);
+      sel.parentNode.insertBefore(cdd, sel); // select 바로 앞에 삽입
     });
 
+    /* 외부 클릭 시 모든 드롭다운 닫기 */
     document.addEventListener('click', () => {
       document.querySelectorAll('.cdd.open').forEach(el => el.classList.remove('open'));
     });
   }
 
-  /* localStorage 값 복원 후 드롭다운 라벨도 동기화 */
+  /* localStorage 복원 또는 초기화 후 드롭다운 라벨·선택 상태 동기화 */
   function syncDropdownLabels() {
-    document.querySelectorAll('.skrow select').forEach(sel => {
+    document.querySelectorAll('.skrow select, .field select').forEach(sel => {
       const cdd = sel.previousElementSibling;
-      if (!cdd || !cdd.classList.contains('cdd')) return;
+      if (!cdd?.classList.contains('cdd')) return;
       const label = cdd.querySelector('.cdd-label');
       if (label) label.textContent = sel.options[sel.selectedIndex]?.text || '';
       cdd.querySelectorAll('.cdd-item').forEach(item => {
@@ -825,6 +971,12 @@ html, body {
     });
   }
 
+  /* ── 페이지 로드 순서 ──
+     1. localStorage 복원
+     2. 커스텀 드롭다운 생성
+     3. 드롭다운 라벨 동기화 (복원된 값 반영)
+     4. 계산 초기화 (스킬 info 텍스트 + 전체 재계산)
+     5. 이후 변경사항 자동 저장 */
   document.addEventListener('DOMContentLoaded', () => {
     loadAll();
     initCustomDropdowns();
@@ -832,7 +984,7 @@ html, body {
     init();
     SAVE_IDS.forEach(id => {
       const e = document.getElementById(id);
-      if (e) e.addEventListener(e.tagName==='SELECT'?'change':'input', saveAll);
+      if (e) e.addEventListener(e.tagName === 'SELECT' ? 'change' : 'input', saveAll);
     });
   });
 </script>
