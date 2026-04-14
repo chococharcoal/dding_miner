@@ -72,7 +72,7 @@ export const MINING = {
    cobbyPct    : 코비 소환 확률(%)
 ──────────────────────────────────────── */
 export const PICKAXE = [
-  /* 0강  */ { oresPerUse:  0, artifactPct:  0, cobbyPct:  0 },
+  /* 0강  */ { oresPerUse:  1, artifactPct:  0, cobbyPct:  0 },
   /* 1강  */ { oresPerUse:  2, artifactPct:  0, cobbyPct:  0 },
   /* 2강  */ { oresPerUse:  3, artifactPct:  1, cobbyPct:  1 },
   /* 3강  */ { oresPerUse:  3, artifactPct:  1, cobbyPct:  1 },

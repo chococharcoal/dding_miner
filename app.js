@@ -53,6 +53,23 @@ function fmtQtyLabel(n, unit = '개') {
   return parts.join(' ') || `0${unit}`;
 }
 
+/* "n상자 n세트 n개" 또는 순수 숫자 문자열을 개수(정수)로 변환
+   예) "2상자 3세트 5개" → 2×3456 + 3×64 + 5 = 7109
+       "1000" → 1000 */
+function parseQty(str) {
+  if (!str || !str.trim()) return 0;
+  // 순수 숫자면 그대로 반환
+  if (/^\d+$/.test(str.trim())) return Math.max(0, parseInt(str.trim(), 10));
+  let total = 0;
+  const boxMatch  = str.match(/(\d+)\s*상자/);
+  const setMatch  = str.match(/(\d+)\s*세트/);
+  const itemMatch = str.match(/(\d+)\s*개/);
+  if (boxMatch)  total += parseInt(boxMatch[1],  10) * BOX_SIZE;
+  if (setMatch)  total += parseInt(setMatch[1],  10) * SET_SIZE;
+  if (itemMatch) total += parseInt(itemMatch[1], 10);
+  return total;
+}
+
 /* 시간을 "X시간 Y분 Z초" 형식으로 포맷 */
 export function fmtTime(sec) {
   if (sec <= 0) return '0초';
@@ -105,19 +122,18 @@ const MAT_META = {
   topaz:                 { name:'토파즈 블럭',         color:'#d4a020', unit:'개',   perUnit:1  },
   sapphire:              { name:'사파이어 블럭',       color:'#3d6fd4', unit:'개',   perUnit:1  },
   platinum:              { name:'플레티넘 블럭',       color:'#9ab0c8', unit:'개',   perUnit:1  },
-  stalactite:            { name:'뾰족한 점적석',       color:'#a0c8a0', unit:'개',   perUnit:1  },
-  tuff:                  { name:'응회암',              color:'#8a9a7a', unit:'개',   perUnit:1  },
-  glow_lichen:           { name:'발광 이끼',           color:'#70c8a0', unit:'개',   perUnit:1  },
-};
+  stalactite:            { name:'뾰족한 점적석',       color:'#a0c8a0', unit:'세트', perUnit:64 },
+  tuff:                  { name:'응회암',              color:'#8a9a7a', unit:'세트', perUnit:64 },
+  glow_lichen:           { name:'발광 이끼',           color:'#70c8a0', unit:'세트', perUnit:64 },};
 
-/* 재료 chip HTML 생성 — 색상 적용, 묶음 단위 자동 변환 */
+/* 재료 chip HTML 생성 — 색상 적용, 묶음/세트 단위 자동 변환 */
 function matChipQty(matKey, totalQty) {
   const m = MAT_META[matKey] || { name: matKey, color: '#888', unit: '개', perUnit: 1 };
   let displayStr;
-  if (m.unit === '묶음') {
-    // 묶음 단위(64개)로 올림 변환
+  if (m.unit === '묶음' || m.unit === '세트') {
+    // 64개 단위로 올림 변환
     const bundles = Math.ceil(totalQty / m.perUnit);
-    displayStr = fmtQtyLabel(bundles, '묶음');
+    displayStr = fmtQtyLabel(bundles, m.unit);
   } else {
     displayStr = fmtQtyLabel(totalQty, m.unit);
   }
@@ -641,24 +657,29 @@ export function ct() {
   const timePerTorch = TORCH.craft_time_sec * (1 - sk.fr);
 
   /* 재료 개당 가격 계산 */
-  const charU = gi('tCharcoalPrice') / SET_SIZE;  // 숯/석탄: 세트가 ÷ 64
-  const woodSetPrice = gi('tWoodPrice');           // 원목 세트당 가격
-  // 원목 1세트(64개) → 막대기 8세트(512개) → 횃불 1개당 막대기 1개
-  // 막대기 개당 가격 = 원목세트가 ÷ 512
+  const charU = gi('tCharcoalPrice') / SET_SIZE;
+  const woodSetPrice = gi('tWoodPrice');
   const stickU = woodSetPrice / (SET_SIZE * 8);
 
-  const costEa = charU + stickU;    // 횃불 1개당 재료비
-  const wantN  = gi('tWantCount'); // 만들 횃불 수
-  const sellEa = gi('tSellPrice') / SET_SIZE; // 판매가: 세트당 입력 → 개당 환산
+  /* 만들 횃불 수 — "n상자 n세트 n개" 또는 숫자 파싱 */
+  const tWantEl = document.getElementById('tWantCount');
+  const wantN   = parseQty(tWantEl ? tWantEl.value : '');
 
+  /* 파싱 결과를 입력칸 아래에 표시 */
+  const parsedEl = document.getElementById('tWantCountParsed');
+  if (parsedEl) {
+    parsedEl.textContent = wantN > 0 ? `(총 ${wantN.toLocaleString('ko-KR')}개)` : '';
+  }
+
+  const sellEa = gi('tSellPrice') / SET_SIZE;
+  const costEa = charU + stickU;
   const totalCost = costEa * wantN;
   const totalTime = timePerTorch * wantN;
 
-  const hasPrice  = sellEa > 0;
-  const totalRev  = hasPrice ? sellEa * wantN : 0;
-  const net       = totalRev - totalCost;
+  const hasPrice = sellEa > 0;
+  const totalRev = hasPrice ? sellEa * wantN : 0;
+  const net      = totalRev - totalCost;
 
-  /* 필요 원목 수: 횃불 N개 = 막대기 N개 = 원목 N/8개 */
   const needWoodLogs = wantN / 8;
 
   const fBdg = sk.fr > 0
@@ -738,9 +759,9 @@ export function co() {
     redstone:    gi('vRe') / SET_SIZE,  // 바닐라와 공유
     lapis:       gi('vLa') / SET_SIZE,  // 바닐라와 공유
     gold:        gi('vGo') / SET_SIZE,  // 바닐라와 공유
-    stalactite:  gi('vStalactite'),
-    tuff:        gi('vTuff'),
-    glow_lichen: gi('vGlowLichen'),
+    stalactite:  gi('vStalactite') / SET_SIZE,
+    tuff:        gi('vTuff')       / SET_SIZE,
+    glow_lichen: gi('vGlowLichen') / SET_SIZE,
   };
 
   const AP  = PRECIOUS.APPRAISAL;

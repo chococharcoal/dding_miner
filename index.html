@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
-<title>⛏ 광부 계산기</title>
+<title>⛏ 채광전문가 계산기</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Jua&family=Noto+Sans+KR:wght@500;700;900&display=swap" rel="stylesheet">
@@ -230,6 +230,23 @@ body{
 
 .empty-msg{color:var(--muted);font-size:12px;text-align:center;padding:14px 0;font-weight:500}
 ::-webkit-scrollbar{width:5px}::-webkit-scrollbar-thumb{background:var(--border2);border-radius:3px}
+
+/* ─ 스킬 패널 토글 ─ */
+.skill-panel-title{cursor:pointer;user-select:none}
+.skill-panel-title:hover{color:var(--accent2)}
+.toggle-arrow{font-size:12px;margin-left:auto;transition:transform .2s;display:inline-block}
+.skill-panel.collapsed .toggle-arrow{transform:rotate(-90deg)}
+.skill-panel.collapsed .skill-panel-body{display:none}
+
+/* ─ 초기화 버튼 ─ */
+.reset-btn{
+  display:inline-flex;align-items:center;gap:4px;
+  font-family:'Jua',sans-serif !important;font-size:12px;
+  padding:5px 12px;border-radius:20px;border:1.5px solid var(--border2);
+  background:var(--surface);color:var(--muted);cursor:pointer;
+  transition:all .15s;margin-left:auto;
+}
+.reset-btn:hover{border-color:var(--red);color:var(--red);background:var(--red-bg)}
 </style>
 </head>
 <body>
@@ -237,114 +254,109 @@ body{
 
 <!-- 헤더 -->
 <div class="header">
-  <div class="header-title"><span class="bounce">⛏</span> 띵타이쿤 종합 광부 계산기 <em>✨</em></div>
+  <div class="header-title"><span class="bounce">⛏</span> 채광전문가 계산기 <em>✨</em></div>
 </div>
 
 <!-- ══ 스킬 패널 ══ -->
-<div class="skill-panel">
-  <div class="skill-panel-title">⚡ 스킬 & 각인석 설정</div>
+<div class="skill-panel" id="skillPanel">
+  <div class="skill-panel-title" onclick="toggleSkillPanel()" style="display:flex;align-items:center;gap:6px">
+    ⚡ 스킬 & 각인석 설정
+    <span class="toggle-arrow">▼</span>
+  </div>
+  <div class="skill-panel-body">
 
   <div class="skill-sec">💰 판매 보너스</div>
   <div class="skill-grid">
     <div class="skill-row">
       <span class="skill-name">💎 주괴 좀 사 주괴</span>
       <select id="skillIngotSell" onchange="onSkillChange()">
-        <option value="0">0랩 — 기본</option>
-        <option value="1">1랩 — +5%</option><option value="2">2랩 — +7%</option>
-        <option value="3">3랩 — +10%</option><option value="4">4랩 — +20%</option>
-        <option value="5">5랩 — +30%</option><option value="6">6랩 — +50%</option>
+        <option value="0">0레벨 — 기본</option>
+        <option value="1">1레벨 — +5%</option><option value="2">2레벨 — +7%</option>
+        <option value="3">3레벨 — +10%</option><option value="4">4레벨 — +20%</option>
+        <option value="5">5레벨 — +30%</option><option value="6">6레벨 — +50%</option>
       </select>
       <span class="skill-info" id="skillIngotSellInfo">기본</span>
     </div>
     <div class="skill-row">
       <span class="skill-name">✨ 반짝반짝 눈이 부셔</span>
       <select id="skillGemSell" onchange="onSkillChange()">
-        <option value="0">0랩 — 기본</option>
-        <option value="1">1랩 — +5%</option><option value="2">2랩 — +7%</option>
-        <option value="3">3랩 — +10%</option><option value="4">4랩 — +20%</option>
-        <option value="5">5랩 — +30%</option><option value="6">6랩 — +50%</option>
+        <option value="0">0레벨 — 기본</option>
+        <option value="1">1레벨 — +5%</option><option value="2">2레벨 — +7%</option>
+        <option value="3">3레벨 — +10%</option><option value="4">4레벨 — +20%</option>
+        <option value="5">5레벨 — +30%</option><option value="6">6레벨 — +50%</option>
       </select>
       <span class="skill-info" id="skillGemSellInfo">기본</span>
     </div>
     <div class="skill-row">
       <span class="skill-name">👑 귀하신 몸값</span>
       <select id="skillPrecious" onchange="onSkillChange()">
-        <option value="0">0랩 — 기본</option>
-        <option value="1">1랩 — +5%</option><option value="2">2랩 — +7%</option>
-        <option value="3">3랩 — +10%</option><option value="4">4랩 — +15%</option>
-        <option value="5">5랩 — +20%</option><option value="6">6랩 — +30%</option>
+        <option value="0">0레벨 — 기본</option>
+        <option value="1">1레벨 — +5%</option><option value="2">2레벨 — +7%</option>
+        <option value="3">3레벨 — +10%</option><option value="4">4레벨 — +15%</option>
+        <option value="5">5레벨 — +20%</option><option value="6">6레벨 — +30%</option>
       </select>
       <span class="skill-info" id="skillPreciousInfo">기본</span>
     </div>
   </div>
-
-
-
-
 
   <div class="skill-sec">⏱ 제작 시간</div>
   <div class="skill-grid">
     <div class="skill-row">
       <span class="skill-name">🔥 초고속 용광로</span>
       <select id="skillFurnace" onchange="onSkillChange()">
-        <option value="0">0랩 — 기본</option>
-        <option value="1">1랩 — -10%</option><option value="2">2랩 — -30%</option>
-        <option value="3">3랩 — -40%</option><option value="4">4랩 — -60%</option>
-        <option value="5">5랩 — -80%</option>
+        <option value="0">0레벨 — 기본</option>
+        <option value="1">1레벨 — -10%</option><option value="2">2레벨 — -30%</option>
+        <option value="3">3레벨 — -40%</option><option value="4">4레벨 — -60%</option>
+        <option value="5">5레벨 — -80%</option>
       </select>
       <span class="skill-info" id="skillFurnaceInfo">기본</span>
     </div>
   </div>
-
-
-
-
-
 
   <div class="skill-sec">⛏ 채굴 드랍</div>
   <div class="skill-grid">
     <div class="skill-row">
       <span class="skill-name">🐾 코비타임</span>
       <select id="skillCobby" onchange="onSkillChange()">
-        <option value="0">0랩 — 기본</option>
-        <option value="1">1랩 — +1%</option><option value="2">2랩 — +1.5%</option>
-        <option value="3">3랩 — +2%</option><option value="4">4랩 — +2.5%</option>
-        <option value="5">5랩 — +3%</option><option value="6">6랩 — +4%</option>
-        <option value="7">7랩 — +5%</option>
+        <option value="0">0레벨 — 기본</option>
+        <option value="1">1레벨 — +1%</option><option value="2">2레벨 — +1.5%</option>
+        <option value="3">3레벨 — +2%</option><option value="4">4레벨 — +2.5%</option>
+        <option value="5">5레벨 — +3%</option><option value="6">6레벨 — +4%</option>
+        <option value="7">7레벨 — +5%</option>
       </select>
       <span class="skill-info" id="skillCobbyInfo">기본</span>
     </div>
     <div class="skill-row">
       <span class="skill-name">💫 반짝임의 시작</span>
       <select id="skillSparkle" onchange="onSkillChange()">
-        <option value="0">0랩 — 기본</option>
-        <option value="1">1랩 — 3% / 1개</option>
-        <option value="2">2랩 — 7% / 1개</option>
-        <option value="3">3랩 — 10% / 2개</option>
+        <option value="0">0레벨 — 기본</option>
+        <option value="1">1레벨 — 3% / 1개</option>
+        <option value="2">2레벨 — 7% / 1개</option>
+        <option value="3">3레벨 — 10% / 2개</option>
       </select>
       <span class="skill-info" id="skillSparkleInfo">기본</span>
     </div>
     <div class="skill-row">
       <span class="skill-name">🍀 럭키히트</span>
       <select id="skillLucky" onchange="onSkillChange()">
-        <option value="0">0랩 — 기본</option>
-        <option value="1">1랩 — 1%/+1개</option><option value="2">2랩 — 2%/+2개</option>
-        <option value="3">3랩 — 3%/+3개</option><option value="4">4랩 — 4%/+4개</option>
-        <option value="5">5랩 — 5%/+6개</option><option value="6">6랩 — 6%/+8개</option>
-        <option value="7">7랩 — 7%/+10개</option><option value="8">8랩 — 8%/+12개</option>
-        <option value="9">9랩 — 10%/+16개</option><option value="10">10랩 — 15%/+20개</option>
+        <option value="0">0레벨 — 기본</option>
+        <option value="1">1레벨 — 1%/+1개</option><option value="2">2랩 — 2%/+2개</option>
+        <option value="3">3레벨 — 3%/+3개</option><option value="4">4랩 — 4%/+4개</option>
+        <option value="5">5레벨 — 5%/+6개</option><option value="6">6랩 — 6%/+8개</option>
+        <option value="7">7레벨 — 7%/+10개</option><option value="8">8랩 — 8%/+12개</option>
+        <option value="9">9레벨 — 10%/+16개</option><option value="10">10랩 — 15%/+20개</option>
       </select>
       <span class="skill-info" id="skillLuckyInfo">기본</span>
     </div>
     <div class="skill-row">
       <span class="skill-name">🔥 불붙은 곡괭이</span>
       <select id="skillFirePick" onchange="onSkillChange()">
-        <option value="0">0랩 — 기본</option>
-        <option value="1">1랩 — 1%</option><option value="2">2랩 — 2%</option>
-        <option value="3">3랩 — 3%</option><option value="4">4랩 — 4%</option>
-        <option value="5">5랩 — 5%</option><option value="6">6랩 — 6%</option>
-        <option value="7">7랩 — 7%</option><option value="8">8랩 — 8%</option>
-        <option value="9">9랩 — 9%</option><option value="10">10랩 — 15%</option>
+        <option value="0">0레벨 — 기본</option>
+        <option value="1">1레벨 — 1%</option><option value="2">2레벨 — 2%</option>
+        <option value="3">3레벨 — 3%</option><option value="4">4레벨 — 4%</option>
+        <option value="5">5레벨 — 5%</option><option value="6">6레벨 — 6%</option>
+        <option value="7">7레벨 — 7%</option><option value="8">8레벨 — 8%</option>
+        <option value="9">9레벨 — 9%</option><option value="10">10레벨 — 15%</option>
       </select>
       <span class="skill-info" id="skillFirePickInfo">기본</span>
     </div>
@@ -353,7 +365,7 @@ body{
   <div class="skill-sec">🪨 각인석</div>
   <div class="skill-grid">
     <div class="skill-row">
-      <span class="skill-name">🪨 광물행운</span>
+      <span class="skill-name">🪨 광물 행운</span>
       <select id="engOreLuck" onchange="onEngravingChange()">
         <option value="0">없음</option>
         <option value="1">1강 — 25%/+1개</option><option value="2">2강 — 50%/+1개</option>
@@ -362,7 +374,7 @@ body{
       <span class="skill-info" id="engOreLuckInfo">없음</span>
     </div>
     <div class="skill-row">
-      <span class="skill-name">🗿 유물탐색</span>
+      <span class="skill-name">🗿 유물 탐색</span>
       <select id="engRelic" onchange="onEngravingChange()">
         <option value="0">없음</option>
         <option value="1">1강 — +1%</option><option value="2">2강 — +3%</option>
@@ -390,7 +402,7 @@ body{
       <span class="skill-info" id="engGemCobbyInfo">없음</span>
     </div>
     <div class="skill-row">
-      <span class="skill-name">🚂 광산수레</span>
+      <span class="skill-name">🚂 광산 수레</span>
       <select id="engCart" onchange="onEngravingChange()">
         <option value="0">없음</option>
         <option value="1">1강 — 0.5%</option><option value="2">2강 — 1%</option>
@@ -400,7 +412,7 @@ body{
       <span class="skill-info" id="engCartInfo">없음</span>
     </div>
     <div class="skill-row">
-      <span class="skill-name">🎲 광부룰렛</span>
+      <span class="skill-name">🎲 광부 룰렛</span>
       <select id="engRoulette" onchange="onEngravingChange()">
         <option value="0">없음</option>
         <option value="1">1강 — 0.5%</option><option value="2">2강 — 1%</option>
@@ -409,26 +421,14 @@ body{
       </select>
       <span class="skill-info" id="engRouletteInfo">없음</span>
     </div>
-  </div>
-</div>
-
-
-
-
-
-<!-- 탭 -->
-<div class="tabs">
+  </div><!-- /skill-panel-body -->
+</div><!-- /skill-panel -->
+<div style="display:flex;align-items:center;flex-wrap:wrap;gap:6px;margin-bottom:10px">
   <div class="tab on"  onclick="sw(0,this)">⛏ 채굴 수익</div>
-  <div class="tab"     onclick="sw(1,this)">🔥 강화횃불</div>
+  <div class="tab"     onclick="sw(1,this)">🔥 강화 횃불</div>
   <div class="tab"     onclick="sw(2,this)">⚖ 수익 최적화</div>
+  <button class="reset-btn" onclick="resetAll()">🗑 초기화</button>
 </div>
-
-
-
-
-
-
-
 
 <!-- ══ TAB 0: 채굴 수익 ══ -->
 <div id="t0" class="panel">
@@ -446,7 +446,7 @@ body{
           <option value="15">15강</option>
         </select>
       </div>
-      <div class="field"><label>총 스테미나</label><input id="totalStamina" type="number" placeholder="0" oninput="cs()"></div>
+      <div class="field"><label>총 스테미나</label><input id="totalStamina" type="number" inputmode="numeric" placeholder="0" oninput="cs()"></div>
     </div>
     <div class="field" style="margin-top:6px">
       <label>캘 광석 종류</label>
@@ -460,28 +460,28 @@ body{
   </div>
 
   <div class="card">
-    <div class="card-title">💰 판매가 입력</div>
-    <div class="sec-label">주괴 (원/개)</div>
+    <div class="card-title">💰 판매가 (원/개)</div>
+    <div class="sec-label">주괴</div>
     <div class="grid3">
-      <div class="field"><label>코룸 주괴</label><input id="ingotPriceC" type="number" placeholder="3500" oninput="cs()"></div>
-      <div class="field"><label>리프톤 주괴</label><input id="ingotPriceR" type="number" placeholder="3750" oninput="cs()"></div>
-      <div class="field"><label>세렌트 주괴</label><input id="ingotPriceS" type="number" placeholder="4000" oninput="cs()"></div>
+      <div class="field"><label>코룸 주괴</label><input id="ingotPriceC" type="number" inputmode="numeric" placeholder="3500" oninput="cs()"></div>
+      <div class="field"><label>리프톤 주괴</label><input id="ingotPriceR" type="number" inputmode="numeric" placeholder="3750" oninput="cs()"></div>
+      <div class="field"><label>세렌트 주괴</label><input id="ingotPriceS" type="number" inputmode="numeric" placeholder="4000" oninput="cs()"></div>
     </div>
-    <div class="sec-label" style="margin-top:8px">보석 (원/개)</div>
+    <div class="sec-label" style="margin-top:8px">보석</div>
     <div class="grid3">
-      <div class="field"><label>코룸 보석</label><input id="gemPriceC" type="number" placeholder="7000" oninput="cs()"></div>
-      <div class="field"><label>리프톤 보석</label><input id="gemPriceR" type="number" placeholder="7500" oninput="cs()"></div>
-      <div class="field"><label>세렌트 보석</label><input id="gemPriceS" type="number" placeholder="8000" oninput="cs()"></div>
+      <div class="field"><label>코룸 보석</label><input id="gemPriceC" type="number" inputmode="numeric" placeholder="7000" oninput="cs()"></div>
+      <div class="field"><label>리프톤 보석</label><input id="gemPriceR" type="number" inputmode="numeric" placeholder="7500" oninput="cs()"></div>
+      <div class="field"><label>세렌트 보석</label><input id="gemPriceS" type="number" inputmode="numeric" placeholder="8000" oninput="cs()"></div>
     </div>
     <div class="sec-label" style="margin-top:8px">기타</div>
     <div class="grid3">
       <div class="field">
-        <label>스킬펄스 (원/개)</label>
-        <input id="skillPulsePrice" type="number" placeholder="0" oninput="cs()">
+        <label>스킬 펄스</label>
+        <input id="skillPulsePrice" type="number" inputmode="numeric" placeholder="0" oninput="cs()">
       </div>
       <div class="field">
-        <label>유물 포인트 (원/100pt)</label>
-        <input id="artifactPtPrice" type="number" placeholder="0" oninput="cs()">
+        <label>항해 포인트 (원/100pt)</label>
+        <input id="artifactPtPrice" type="number" inputmode="numeric" placeholder="0" oninput="cs()">
       </div>
     </div>
   </div>
@@ -495,19 +495,23 @@ body{
 <!-- ══ TAB 1: 강화횃불 ══ -->
 <div id="t1" class="panel" style="display:none">
   <div class="card">
-    <div class="card-title">🪵 재료 가격</div>
+    <div class="card-title">🪵 재료 가격 (원/세트)</div>
     <div class="grid2">
-      <div class="field"><label>숯 / 석탄 (원/세트)</label><input id="tCharcoalPrice" type="number" placeholder="0" oninput="ct()"></div>
-      <div class="field"><label>원목 (원/세트)</label><input id="tWoodPrice" type="number" placeholder="0" oninput="ct()"></div>
+      <div class="field"><label>숯 / 석탄</label><input id="tCharcoalPrice" type="number" inputmode="numeric" placeholder="0" oninput="ct()"></div>
+      <div class="field"><label>원목</label><input id="tWoodPrice" type="number" inputmode="numeric" placeholder="0" oninput="ct()"></div>
     </div>
   </div>
   <div class="card">
     <div class="card-title">📋 제작 계획</div>
     <div class="grid2">
-      <div class="field"><label>만들 횃불 수 (개)</label><input id="tWantCount" type="number" placeholder="0" oninput="ct()"></div>
+      <div class="field">
+        <label>만들 횃불 수</label>
+        <input id="tWantCount" type="text" placeholder="예) 2상자 3세트 5개" oninput="ct()" style="font-size:12px">
+        <span id="tWantCountParsed" style="font-size:10px;color:var(--muted);min-height:14px;display:block;margin-top:2px"></span>
+      </div>
       <div class="field">
         <label>횃불 판매가 (원/세트) <span class="opt">선택</span></label>
-        <input id="tSellPrice" type="number" placeholder="미입력 시 재료비만" oninput="ct()">
+        <input id="tSellPrice" type="number" inputmode="numeric" placeholder="미입력 시 재료비만" oninput="ct()">
       </div>
     </div>
   </div>
@@ -522,71 +526,71 @@ body{
   <div class="card">
     <div class="card-title">📦 보유 주괴</div>
     <div class="grid3">
-      <div class="field"><label>코룸 주괴 (개)</label><input id="iCo" type="number" placeholder="0" oninput="co()"></div>
-      <div class="field"><label>리프톤 주괴 (개)</label><input id="iRi" type="number" placeholder="0" oninput="co()"></div>
-      <div class="field"><label>세렌트 주괴 (개)</label><input id="iSe" type="number" placeholder="0" oninput="co()"></div>
+      <div class="field"><label>코룸 주괴</label><input id="iCo" type="number" inputmode="numeric" placeholder="0" oninput="co()"></div>
+      <div class="field"><label>리프톤 주괴</label><input id="iRi" type="number" inputmode="numeric" placeholder="0" oninput="co()"></div>
+      <div class="field"><label>세렌트 주괴</label><input id="iSe" type="number" inputmode="numeric" placeholder="0" oninput="co()"></div>
     </div>
   </div>
 
   <div class="card">
     <div class="card-title">💰 주괴 단가 (원/개)</div>
     <div class="grid3">
-      <div class="field"><label>코룸 주괴</label><input id="oCo" type="number" placeholder="3500" oninput="co()"></div>
-      <div class="field"><label>리프톤 주괴</label><input id="oRi" type="number" placeholder="3750" oninput="co()"></div>
-      <div class="field"><label>세렌트 주괴</label><input id="oSe" type="number" placeholder="4000" oninput="co()"></div>
+      <div class="field"><label>코룸 주괴</label><input id="oCo" type="number" inputmode="numeric" placeholder="3500" oninput="co()"></div>
+      <div class="field"><label>리프톤 주괴</label><input id="oRi" type="number" inputmode="numeric" placeholder="3750" oninput="co()"></div>
+      <div class="field"><label>세렌트 주괴</label><input id="oSe" type="number" inputmode="numeric" placeholder="4000" oninput="co()"></div>
     </div>
   </div>
 
   <div class="card">
     <div class="card-title">🏪 라이프스톤 / 어빌리티 스톤 (원/개)</div>
     <div class="grid2">
-      <div class="field"><label>하급 라이프스톤</label><input id="oL1" type="number" placeholder="0" oninput="co()"></div>
-      <div class="field"><label>중급 라이프스톤</label><input id="oL2" type="number" placeholder="0" oninput="co()"></div>
-      <div class="field"><label>상급 라이프스톤</label><input id="oL3" type="number" placeholder="0" oninput="co()"></div>
-      <div class="field"><label>어빌리티 스톤</label><input id="oAb" type="number" placeholder="0" oninput="co()"></div>
+      <div class="field"><label>하급 라이프스톤</label><input id="oL1" type="number" inputmode="numeric" placeholder="0" oninput="co()"></div>
+      <div class="field"><label>중급 라이프스톤</label><input id="oL2" type="number" inputmode="numeric" placeholder="0" oninput="co()"></div>
+      <div class="field"><label>상급 라이프스톤</label><input id="oL3" type="number" inputmode="numeric" placeholder="0" oninput="co()"></div>
+      <div class="field"><label>어빌리티 스톤</label><input id="oAb" type="number" inputmode="numeric" placeholder="0" oninput="co()"></div>
     </div>
   </div>
 
   <div class="card">
-    <div class="card-title">📦 바닐라 재료 가격</div>
+    <div class="card-title">📦 바닐라 재료 가격 (원/세트)</div>
     <div class="sec-label">조약돌 계열</div>
     <div class="grid2">
       <div class="field">
-        <label>조약돌 묶음 (원/세트)</label>
-        <input id="vCo" type="number" placeholder="0" oninput="co()">
+        <label>조약돌 묶음</label>
+        <input id="vCo" type="number" inputmode="numeric" placeholder="0" oninput="co()">
       </div>
       <div class="field">
-        <label>심층암 조약돌 묶음 (원/세트)</label>
-        <input id="vDc" type="number" placeholder="0" oninput="co()">
+        <label>심층암 조약돌 묶음</label>
+        <input id="vDc" type="number" inputmode="numeric" placeholder="0" oninput="co()">
       </div>
     </div>
-    <div class="sec-label" style="margin-top:8px">바닐라 광물 계열</div>
+    <div class="sec-label" style="margin-top:8px">바닐라 광물 계열 (원/세트)</div>
     <div class="grid3">
-      <div class="field"><label>구리 블럭</label><input id="vCu" type="number" placeholder="0" oninput="co()"></div>
-      <div class="field"><label>철 블럭</label><input id="vIr" type="number" placeholder="0" oninput="co()"></div>
-      <div class="field"><label>금 블럭</label><input id="vGo" type="number" placeholder="0" oninput="co()"></div>
-      <div class="field"><label>다이아 블럭</label><input id="vDi" type="number" placeholder="0" oninput="co()"></div>
-      <div class="field"><label>레드스톤 블럭</label><input id="vRe" type="number" placeholder="0" oninput="co()"></div>
-      <div class="field"><label>청금석 블럭</label><input id="vLa" type="number" placeholder="0" oninput="co()"></div>
-      <div class="field"><label>자수정 블럭</label><input id="vAm" type="number" placeholder="0" oninput="co()"></div>
+      <div class="field"><label>구리 블럭</label><input id="vCu" type="number" inputmode="numeric" placeholder="0" oninput="co()"></div>
+      <div class="field"><label>철 블럭</label><input id="vIr" type="number" inputmode="numeric" placeholder="0" oninput="co()"></div>
+      <div class="field"><label>금 블럭</label><input id="vGo" type="number" inputmode="numeric" placeholder="0" oninput="co()"></div>
+      <div class="field"><label>다이아 블럭</label><input id="vDi" type="number" inputmode="numeric" placeholder="0" oninput="co()"></div>
+      <div class="field"><label>레드스톤 블럭</label><input id="vRe" type="number" inputmode="numeric" placeholder="0" oninput="co()"></div>
+      <div class="field"><label>청금석 블럭</label><input id="vLa" type="number" inputmode="numeric" placeholder="0" oninput="co()"></div>
+      <div class="field"><label>자수정 블럭</label><input id="vAm" type="number" inputmode="numeric" placeholder="0" oninput="co()"></div>
     </div>
   </div>
 
   <div class="card">
     <div class="card-title">👑 귀중품 재료 가격</div>
-    <div class="sec-label">특수 광물 블럭 (원/개)</div>
+    <div class="sec-label">특수 광물 (원/개)</div>
     <div class="grid3">
-      <div class="field"><label>토파즈 블럭</label><input id="vTopaz" type="number" placeholder="0" oninput="co()"></div>
-      <div class="field"><label>사파이어 블럭</label><input id="vSapphire" type="number" placeholder="0" oninput="co()"></div>
-      <div class="field"><label>플레티넘 블럭</label><input id="vPlatinum" type="number" placeholder="0" oninput="co()"></div>
+      <div class="field"><label>토파즈 블럭</label><input id="vTopaz" type="number" inputmode="numeric" placeholder="0" oninput="co()"></div>
+      <div class="field"><label>사파이어 블럭</label><input id="vSapphire" type="number" inputmode="numeric" placeholder="0" oninput="co()"></div>
+      <div class="field"><label>플레티넘 블럭</label><input id="vPlatinum" type="number" inputmode="numeric" placeholder="0" oninput="co()"></div>
     </div>
-    <div class="sec-label" style="margin-top:8px">기타 재료 (원/개)</div>
+    <div class="sec-label" style="margin-top:8px">기타 재료 (원/세트)</div>
     <div class="grid3">
-      <div class="field"><label>뾰족한 점적석</label><input id="vStalactite" type="number" placeholder="0" oninput="co()"></div>
-      <div class="field"><label>응회암</label><input id="vTuff" type="number" placeholder="0" oninput="co()"></div>
-      <div class="field"><label>발광이끼</label><input id="vGlowLichen" type="number" placeholder="0" oninput="co()"></div>
+      <div class="field"><label>뾰족한 점적석</label><input id="vStalactite" type="number" inputmode="numeric" placeholder="0" oninput="co()"></div>
+      <div class="field"><label>응회암</label><input id="vTuff" type="number" inputmode="numeric" placeholder="0" oninput="co()"></div>
+      <div class="field"><label>발광이끼</label><input id="vGlowLichen" type="number" inputmode="numeric" placeholder="0" oninput="co()"></div>
     </div>
-    <div class="field-note" style="margin-top:6px">📌증서는 개당 10,000원 고정 반영됩니다</div>
+    <div class="field-note" style="margin-top:6px">📌 레드스톤·청금석·금 블럭은 위 바닐라 재료 가격을 공유합니다 · 증서는 개당 10,000원 고정</div>
   </div>
 
   <div class="card">
@@ -601,8 +605,6 @@ body{
   import { sw,cs,ct,co,onSkillChange,onEngravingChange,init } from './app.js';
   window.sw=sw; window.cs=cs; window.ct=ct; window.co=co;
   window.onSkillChange=onSkillChange; window.onEngravingChange=onEngravingChange;
-  document.addEventListener('DOMContentLoaded', init);
-
 
   /* ── localStorage 저장/복원 ──────────────────────────
      저장 대상 input/select ID 목록
@@ -631,11 +633,11 @@ body{
     // 귀중품 재료 가격
     'vTopaz','vSapphire','vPlatinum','vStalactite','vTuff','vGlowLichen',
     // 강화횃불
-    'tCharcoalPrice','tWoodPrice','tWantCount','tSellPrice',
+    'tCharcoalPrice','tWoodPrice','tSellPrice',
   ];
- 
+
   const KEY = 'miner_calc_v1'; // localStorage 키
- 
+
   /* 모든 값을 localStorage에 저장 */
   function saveAll() {
     const data = {};
@@ -645,7 +647,7 @@ body{
     });
     localStorage.setItem(KEY, JSON.stringify(data));
   }
- 
+
   /* localStorage에서 값을 읽어 입력칸에 복원 */
   function loadAll() {
     try {
@@ -660,7 +662,27 @@ body{
       console.warn('저장된 값 복원 실패:', e);
     }
   }
- 
+
+  /* ── 스킬 패널 토글 ── */
+  function toggleSkillPanel() {
+    document.getElementById('skillPanel').classList.toggle('collapsed');
+  }
+
+  /* ── 전체 초기화 ── */
+  window.resetAll = function() {
+    if (!confirm('입력된 값을 모두 초기화할까요?')) return;
+    localStorage.removeItem(KEY);
+    SAVE_IDS.forEach(id => {
+      const el = document.getElementById(id);
+      if (!el) return;
+      if (el.tagName === 'SELECT') el.selectedIndex = 0;
+      else el.value = '';
+    });
+    init();
+  };
+
+  window.toggleSkillPanel = toggleSkillPanel;
+
   document.addEventListener('DOMContentLoaded', () => {
     // 저장된 값 먼저 복원
     loadAll();
