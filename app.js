@@ -9,6 +9,7 @@ import {
 } from './config.js';
 
 const { SET_SIZE, BOX_SIZE } = UNITS;
+const COBBY_DROP_RATE = 0.5;
 
 
 /* ════════════════════════════════════════
@@ -340,7 +341,6 @@ function calcMining() {
 
   /* ── 코비 & 보석 계산 ── */
   // 전체 코비 확률 = 곡괭이 + 코비타임 스킬 + 코비소환 각인석
-  const COBBY_DROP_RATE = 0.5;
   const totalCobbyPct = px.cobbyPct + sk.ca + eng.cp;
   const cobbyCount    = miningCount * (totalCobbyPct / 100);
   // 보석코비 전환 기댓값
