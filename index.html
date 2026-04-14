@@ -602,6 +602,79 @@ body{
   window.sw=sw; window.cs=cs; window.ct=ct; window.co=co;
   window.onSkillChange=onSkillChange; window.onEngravingChange=onEngravingChange;
   document.addEventListener('DOMContentLoaded', init);
+
+
+  /* ── localStorage 저장/복원 ──────────────────────────
+     저장 대상 input/select ID 목록
+     값이 바뀔 때마다 자동 저장, 페이지 로드 시 복원
+  ─────────────────────────────────────────────────── */
+  const SAVE_IDS = [
+    // 스킬 설정
+    'skillIngotSell','skillGemSell','skillPrecious','skillFurnace',
+    'skillCobby','skillSparkle','skillLucky','skillFirePick',
+    // 각인석 설정
+    'engOreLuck','engRelic','engCobby','engGemCobby','engCart','engRoulette',
+    // 채굴 설정
+    'pickaxeLevel','totalStamina','oreType',
+    // 판매가 — 주괴
+    'ingotPriceC','ingotPriceR','ingotPriceS',
+    // 판매가 — 보석
+    'gemPriceC','gemPriceR','gemPriceS',
+    // 판매가 — 기타
+    'skillPulsePrice','artifactPtPrice',
+    // 라이프스톤 / 어빌리티 스톤
+    'oL1','oL2','oL3','oAb',
+    // 주괴 최적화 — 보유량 & 단가
+    'iCo','iRi','iSe','oCo','oRi','oSe',
+    // 바닐라 재료 가격
+    'vCo','vDc','vCu','vIr','vGo','vDi','vRe','vLa','vAm',
+    // 귀중품 재료 가격
+    'vTopaz','vSapphire','vPlatinum','vStalactite','vTuff','vGlowLichen',
+    // 강화횃불
+    'tCharcoalPrice','tWoodPrice','tWantCount','tSellPrice',
+  ];
+ 
+  const KEY = 'miner_calc_v1'; // localStorage 키
+ 
+  /* 모든 값을 localStorage에 저장 */
+  function saveAll() {
+    const data = {};
+    SAVE_IDS.forEach(id => {
+      const el = document.getElementById(id);
+      if (el) data[id] = el.value;
+    });
+    localStorage.setItem(KEY, JSON.stringify(data));
+  }
+ 
+  /* localStorage에서 값을 읽어 입력칸에 복원 */
+  function loadAll() {
+    try {
+      const raw = localStorage.getItem(KEY);
+      if (!raw) return;
+      const data = JSON.parse(raw);
+      SAVE_IDS.forEach(id => {
+        const el = document.getElementById(id);
+        if (el && data[id] !== undefined) el.value = data[id];
+      });
+    } catch(e) {
+      console.warn('저장된 값 복원 실패:', e);
+    }
+  }
+ 
+  document.addEventListener('DOMContentLoaded', () => {
+    // 저장된 값 먼저 복원
+    loadAll();
+    // 복원 후 계산 초기화
+    init();
+    // 이후 모든 변경사항을 자동 저장
+    SAVE_IDS.forEach(id => {
+      const el = document.getElementById(id);
+      if (el) {
+        const evtType = (el.tagName === 'SELECT') ? 'change' : 'input';
+        el.addEventListener(evtType, saveAll);
+      }
+    });
+  });
 </script>
 </body>
 </html>
