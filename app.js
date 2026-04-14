@@ -369,9 +369,9 @@ export function cs() {
 
   <div class="rsec">
     <div class="rsec-title">⛏ 광석 → 주괴 변환</div>
-    ${cRow('코룸', m.oreC, m.ingotFromOreC, CC, torchC)}
-    ${cRow('리프톤', m.oreR, m.ingotFromOreR, CR, torchR)}
-    ${cRow('세렌트', m.oreS, m.ingotFromOreS, CS, torchS)}
+    ${cRow('🟠 코룸', m.oreC, m.ingotFromOreC, CC, torchC)}
+    ${cRow('🟢 리프톤', m.oreR, m.ingotFromOreR, CR, torchR)}
+    ${cRow('🔴 세렌트', m.oreS, m.ingotFromOreS, CS, torchS)}
     ${m.totalTorch > 0.01 ? `<div class="rrow"><span class="rl" style="color:var(--blue)">🔥 필요 강화횃불 합계</span><span class="rv b">${f(m.totalTorch)}개</span></div>` : ''}
     ${m.fpDrops > 0.01 ? `<div class="rrow"><span class="rl">불붙은 곡괭이 ${bdg('bg','Lv'+sk.fpl)}</span><span class="rv">+${fd(m.fpDrops)}개 주괴</span></div>` : ''}
     <div class="rrow rrow-strong">
@@ -437,21 +437,31 @@ export function cs() {
 export function ct() {
   const sk=getSK();
   const timePerTorch=TORCH.craft_time_sec*(1-sk.fr);
-  const charU=gi('tCharcoalPrice')/SET_SIZE, stickU=gi('tStickPrice')/SET_SIZE;
+  // 원목 1세트(64개) → 막대기 8세트(512개) → 막대기 개당 = 원목세트가 ÷ 512
+  const charU = gi('tCharcoalPrice') / SET_SIZE;      // 숯/석탄 개당 가격
+  const woodSetPrice = gi('tWoodPrice');               // 원목 세트당 가격
+  const stickU = woodSetPrice / (SET_SIZE * 8);        // 막대기 개당 가격 (원목 1세트 = 막대기 8세트)
+  const woodPerTorch = 1 / (SET_SIZE * 8);             // 횃불 1개당 필요 원목 (막대기 1개 = 원목 1/8개 = 원목 1/512 세트)
+  const needWoodSets = wantN => wantN / (SET_SIZE * 8); // 횃불 N개에 필요한 원목 세트 수
+
   const costEa=charU+stickU, wantN=gi('tWantCount'), sellEa=gi('tSellPrice');
   const totalCost=costEa*wantN, totalTime=timePerTorch*wantN;
   const hasPrice=sellEa>0, totalRev=hasPrice?sellEa*wantN:0, net=totalRev-totalCost;
   const fBdg=sk.fr>0?bdg('bg',`용광로 Lv${sk.fl} -${Math.round(sk.fr*100)}%`):'';
 
+  // 필요 원목 계산: 횃불 N개 = 막대기 N개 = 원목 N/8개 → 원목 세트 수 = N/512
+  const needWoodItems = wantN;           // 막대기 N개 필요
+  const needWoodLogs  = wantN / 8;       // 원목 N/8개 필요 (원목 1개 = 막대기 8개)
+
   document.getElementById('tRes').innerHTML=`
   <div class="rsec">
     ${row('숯/석탄 개당',`${charU.toFixed(1)}원`)}
-    ${row('막대기 개당',`${stickU.toFixed(1)}원`)}
+    ${row('원목 세트당',`${f(woodSetPrice)}원 → 막대기 개당 ${stickU.toFixed(1)}원`)}
     ${row('횃불 1개 재료비',`${costEa.toFixed(1)}원`,'r')}
   </div>
   <div class="rsec">
     ${row('필요 숯/석탄',fmtQty(wantN),'g')}
-    ${row('필요 막대기',fmtQty(wantN),'g')}
+    ${row('필요 원목',fmtQty(Math.ceil(needWoodLogs)),'g')}
     ${row('총 재료비',`${f(totalCost)}원`,'r')}
   </div>
   <div class="rsec">
