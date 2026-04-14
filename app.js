@@ -369,9 +369,9 @@ export function cs() {
 
   <div class="rsec">
     <div class="rsec-title">⛏ 광석 → 주괴 변환</div>
-    ${cRow('🟠 코룸', m.oreC, m.ingotFromOreC, CC, torchC)}
-    ${cRow('🟢 리프톤', m.oreR, m.ingotFromOreR, CR, torchR)}
-    ${cRow('🔴 세렌트', m.oreS, m.ingotFromOreS, CS, torchS)}
+    ${cRow('코룸', m.oreC, m.ingotFromOreC, CC, torchC)}
+    ${cRow('리프톤', m.oreR, m.ingotFromOreR, CR, torchR)}
+    ${cRow('세렌트', m.oreS, m.ingotFromOreS, CS, torchS)}
     ${m.totalTorch > 0.01 ? `<div class="rrow"><span class="rl" style="color:var(--blue)">🔥 필요 강화횃불 합계</span><span class="rv b">${f(m.totalTorch)}개</span></div>` : ''}
     ${m.fpDrops > 0.01 ? `<div class="rrow"><span class="rl">불붙은 곡괭이 ${bdg('bg','Lv'+sk.fpl)}</span><span class="rv">+${fd(m.fpDrops)}개 주괴</span></div>` : ''}
     <div class="rrow rrow-strong">
@@ -413,16 +413,17 @@ export function cs() {
   </div>
 
   <div class="result-box">
-    <div class="result-box-row">
-      <div>
+    <div style="display:flex;gap:12px;align-items:stretch">
+      <div style="flex:1;text-align:center;padding:4px 8px">
         <div class="rb-label">기댓값 수익</div>
         <div class="rb-value">${f(totalRev)}원</div>
-        <div class="rb-sub" style="margin-top:4px">주괴 ${f(m.totalIngotAll)}개</div>
+        <span class="rb-sub">주괴 ${f(m.totalIngotAll)}개</span>
       </div>
-      <div>
+      <div style="width:1px;background:var(--border2);margin:4px 0;flex:none"></div>
+      <div style="flex:1;text-align:center;padding:4px 8px">
         <div class="rb-label">🎯 80% 확률로 최소</div>
         <div class="rb-value rb-floor">${f(totalRev80)}원</div>
-        <div class="rb-sub" style="margin-top:4px">${ingot80Parts}${p80.totalGems80>0 ? ` · 보석 ${fd(p80.totalGems80)}개` : ''}${p80.normalCobby80>0 ? ` · 펄스 ${fd(p80.normalCobby80)}개` : ''}</div>
+        <span class="rb-sub">${ingot80Parts}${p80.totalGems80>0 ? ` · 보석 ${fd(p80.totalGems80)}개` : ''}${p80.normalCobby80>0 ? ` · 펄스 ${fd(p80.normalCobby80)}개` : ''}</span>
       </div>
     </div>
   </div>`;
