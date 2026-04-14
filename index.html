@@ -452,7 +452,7 @@ html, body {
 
   <!-- 패널 제목 — 클릭 시 접기/펼치기 -->
   <div class="skpanel-title" onclick="toggleSkillPanel()">
-    ⚡ 스킬 &amp; 각인석 설정
+    ⚡ 스킬 설정
     <span class="toggle-arrow">▼</span>
   </div>
 
@@ -469,7 +469,6 @@ html, body {
           <option value="3">3레벨 — +10%</option><option value="4">4레벨 — +20%</option>
           <option value="5">5레벨 — +30%</option><option value="6">6레벨 — +50%</option>
         </select>
-        <span class="skinfo" id="skillIngotSellInfo">기본</span>
       </div>
       <div class="skrow">
         <span class="skname">✨ 반짝반짝 눈이 부셔</span>
@@ -479,7 +478,6 @@ html, body {
           <option value="3">3레벨 — +10%</option><option value="4">4레벨 — +20%</option>
           <option value="5">5레벨 — +30%</option><option value="6">6레벨 — +50%</option>
         </select>
-        <span class="skinfo" id="skillGemSellInfo">기본</span>
       </div>
       <div class="skrow">
         <span class="skname">👑 귀하신 몸값</span>
@@ -489,7 +487,6 @@ html, body {
           <option value="3">3레벨 — +10%</option><option value="4">4레벨 — +15%</option>
           <option value="5">5레벨 — +20%</option><option value="6">6레벨 — +30%</option>
         </select>
-        <span class="skinfo" id="skillPreciousInfo">기본</span>
       </div>
       <div class="skrow">
         <span class="skname">🔥 초고속 용광로</span>
@@ -499,7 +496,6 @@ html, body {
           <option value="3">3레벨 — -40%</option><option value="4">4레벨 — -60%</option>
           <option value="5">5레벨 — -80%</option>
         </select>
-        <span class="skinfo" id="skillFurnaceInfo">기본</span>
       </div>
     </div>
 
@@ -515,7 +511,6 @@ html, body {
           <option value="5">5레벨 — +3%</option><option value="6">6레벨 — +4%</option>
           <option value="7">7레벨 — +5%</option>
         </select>
-        <span class="skinfo" id="skillCobbyInfo">기본</span>
       </div>
       <div class="skrow">
         <span class="skname">🍀 럭키히트</span>
@@ -527,7 +522,6 @@ html, body {
           <option value="7">7레벨 — 7%/+10개</option><option value="8">8레벨 — 8%/+12개</option>
           <option value="9">9레벨 — 10%/+16개</option><option value="10">10레벨 — 15%/+20개</option>
         </select>
-        <span class="skinfo" id="skillLuckyInfo">기본</span>
       </div>
       <div class="skrow">
         <span class="skname">💫 반짝임의 시작</span>
@@ -537,7 +531,6 @@ html, body {
           <option value="2">2레벨 — 7% / 1개</option>
           <option value="3">3레벨 — 10% / 2개</option>
         </select>
-        <span class="skinfo" id="skillSparkleInfo">기본</span>
       </div>
       <div class="skrow">
         <span class="skname">🔥 불붙은 곡괭이</span>
@@ -549,10 +542,20 @@ html, body {
           <option value="7">7레벨 — 7%</option><option value="8">8레벨 — 8%</option>
           <option value="9">9레벨 — 9%</option><option value="10">10레벨 — 15%</option>
         </select>
-        <span class="skinfo" id="skillFirePickInfo">기본</span>
       </div>
     </div>
+  </div><!-- /skbody -->
+</div><!-- /skpanel -->
 
+<div class="engpanel" id="EngPanel">
+
+  <!-- 패널 제목 — 클릭 시 접기/펼치기 -->
+  <div class="engpanel-title" onclick="toggleEngPanel()">
+    ⚡ 각인석 설정
+    <span class="toggle-arrow">▼</span>
+  </div>
+
+  <div class="skbody">
     <!-- 각인석 -->
     <div class="sksec">🪨 각인석</div>
     <div class="skgrid">
@@ -563,7 +566,6 @@ html, body {
           <option value="1">1강 — 25%/+1개</option><option value="2">2강 — 50%/+1개</option>
           <option value="3">3강 — 75%/+1개</option><option value="4">4강 — 100%/+1개</option>
         </select>
-        <span class="skinfo" id="engOreLuckInfo">없음</span>
       </div>
       <div class="skrow">
         <span class="skname">🗿 유물 탐색</span>
@@ -572,7 +574,6 @@ html, body {
           <option value="1">1강 — +1%</option><option value="2">2강 — +3%</option>
           <option value="3">3강 — +5%</option>
         </select>
-        <span class="skinfo" id="engRelicInfo">없음</span>
       </div>
       <div class="skrow">
         <span class="skname">🐾 코비 소환</span>
@@ -581,7 +582,6 @@ html, body {
           <option value="1">1강 — +1%</option><option value="2">2강 — +3%</option>
           <option value="3">3강 — +5%</option>
         </select>
-        <span class="skinfo" id="engCobbyInfo">없음</span>
       </div>
       <div class="skrow">
         <span class="skname">💎 보석 코비</span>
@@ -591,7 +591,6 @@ html, body {
           <option value="3">3강 — 10%</option><option value="4">4강 — 20%</option>
           <option value="5">5강 — 30%</option>
         </select>
-        <span class="skinfo" id="engGemCobbyInfo">없음</span>
       </div>
       <div class="skrow">
         <span class="skname">🚂 광산 수레</span>
@@ -601,7 +600,6 @@ html, body {
           <option value="3">3강 — 1.5%</option><option value="4">4강 — 2%</option>
           <option value="5">5강 — 3%</option>
         </select>
-        <span class="skinfo" id="engCartInfo">없음</span>
       </div>
       <div class="skrow">
         <span class="skname">🎲 광부 룰렛</span>
@@ -611,12 +609,10 @@ html, body {
           <option value="3">3강 — 1.5%</option><option value="4">4강 — 2%</option>
           <option value="5">5강 — 3%</option>
         </select>
-        <span class="skinfo" id="engRouletteInfo">없음</span>
       </div>
     </div>
-
-  </div><!-- /skbody -->
-</div><!-- /skpanel -->
+  </div><!-- /engbody -->
+</div><!-- /engpanel -->
 </div><!-- /sidebar -->
 
 <!-- ── 메인: 탭 + 콘텐츠 ── -->
@@ -883,6 +879,7 @@ html, body {
 
   /* 스킬 패널 접기/펼치기 토글 */
   window.toggleSkillPanel = () => document.getElementById('skillPanel').classList.toggle('collapsed');
+  window.toggleEngPanel = () => document.getElementById('engPanel').classList.toggle('collapsed');
 
   /* 전체 초기화 — localStorage 삭제 + 모든 입력 리셋 */
   window.resetAll = () => {
