@@ -123,15 +123,63 @@ html, body {
   font-family: 'Jua', sans-serif !important;
   font-size: 11px; color: var(--txt);
 }
-.skrow select {
-  font-size: 11px !important; font-weight: 700 !important;
-  border: 1.5px solid var(--bdr2); border-radius: 5px;
-  padding: 4px 5px;
-  background: var(--surf); color: var(--txt);
-  cursor: pointer; outline: none;
+.skrow select { display: none; } /* 숨김 — JS로 커스텀 드롭다운 대체 */
+.skinfo { font-size: 10px; color: var(--muted); font-weight: 500; min-height: 13px; }
+
+/* ── 커스텀 드롭다운 ── */
+.cdd {
+  position: relative;
   width: 100%;
 }
-.skinfo { font-size: 10px; color: var(--muted); font-weight: 500; min-height: 13px; }
+.cdd-trigger {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 4px;
+  padding: 4px 7px;
+  border: 1.5px solid var(--bdr2);
+  border-radius: 5px;
+  background: var(--surf);
+  color: var(--txt);
+  font-size: 11px !important;
+  font-weight: 700 !important;
+  cursor: pointer;
+  user-select: none;
+  line-height: 1.4;
+}
+.cdd-trigger:hover { border-color: var(--acc); }
+.cdd-trigger .cdd-arrow { font-size: 9px; color: var(--muted); flex-shrink: 0; transition: transform .15s; }
+.cdd.open .cdd-trigger { border-color: var(--acc); box-shadow: 0 0 0 2px rgba(224,123,42,.15); }
+.cdd.open .cdd-arrow { transform: rotate(180deg); }
+
+.cdd-menu {
+  display: none;
+  position: absolute;
+  top: calc(100% + 3px);
+  left: 0; right: 0;
+  background: var(--surf);
+  border: 1.5px solid var(--acc);
+  border-radius: var(--rs);
+  box-shadow: 0 6px 20px rgba(0,0,0,.12);
+  z-index: 9999;
+  overflow: hidden;
+  max-height: 220px;
+  overflow-y: auto;
+}
+.cdd.open .cdd-menu { display: block; }
+
+.cdd-item {
+  padding: 6px 10px;
+  font-size: 11px !important;
+  font-weight: 700 !important;
+  color: var(--txt);
+  cursor: pointer;
+  border-bottom: 1px solid var(--bdr);
+  line-height: 1.4;
+}
+.cdd-item:last-child { border-bottom: none; }
+.cdd-item:hover { background: var(--ylw-bg); color: var(--acc); }
+.cdd-item.selected { background: var(--acc); color: #fff; }
 
 /* ════ 탭바 ════ */
 .tabbar {
@@ -275,7 +323,8 @@ html, body {
 
 <!-- 헤더 -->
 <div class="hdr">
-  <div class="hdr-title"><span class="bounce">⛏</span> 채광전문가 계산기</div>
+  <div class="hdr-title"><span class="bounce">⛏</span> 채광전문가 계산기 <em>✨</em></div>
+  <div class="hdr-sub">채굴 수익부터 귀중품까지, 한눈에!</div>
 </div>
 
 <div class="layout">
@@ -503,7 +552,7 @@ html, body {
       </div>
       <div class="slabel" style="margin-top:8px">기타</div>
       <div class="g2">
-        <div class="field"><label>스킬펄스</label><input id="skillPulsePrice" type="number" inputmode="numeric" placeholder="0" oninput="cs()"></div>
+        <div class="field"><label>스킬펄스 (원/개)</label><input id="skillPulsePrice" type="number" inputmode="numeric" placeholder="0" oninput="cs()"></div>
         <div class="field"><label>유물 포인트 (원/100pt)</label><input id="artifactPtPrice" type="number" inputmode="numeric" placeholder="0" oninput="cs()"></div>
       </div>
     </div>
@@ -587,12 +636,12 @@ html, body {
 
     <div class="card">
       <div class="card-title">📦 바닐라 재료 가격</div>
-      <div class="slabel">조약돌 묶음 (원/세트)</div>
+      <div class="slabel">묶음(64개)당 — 조약돌 계열</div>
       <div class="g2">
-        <div class="field"><label>조약돌 묶음</label><input id="vCo" type="number" inputmode="numeric" placeholder="0" oninput="co()"></div>
-        <div class="field"><label>심층암 조약돌 묶음</label><input id="vDc" type="number" inputmode="numeric" placeholder="0" oninput="co()"></div>
+        <div class="field"><label>조약돌 묶음 (원/묶음=64개)</label><input id="vCo" type="number" inputmode="numeric" placeholder="0" oninput="co()"></div>
+        <div class="field"><label>심층암 조약돌 묶음 (원/묶음=64개)</label><input id="vDc" type="number" inputmode="numeric" placeholder="0" oninput="co()"></div>
       </div>
-      <div class="slabel" style="margin-top:8px"> 바닐라 광물 (원/세트)</div>
+      <div class="slabel" style="margin-top:8px">세트(64개)당 — 블럭 계열</div>
       <div class="g3">
         <div class="field"><label>구리 블럭</label><input id="vCu" type="number" inputmode="numeric" placeholder="0" oninput="co()"></div>
         <div class="field"><label>철 블럭</label><input id="vIr" type="number" inputmode="numeric" placeholder="0" oninput="co()"></div>
@@ -606,19 +655,19 @@ html, body {
 
     <div class="card">
       <div class="card-title">👑 귀중품 재료 가격</div>
-      <div class="slabel">특수 광물 블럭 (원/개)</div>
+      <div class="slabel">특수 블럭 (원/개)</div>
       <div class="g3">
         <div class="field"><label>토파즈 블럭</label><input id="vTopaz" type="number" inputmode="numeric" placeholder="0" oninput="co()"></div>
         <div class="field"><label>사파이어 블럭</label><input id="vSapphire" type="number" inputmode="numeric" placeholder="0" oninput="co()"></div>
         <div class="field"><label>플레티넘 블럭</label><input id="vPlatinum" type="number" inputmode="numeric" placeholder="0" oninput="co()"></div>
       </div>
-      <div class="slabel" style="margin-top:8px">기타 재료 (원/세트)</div>
+      <div class="slabel" style="margin-top:8px">기타 재료 (원/세트=64개)</div>
       <div class="g3">
         <div class="field"><label>뾰족한 점적석</label><input id="vStalactite" type="number" inputmode="numeric" placeholder="0" oninput="co()"></div>
         <div class="field"><label>응회암</label><input id="vTuff" type="number" inputmode="numeric" placeholder="0" oninput="co()"></div>
         <div class="field"><label>발광이끼</label><input id="vGlowLichen" type="number" inputmode="numeric" placeholder="0" oninput="co()"></div>
       </div>
-      <div class="fnote" style="margin-top:6px">📌증서는 개당 10,000원 고정 계산됩니다</div>
+      <div class="fnote" style="margin-top:6px">📌 레드스톤·청금석·금 블럭은 위 바닐라 재료 가격을 공유합니다 · 증서는 개당 10,000원 고정</div>
     </div>
 
     <div class="card">
@@ -674,11 +723,88 @@ html, body {
       if (!e) return;
       if (e.tagName==='SELECT') e.selectedIndex=0; else e.value='';
     });
+    syncDropdownLabels();
     init();
   };
 
+  /* ── 커스텀 드롭다운 초기화 ── */
+  function initCustomDropdowns() {
+    // .skrow 안의 select만 대상
+    document.querySelectorAll('.skrow select').forEach(sel => {
+      // 래퍼 생성
+      const cdd = document.createElement('div');
+      cdd.className = 'cdd';
+
+      // 트리거 버튼
+      const trigger = document.createElement('div');
+      trigger.className = 'cdd-trigger';
+      const label = document.createElement('span');
+      label.className = 'cdd-label';
+      label.textContent = sel.options[sel.selectedIndex]?.text || '';
+      const arrow = document.createElement('span');
+      arrow.className = 'cdd-arrow';
+      arrow.textContent = '▼';
+      trigger.appendChild(label);
+      trigger.appendChild(arrow);
+
+      // 메뉴
+      const menu = document.createElement('div');
+      menu.className = 'cdd-menu';
+      Array.from(sel.options).forEach((opt, i) => {
+        const item = document.createElement('div');
+        item.className = 'cdd-item' + (i === sel.selectedIndex ? ' selected' : '');
+        item.textContent = opt.text;
+        item.dataset.value = opt.value;
+        item.addEventListener('click', () => {
+          sel.value = opt.value;
+          label.textContent = opt.text;
+          menu.querySelectorAll('.cdd-item').forEach(el => el.classList.remove('selected'));
+          item.classList.add('selected');
+          cdd.classList.remove('open');
+          // 원본 select의 onchange 이벤트 발생
+          sel.dispatchEvent(new Event('change', { bubbles: true }));
+        });
+        menu.appendChild(item);
+      });
+
+      // 트리거 클릭 시 열기/닫기
+      trigger.addEventListener('click', e => {
+        e.stopPropagation();
+        const isOpen = cdd.classList.contains('open');
+        // 다른 모든 드롭다운 닫기
+        document.querySelectorAll('.cdd.open').forEach(el => el.classList.remove('open'));
+        if (!isOpen) cdd.classList.add('open');
+      });
+
+      // select 앞에 cdd 삽입
+      cdd.appendChild(trigger);
+      cdd.appendChild(menu);
+      sel.parentNode.insertBefore(cdd, sel);
+    });
+
+    // 외부 클릭 시 닫기
+    document.addEventListener('click', () => {
+      document.querySelectorAll('.cdd.open').forEach(el => el.classList.remove('open'));
+    });
+  }
+
+  /* localStorage 값 복원 후 드롭다운 라벨도 동기화 */
+  function syncDropdownLabels() {
+    document.querySelectorAll('.skrow select').forEach(sel => {
+      const cdd = sel.previousElementSibling;
+      if (!cdd || !cdd.classList.contains('cdd')) return;
+      const label = cdd.querySelector('.cdd-label');
+      if (label) label.textContent = sel.options[sel.selectedIndex]?.text || '';
+      cdd.querySelectorAll('.cdd-item').forEach(item => {
+        item.classList.toggle('selected', item.dataset.value === sel.value);
+      });
+    });
+  }
+
   document.addEventListener('DOMContentLoaded', () => {
     loadAll();
+    initCustomDropdowns();
+    syncDropdownLabels();
     init();
     SAVE_IDS.forEach(id => {
       const e = document.getElementById(id);
