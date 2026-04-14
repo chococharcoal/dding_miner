@@ -526,9 +526,21 @@ body{
   <div class="card">
     <div class="card-title">📦 보유 주괴</div>
     <div class="grid3">
-      <div class="field"><label>코룸 주괴</label><input id="iCo" type="number" inputmode="numeric" placeholder="0" oninput="co()"></div>
-      <div class="field"><label>리프톤 주괴</label><input id="iRi" type="number" inputmode="numeric" placeholder="0" oninput="co()"></div>
-      <div class="field"><label>세렌트 주괴</label><input id="iSe" type="number" inputmode="numeric" placeholder="0" oninput="co()"></div>
+      <div class="field">
+        <label>코룸 주괴</label>
+        <input id="iCo" type="text" placeholder="예) 1세트 5개" oninput="co()" style="font-size:12px">
+        <span id="iCoParsed" style="font-size:10px;color:var(--muted);min-height:14px;display:block;margin-top:2px"></span>
+      </div>
+      <div class="field">
+        <label>리프톤 주괴</label>
+        <input id="iRi" type="text" placeholder="예) 1세트 5개" oninput="co()" style="font-size:12px">
+        <span id="iRiParsed" style="font-size:10px;color:var(--muted);min-height:14px;display:block;margin-top:2px"></span>
+      </div>
+      <div class="field">
+        <label>세렌트 주괴</label>
+        <input id="iSe" type="text" placeholder="예) 1세트 5개" oninput="co()" style="font-size:12px">
+        <span id="iSeParsed" style="font-size:10px;color:var(--muted);min-height:14px;display:block;margin-top:2px"></span>
+      </div>
     </div>
   </div>
 

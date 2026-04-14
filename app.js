@@ -340,12 +340,14 @@ function calcMining() {
 
   /* ── 코비 & 보석 계산 ── */
   // 전체 코비 확률 = 곡괭이 + 코비타임 스킬 + 코비소환 각인석
+  const COBBY_DROP_RATE = 0.5;
   const totalCobbyPct = px.cobbyPct + sk.ca + eng.cp;
   const cobbyCount    = miningCount * (totalCobbyPct / 100);
   // 보석코비 전환 기댓값
-  const gemCobby      = cobbyCount * (eng.gp / 100);
+  const gemCobby    = cobbyCount * (eng.gp / 100) * COBBY_DROP_RATE;
   // 일반코비 → 스킬펄스
-  const normalCobby   = cobbyCount - gemCobby;
+  const normalCobby = (cobbyCount - cobbyCount * (eng.gp / 100)) * COBBY_DROP_RATE;
+
 
   // 반짝임의 시작 보석 드랍
   const sparkleGems = miningCount * (sk.sp / 100) * sk.sc;
@@ -442,8 +444,8 @@ function calc80Ingots(m) {
   /* ── 보석·코비 80% 보정 ── */
   const sparkle80      = floor80(n, sk.sp / 100) * sk.sc;
   const cobby80        = floor80(n, m.totalCobbyPct / 100);
-  const gemCobby80     = floor80(cobby80, eng.gp / 100);
-  const normalCobby80  = cobby80 - gemCobby80;
+  const gemCobby80    = floor80(cobby80, eng.gp / 100) * COBBY_DROP_RATE;
+  const normalCobby80 = (cobby80 - floor80(cobby80, eng.gp / 100)) * COBBY_DROP_RATE;
   const totalGems80    = sparkle80 + gemCobby80;
 
   /* ── 유물 80% 보정 ── */
@@ -720,7 +722,19 @@ export function co() {
   const { ib, fr, pb } = getSK();
 
   /* ── 주괴 보유량 & 스킬 적용 단가 ── */
-  const iCo = gi('iCo'), iRi = gi('iRi'), iSe = gi('iSe');
+  const iCo = parseQty(document.getElementById('iCo')?.value || '');
+  const iRi = parseQty(document.getElementById('iRi')?.value || '');
+  const iSe = parseQty(document.getElementById('iSe')?.value || '');
+  
+  const showParsed = (spanId, n) => {
+    const el = document.getElementById(spanId);
+    if (el) el.textContent = n > 0 ? `(총 ${n.toLocaleString('ko-KR')}개)` : '';
+  };
+  
+  showParsed('iCoParsed', iCo);
+  showParsed('iRiParsed', iRi);
+  showParsed('iSeParsed', iSe);
+  
   const cP  = (gi('oCo') || DEFAULT_PRICES.ingot.corum)  * (1 + ib);
   const rP  = (gi('oRi') || DEFAULT_PRICES.ingot.rifton) * (1 + ib);
   const sP  = (gi('oSe') || DEFAULT_PRICES.ingot.serent) * (1 + ib);
