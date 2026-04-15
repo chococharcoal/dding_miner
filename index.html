@@ -435,7 +435,8 @@ html, body {
      헤더
 ══════════════════════════════ -->
 <div class="hdr">
-  <div class="hdr-title"><span class="bounce">⛏</span> 채광전문가 계산기</div>
+  <div class="hdr-title"><span class="bounce">⛏</span> 채광전문가 계산기 <em>✨</em></div>
+  <div class="hdr-sub">채굴 수익부터 귀중품까지, 한눈에!</div>
 </div>
 
 <!-- ══════════════════════════════
@@ -502,7 +503,7 @@ html, body {
     <div class="sksec">⛏ 채굴 드랍</div>
     <div class="skgrid">
       <div class="skrow">
-        <span class="skname">🐾 코비타임</span>
+        <span class="skname">🐾 코비 타임</span>
         <select id="skillCobby" onchange="onSkillChange()">
           <option value="0">0레벨 — 기본</option>
           <option value="1">1레벨 — +1%</option><option value="2">2레벨 — +1.5%</option>
@@ -512,7 +513,7 @@ html, body {
         </select>
       </div>
       <div class="skrow">
-        <span class="skname">🍀 럭키히트</span>
+        <span class="skname">🍀 럭키 히트</span>
         <select id="skillLucky" onchange="onSkillChange()">
           <option value="0">0레벨 — 기본</option>
           <option value="1">1레벨 — 1%/+1개</option><option value="2">2레벨 — 2%/+2개</option>
@@ -543,20 +544,18 @@ html, body {
         </select>
       </div>
     </div>
+
+
   </div><!-- /skbody -->
 </div><!-- /skpanel -->
 
-<div class="skpanel" id="EngPanel">
-
-  <!-- 패널 제목 — 클릭 시 접기/펼치기 -->
+<!-- 각인석 패널 — 별도 접기/펼치기 -->
+<div class="skpanel" id="engPanel" style="margin-top:10px">
   <div class="skpanel-title" onclick="toggleEngPanel()">
-    ⚡ 각인석 설정
+    🪨 각인석 설정
     <span class="toggle-arrow">▼</span>
   </div>
-
   <div class="skbody">
-    <!-- 각인석 -->
-    <div class="sksec">🪨 각인석</div>
     <div class="skgrid">
       <div class="skrow">
         <span class="skname">🪨 광물 행운</span>
@@ -610,8 +609,9 @@ html, body {
         </select>
       </div>
     </div>
-  </div><!-- /engbody -->
-</div><!-- /engpanel -->
+
+  </div><!-- /skbody -->
+</div><!-- /skpanel -->
 </div><!-- /sidebar -->
 
 <!-- ── 메인: 탭 + 콘텐츠 ── -->
@@ -673,7 +673,7 @@ html, body {
       </div>
       <div class="slabel" style="margin-top:8px">기타</div>
       <div class="g2">
-        <div class="field"><label>스킬펄스 (원/개)</label><input id="skillPulsePrice" type="number" inputmode="numeric" placeholder="0" oninput="cs()"></div>
+        <div class="field"><label>스킬펄스</label><input id="skillPulsePrice" type="number" inputmode="numeric" placeholder="0" oninput="cs()"></div>
         <div class="field"><label>유물 포인트 (원/100pt)</label><input id="artifactPtPrice" type="number" inputmode="numeric" placeholder="0" oninput="cs()"></div>
       </div>
     </div>
@@ -772,12 +772,12 @@ html, body {
          조약돌: 묶음(64개)당 / 블럭류: 세트(64개)당 -->
     <div class="card">
       <div class="card-title">📦 바닐라 재료 가격</div>
-      <div class="slabel">묶음(64개)당 — 조약돌 계열</div>
+      <div class="slabel">조약돌 묶음 (골드/ 세트)</div>
       <div class="g2">
-        <div class="field"><label>조약돌 묶음 (원/묶음=64개)</label><input id="vCo" type="number" inputmode="numeric" placeholder="0" oninput="co()"></div>
-        <div class="field"><label>심층암 조약돌 묶음 (원/묶음=64개)</label><input id="vDc" type="number" inputmode="numeric" placeholder="0" oninput="co()"></div>
+        <div class="field"><label>조약돌 묶음</label><input id="vCo" type="number" inputmode="numeric" placeholder="0" oninput="co()"></div>
+        <div class="field"><label>심층암 조약돌 묶음</label><input id="vDc" type="number" inputmode="numeric" placeholder="0" oninput="co()"></div>
       </div>
-      <div class="slabel" style="margin-top:8px">세트(64개)당 — 블럭 계열</div>
+      <div class="slabel" style="margin-top:8px">바닐라 광물 블럭 (골드/ 세트)</div>
       <div class="g3">
         <div class="field"><label>구리 블럭</label><input id="vCu" type="number" inputmode="numeric" placeholder="0" oninput="co()"></div>
         <div class="field"><label>철 블럭</label><input id="vIr" type="number" inputmode="numeric" placeholder="0" oninput="co()"></div>
@@ -794,19 +794,19 @@ html, body {
          레드스톤·청금석·금은 위 바닐라 재료와 공유 -->
     <div class="card">
       <div class="card-title">👑 귀중품 재료 가격</div>
-      <div class="slabel">특수 블럭 (원/개)</div>
+      <div class="slabel">특수 광물 블럭 (골드/개)</div>
       <div class="g3">
         <div class="field"><label>토파즈 블럭</label><input id="vTopaz" type="number" inputmode="numeric" placeholder="0" oninput="co()"></div>
         <div class="field"><label>사파이어 블럭</label><input id="vSapphire" type="number" inputmode="numeric" placeholder="0" oninput="co()"></div>
         <div class="field"><label>플레티넘 블럭</label><input id="vPlatinum" type="number" inputmode="numeric" placeholder="0" oninput="co()"></div>
       </div>
-      <div class="slabel" style="margin-top:8px">기타 재료 (원/세트=64개)</div>
+      <div class="slabel" style="margin-top:8px">기타 재료 (골드/ 세트)</div>
       <div class="g3">
         <div class="field"><label>뾰족한 점적석</label><input id="vStalactite" type="number" inputmode="numeric" placeholder="0" oninput="co()"></div>
         <div class="field"><label>응회암</label><input id="vTuff" type="number" inputmode="numeric" placeholder="0" oninput="co()"></div>
         <div class="field"><label>발광이끼</label><input id="vGlowLichen" type="number" inputmode="numeric" placeholder="0" oninput="co()"></div>
       </div>
-      <div class="fnote" style="margin-top:6px">📌 레드스톤·청금석·금 블럭은 위 바닐라 재료 가격을 공유합니다 · 증서는 개당 10,000원 고정</div>
+      <div class="fnote" style="margin-top:6px">📌증서는 개당 10,000원 고정 반영됩니다</div>
     </div>
 
     <!-- 최적화 결과 (app.js co() 함수가 채워줌) -->
@@ -876,9 +876,9 @@ html, body {
     } catch(e) { /* 파싱 실패 시 무시 */ }
   }
 
-  /* 스킬 패널 접기/펼치기 토글 */
+  /* 스킬 패널 / 각인석 패널 접기/펼치기 토글 */
   window.toggleSkillPanel = () => document.getElementById('skillPanel').classList.toggle('collapsed');
-  window.toggleEngPanel = () => document.getElementById('engPanel').classList.toggle('collapsed');
+  window.toggleEngPanel   = () => document.getElementById('engPanel').classList.toggle('collapsed');
 
   /* 전체 초기화 — localStorage 삭제 + 모든 입력 리셋 */
   window.resetAll = () => {
