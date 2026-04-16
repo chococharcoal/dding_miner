@@ -966,12 +966,14 @@ export function co() {
     if (!label || net === 0) return '';
     const color = net >= 0 ? 'g' : 'r';
     const n     = iC + iR + iS; // 소모 주괴 총수
-    const perParts = [];
-    if (iC > 0) perParts.push(`코룸 ${f(net / n)}원`);
-    if (iR > 0) perParts.push(`리프톤 ${f(net / n)}원`);
-    if (iS > 0) perParts.push(`세렌트 ${f(net / n)}원`);
-    const perHtml = perParts.length > 0
-      ? ` <small style="color:var(--muted)">· 주괴당 ${perParts.join(' / ')}</small>`
+    // 단일 종 주괴(라스·귀중품): "코룸 주괴당 N원" 처럼 종류 명시
+    // 복수 종 주괴(어빌리티 스톤): 종류 나열 불필요, "주괴당 N원"으로 단순 표시
+    const ingotKindCount = [iC, iR, iS].filter(v => v > 0).length;
+    const ingotKindLabel = ingotKindCount === 1
+      ? (iC > 0 ? '코룸 ' : iR > 0 ? '리프톤 ' : '세렌트 ')
+      : '';
+    const perHtml = n > 0
+      ? ` <small style="color:var(--muted)">· ${ingotKindLabel}주괴당 ${f(net / n)}원</small>`
       : '';
     return row(`${label} ${badge}`, `${f(net)}원 ${perHtml}`, color);
   };
