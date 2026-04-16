@@ -123,9 +123,9 @@ const MAT_META = {
   topaz:                 { name:'토파즈 블럭',         color:'#d4a020', unit:'개',   perUnit:1  },
   sapphire:              { name:'사파이어 블럭',       color:'#3d6fd4', unit:'개',   perUnit:1  },
   platinum:              { name:'플레티넘 블럭',       color:'#9ab0c8', unit:'개',   perUnit:1  },
-  stalactite:            { name:'섬록암',              color:'#a0c8a0', unit:'세트', perUnit:64 },
+  diorite:               { name:'섬록암',              color:'#cedab4', unit:'세트', perUnit:64 },
   tuff:                  { name:'응회암',              color:'#8a9a7a', unit:'세트', perUnit:64 },
-  glow_lichen:           { name:'안산암',              color:'#70c8a0', unit:'세트', perUnit:64 },};
+  andesite:              { name:'안산암',              color:'rgb(200, 162, 112)', unit:'세트', perUnit:64 },};
 
 /* 재료 chip HTML 생성 — 색상 적용, 묶음/세트 단위 자동 변환 */
 function matChipQty(matKey, totalQty) {
@@ -773,9 +773,9 @@ export function co() {
     redstone:    gi('vRe') / SET_SIZE,  // 바닐라와 공유
     lapis:       gi('vLa') / SET_SIZE,  // 바닐라와 공유
     gold:        gi('vGo') / SET_SIZE,  // 바닐라와 공유
-    diorite:  gi('vDiorite') / SET_SIZE,
+    diorite:     gi('vDiorite') / SET_SIZE,
     tuff:        gi('vTuff')       / SET_SIZE,
-    andesite: gi('vAndesite') / SET_SIZE,
+    andesite:    gi('vAndesite') / SET_SIZE,
   };
 
   const AP  = PRECIOUS.APPRAISAL;
@@ -916,7 +916,7 @@ export function co() {
 
   const isRaw = rawSell >= craftRev;
   const iBdg  = ib > 0 ? bdg('bg',  `주괴 좀 사 주괴 +${Math.round(ib * 100)}%`) : '';
-  const fBdg  = fr > 0 ? bdg('bg',  `용광로 -${Math.round(fr * 100)}%`) : '';
+  const fBdg  = fr > 0 ? bdg('bg',  `초고속 용광로 -${Math.round(fr * 100)}%`) : '';
   const pBdg  = pb > 0 ? bdg('bpu', `귀하신 몸값 +${Math.round(pb * 100)}%`) : '';
 
   document.getElementById('oRes').innerHTML = `
