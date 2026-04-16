@@ -133,12 +133,12 @@ export const RECIPES = {
   /* 라이프스톤 */
   LS1: {  // 하급 라이프스톤 — 코룸 주괴 1개
     ingot_corum: 1, ingot_rifton: 0, ingot_serent: 0,
-    vanilla: { cobblestone: 12, copper: 8, redstone: 3 },
+    vanilla: { cobblestone: 2, copper: 8, redstone: 3 },
     craft_time_sec: 60,     // 1분
   },
   LS2: {  // 중급 라이프스톤 — 리프톤 주괴 2개
     ingot_corum: 0, ingot_rifton: 2, ingot_serent: 0,
-    vanilla: { deepslate_cobblestone: 128, iron: 5, lapis: 5, diamond: 3 },
+    vanilla: { deepslate_cobblestone: 2, iron: 5, lapis: 5, diamond: 3 },
     craft_time_sec: 120,    // 2분
   },
   LS3: {  // 상급 라이프스톤 — 세렌트 주괴 3개
