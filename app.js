@@ -101,8 +101,25 @@ const row = (l, v, vc = '') =>
    수량 표시: matChipQty에서 fmtQty(내림)로 상자·세트 자동 변환.
    config vanilla 수량이 전부 "개수" 단위이므로 fmtQty 하나로 통일.
    (별도 fmtQtyLabel 불필요 — 이전 버전에서 조약돌·석재류에
-    잘못 적용되어 "5세트 4세트" 같은 이상한 표기가 나오던 원인이었음)*/
+    잘못 적용되어 "5세트 4세트" 같은 이상한 표기가 나오던 원인이었음)
 
+   색상 선정 기준 — 기존 재료와 겹치지 않도록:
+     cobblestone      #8a7060  갈색
+     deepslate_cobble #5a5570  보라빛 회색
+     copper           #c87941  구리색 (주황갈)
+     iron             #a0a0a0  중간 회색
+     gold             #d4a020  금색
+     diamond          #38c8d0  청록
+     redstone         #d94f3d  빨강
+     lapis            #3d6fd4  파랑
+     amethyst         #9b6dd4  보라
+     topaz            #c8960a  짙은 금색  ← 수정: 기존 gold(#d4a020)와 동일색이었음
+     sapphire         #1e54b0  짙은 파랑  ← 수정: 기존 lapis(#3d6fd4)와 동일색이었음
+     platinum         #9ab0c8  밝은 청회  (유지)
+     diorite          #7a8c6e  회록색     ← 수정: 기존 #cedab4(너무 밝은 연두)
+     tuff             #8a9a7a  올리브 녹색 (유지)
+     andesite         #8c7a5a  어두운 황갈 ← 수정: 기존 rgb(200,162,112)(copper와 유사한 황갈)
+   ───────────────────────────────────── */
 const MAT_META = {
   cobblestone:           { name:'조약돌 묶음',        color:'#8a7060' },
   deepslate_cobblestone: { name:'심층암 조약돌 묶음',  color:'#5a5570' },
@@ -113,12 +130,12 @@ const MAT_META = {
   redstone:              { name:'레드스톤 블럭',       color:'#d94f3d' },
   lapis:                 { name:'청금석 블럭',         color:'#3d6fd4' },
   amethyst:              { name:'자수정 블럭',         color:'#9b6dd4' },
-  topaz:                 { name:'토파즈 블럭',         color:'#c8960a' }, 
-  sapphire:              { name:'사파이어 블럭',       color:'#1e54b0' }, 
+  topaz:                 { name:'토파즈 블럭',         color:'#c8960a' }, // gold 구별: 더 짙은 금색
+  sapphire:              { name:'사파이어 블럭',       color:'#1e54b0' }, // lapis 구별: 더 짙은 파랑
   platinum:              { name:'플레티넘 블럭',       color:'#9ab0c8' },
-  diorite:               { name:'섬록암',              color:'#7a8c6e' }, 
+  diorite:               { name:'섬록암',              color:'#7a8c6e' }, // 회록색 (기존 밝은 연두 → 변경)
   tuff:                  { name:'응회암',              color:'#8a9a7a' },
-  andesite:              { name:'안산암',              color:'#8c7a5a' }, 
+  andesite:              { name:'안산암',              color:'#8c7a5a' }, // 어두운 황갈 (기존 copper 유사색 → 변경)
 };
 
 /* 재료 chip HTML 생성
@@ -916,7 +933,7 @@ export function co() {
          </div>`
       : '';
 
-    // 주괴당 이익 표시 — 정렬 기준을 유저가 직접 확인할 수 있도록
+    // 주괴당 이익 표시 — 정렬 기준을 유저가 직접 확인할 수 있도록 (색상 없이 muted로 통일)
     const npi     = totalIngots(c);
     const npiHtml = npi > 0
       ? ` <small style="color:var(--muted);font-weight:500">· 주괴당 ${f(c.net / npi)}원</small>`
@@ -950,9 +967,9 @@ export function co() {
     const color = net >= 0 ? 'g' : 'r';
     const n     = iC + iR + iS; // 소모 주괴 총수
     const perParts = [];
-    if (iC > 0) perParts.push(`<span style="color:${CC}">코룸 ${f(net / n)}원</span>`);
-    if (iR > 0) perParts.push(`<span style="color:${CR}">리프톤 ${f(net / n)}원</span>`);
-    if (iS > 0) perParts.push(`<span style="color:${CS}">세렌트 ${f(net / n)}원</span>`);
+    if (iC > 0) perParts.push(`코룸 ${f(net / n)}원`);
+    if (iR > 0) perParts.push(`리프톤 ${f(net / n)}원`);
+    if (iS > 0) perParts.push(`세렌트 ${f(net / n)}원`);
     const perHtml = perParts.length > 0
       ? ` <small style="color:var(--muted)">· 주괴당 ${perParts.join(' / ')}</small>`
       : '';
