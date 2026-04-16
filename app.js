@@ -123,9 +123,9 @@ const MAT_META = {
   topaz:                 { name:'토파즈 블럭',         color:'#d4a020', unit:'개',   perUnit:1  },
   sapphire:              { name:'사파이어 블럭',       color:'#3d6fd4', unit:'개',   perUnit:1  },
   platinum:              { name:'플레티넘 블럭',       color:'#9ab0c8', unit:'개',   perUnit:1  },
-  stalactite:            { name:'뾰족한 점적석',       color:'#a0c8a0', unit:'세트', perUnit:64 },
+  stalactite:            { name:'섬록암',              color:'#a0c8a0', unit:'세트', perUnit:64 },
   tuff:                  { name:'응회암',              color:'#8a9a7a', unit:'세트', perUnit:64 },
-  glow_lichen:           { name:'발광 이끼',           color:'#70c8a0', unit:'세트', perUnit:64 },};
+  glow_lichen:           { name:'안산암',              color:'#70c8a0', unit:'세트', perUnit:64 },};
 
 /* 재료 chip HTML 생성 — 색상 적용, 묶음/세트 단위 자동 변환 */
 function matChipQty(matKey, totalQty) {
@@ -627,13 +627,13 @@ export function cs() {
   <div class="result-box">
     <div style="display:flex;gap:12px;align-items:stretch">
       <div style="flex:1;text-align:center;padding:4px 8px">
-        <div class="rb-label">기댓값 수익</div>
+        <div class="rb-label">하루 평균 수익</div>
         <div class="rb-value">${f(totalRev)}원</div>
         <span class="rb-sub">주괴 ${f(m.totalIngotAll)}개</span>
       </div>
       <div style="width:1px;background:var(--border2);margin:4px 0;flex:none"></div>
       <div style="flex:1;text-align:center;padding:4px 8px">
-        <div class="rb-label">🎯 80% 확률로 최소</div>
+        <div class="rb-label">80% 확률로 최소</div>
         <div class="rb-value rb-floor">${f(totalRev80)}원</div>
         <span class="rb-sub">
           ${ingot80Parts}
@@ -773,9 +773,9 @@ export function co() {
     redstone:    gi('vRe') / SET_SIZE,  // 바닐라와 공유
     lapis:       gi('vLa') / SET_SIZE,  // 바닐라와 공유
     gold:        gi('vGo') / SET_SIZE,  // 바닐라와 공유
-    stalactite:  gi('vStalactite') / SET_SIZE,
+    diorite:  gi('vDiorite') / SET_SIZE,
     tuff:        gi('vTuff')       / SET_SIZE,
-    glow_lichen: gi('vGlowLichen') / SET_SIZE,
+    andesite: gi('vAndesite') / SET_SIZE,
   };
 
   const AP  = PRECIOUS.APPRAISAL;

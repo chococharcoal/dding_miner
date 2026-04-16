@@ -593,9 +593,9 @@ html, body {
         <span class="skname">💎 보석 코비</span>
         <select id="engGemCobby" onchange="onEngravingChange()">
           <option value="0">없음</option>
-          <option value="1">1강 — 3%</option><option value="2">2강 — 5%</option>
-          <option value="3">3강 — 10%</option><option value="4">4강 — 20%</option>
-          <option value="5">5강 — 30%</option>
+          <option value="1">1강 — 5%</option><option value="2">2강 — 10%</option>
+          <option value="3">3강 — 20%</option><option value="4">4강 — 30%</option>
+          <option value="5">5강 — 50%</option>
         </select>
       </div>
       <div class="skrow">
@@ -611,9 +611,9 @@ html, body {
         <span class="skname">🎲 광부 룰렛</span>
         <select id="engRoulette" onchange="onEngravingChange()">
           <option value="0">없음</option>
-          <option value="1">1강 — 0.5%</option><option value="2">2강 — 1%</option>
-          <option value="3">3강 — 1.5%</option><option value="4">4강 — 2%</option>
-          <option value="5">5강 — 3%</option>
+          <option value="1">1강 — 1%</option><option value="2">2강 — 2%</option>
+          <option value="3">3강 — 3%</option><option value="4">4강 — 4%</option>
+          <option value="5">5강 — 5%</option>
         </select>
       </div>
     </div>
@@ -810,9 +810,9 @@ html, body {
       </div>
       <div class="slabel" style="margin-top:8px">기타 재료 (골드/ 세트)</div>
       <div class="g3">
-        <div class="field"><label>뾰족한 점적석</label><input id="vStalactite" type="number" inputmode="numeric" placeholder="0" oninput="co()"></div>
+        <div class="field"><label>섬록암</label><input id="vDiorite" type="number" inputmode="numeric" placeholder="0" oninput="co()"></div>
         <div class="field"><label>응회암</label><input id="vTuff" type="number" inputmode="numeric" placeholder="0" oninput="co()"></div>
-        <div class="field"><label>발광이끼</label><input id="vGlowLichen" type="number" inputmode="numeric" placeholder="0" oninput="co()"></div>
+        <div class="field"><label>안산암</label><input id="vAndesite" type="number" inputmode="numeric" placeholder="0" oninput="co()"></div>
       </div>
       <div class="fnote" style="margin-top:6px">📌증서는 개당 10,000원 고정 반영됩니다</div>
     </div>
@@ -863,7 +863,7 @@ html, body {
     // 바닐라 재료 가격
     'vCo','vDc','vCu','vIr','vGo','vDi','vRe','vLa','vAm',
     // 귀중품 재료 가격
-    'vTopaz','vSapphire','vPlatinum','vStalactite','vTuff','vGlowLichen',
+    'vTopaz','vSapphire','vPlatinum','vDiorite','vTuff','vAndesite',
     // 강화 횃불 재료·판매가
     'tCharcoalPrice','tWoodPrice','tSellPrice',
   ];

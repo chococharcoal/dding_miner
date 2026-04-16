@@ -156,15 +156,15 @@ export const RECIPES = {
 
   /* 귀중품 — 코룸 주괴 32개 */
   TOPAZ_BOX: {
-    ingot_corum: 32, ingot_rifton: 0, ingot_serent: 0,
-    vanilla: { topaz: 3, redstone: 64, lapis: 6, gold: 10, stalactite: 64 },
+    ingot_corum: 20, ingot_rifton: 0, ingot_serent: 0,
+    vanilla: { topaz: 3, redstone: 64, lapis: 6, gold: 10, diorite: 64 },
     doc: 1,
     craft_time_sec: 3600,   // 1시간
   },
 
   /* 귀중품 — 리프톤 주괴 32개 */
   SAPPHIRE_STATUE: {
-    ingot_corum: 0, ingot_rifton: 32, ingot_serent: 0,
+    ingot_corum: 0, ingot_rifton: 20, ingot_serent: 0,
     vanilla: { sapphire: 3, redstone: 64, lapis: 6, gold: 10, tuff: 64 },
     doc: 1,
     craft_time_sec: 3600,   // 1시간
@@ -172,8 +172,8 @@ export const RECIPES = {
 
   /* 귀중품 — 세렌트 주괴 32개 */
   PLATINUM_CROWN: {
-    ingot_corum: 0, ingot_rifton: 0, ingot_serent: 32,
-    vanilla: { platinum: 3, redstone: 64, lapis: 6, gold: 10, glow_lichen: 64 },
+    ingot_corum: 0, ingot_rifton: 0, ingot_serent: 20,
+    vanilla: { platinum: 3, redstone: 64, lapis: 6, gold: 10, andesite: 64 },
     doc: 1,
     craft_time_sec: 3600,   // 1시간
   },
@@ -195,19 +195,19 @@ export const PRECIOUS = {
       name: '토파즈 보석함',
       recipe: 'TOPAZ_BOX',
       ingotType: 'corum',
-      prices: { LOW: 281772, GOOD: 394481, ROYAL: 563544 },
+      prices: { LOW: 295000, GOOD: 413000, ROYAL: 590000 },
     },
     SAPPHIRE_STATUE: {
       name: '사파이어 조각상',
       recipe: 'SAPPHIRE_STATUE',
       ingotType: 'rifton',
-      prices: { LOW: 282671, GOOD: 395739, ROYAL: 565341 },
+      prices: { LOW: 297500, GOOD: 416500, ROYAL: 595000 },
     },
     PLATINUM_CROWN: {
       name: '플레티넘 왕관',
       recipe: 'PLATINUM_CROWN',
       ingotType: 'serent',
-      prices: { LOW: 279445, GOOD: 391223, ROYAL: 558890 },
+      prices: { LOW: 300000, GOOD: 420000, ROYAL: 600000 },
     },
   },
   DOC_PRICE: 10000,  // 증서 고정 가격(원)
@@ -244,7 +244,7 @@ export const ENGRAVING = {
   /* 보석 코비 — 코비 등장 시 gemConvertPct% 확률로 보석코비로 전환
      일반 코비 → 스킬펄스 1개 / 보석 코비 → 보석 1개 */
   GEM_COBBY: {
-    gemConvertPct: [0, 3, 5, 10, 20, 30],
+    gemConvertPct: [0, 5, 10, 20, 30, 50],
   },
 
   /* 광산수레 — 채굴 시 cartPct% 확률로 등장, 파괴 시 유물 1~3개 */
@@ -255,12 +255,12 @@ export const ENGRAVING = {
   },
 
   /* 광부룰렛 — 채굴 시 dicePct% 확률로 주사위 등장
-     일반 주사위: 눈수 × 4 광석
-     황금 주사위(10% 확률): 눈수 × 8 광석 */
+     일반 주사위: 눈수 × 6 광석
+     황금 주사위(10% 확률): 눈수 × 12 광석 */
   MINER_ROULETTE: {
-    dicePct:    [0, 0.5, 1, 1.5, 2, 3],
-    normalMult: 4,   // 일반 주사위 눈수 배율
-    goldenMult: 8,   // 황금 주사위 눈수 배율
+    dicePct:    [0, 1, 2, 3, 4, 5],
+    normalMult: 6,   // 일반 주사위 눈수 배율
+    goldenMult: 12,   // 황금 주사위 눈수 배율
     goldenPct:  10,  // 황금 주사위 등장 확률(%)
   },
 };
