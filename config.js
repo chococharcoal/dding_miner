@@ -157,7 +157,7 @@ export const RECIPES = {
   /* 귀중품 — 코룸 주괴 32개 */
   TOPAZ_BOX: {
     ingot_corum: 20, ingot_rifton: 0, ingot_serent: 0,
-    vanilla: { topaz: 3, redstone: 64, lapis: 6, gold: 10, diorite: 64 },
+    vanilla: { topaz: 3, redstone: 64, lapis: 64, gold: 10, diorite: 64 },
     doc: 1,
     craft_time_sec: 3600,   // 1시간
   },
@@ -165,7 +165,7 @@ export const RECIPES = {
   /* 귀중품 — 리프톤 주괴 32개 */
   SAPPHIRE_STATUE: {
     ingot_corum: 0, ingot_rifton: 20, ingot_serent: 0,
-    vanilla: { sapphire: 3, redstone: 64, lapis: 6, gold: 10, tuff: 64 },
+    vanilla: { sapphire: 3, redstone: 64, lapis: 64, gold: 10, tuff: 64 },
     doc: 1,
     craft_time_sec: 3600,   // 1시간
   },
@@ -173,7 +173,7 @@ export const RECIPES = {
   /* 귀중품 — 세렌트 주괴 32개 */
   PLATINUM_CROWN: {
     ingot_corum: 0, ingot_rifton: 0, ingot_serent: 20,
-    vanilla: { platinum: 3, redstone: 64, lapis: 6, gold: 10, andesite: 64 },
+    vanilla: { platinum: 3, redstone: 64, lapis: 64, gold: 10, andesite: 64 },
     doc: 1,
     craft_time_sec: 3600,   // 1시간
   },
