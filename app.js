@@ -111,8 +111,8 @@ const row = (l, v, vc = '') =>
 
 /* 재료별 표시 이름, 색상, 단위 정의 */
 const MAT_META = {
-  cobblestone:           { name:'조약돌 묶음',        color:'#8a7060', unit:'묶음', perUnit:64 },
-  deepslate_cobblestone: { name:'심층암 조약돌 묶음',  color:'#5a5570', unit:'묶음', perUnit:64 },
+  cobblestone:           { name:'조약돌 묶음',        color:'#8a7060', unit:'개', perUnit:1 },
+  deepslate_cobblestone: { name:'심층암 조약돌 묶음',  color:'#5a5570', unit:'개', perUnit:1 },
   copper:                { name:'구리 블럭',           color:'#c87941', unit:'개',   perUnit:1  },
   iron:                  { name:'철 블럭',             color:'#a0a0a0', unit:'개',   perUnit:1  },
   gold:                  { name:'금 블럭',             color:'#d4a020', unit:'개',   perUnit:1  },
@@ -123,9 +123,9 @@ const MAT_META = {
   topaz:                 { name:'토파즈 블럭',         color:'#d4a020', unit:'개',   perUnit:1  },
   sapphire:              { name:'사파이어 블럭',       color:'#3d6fd4', unit:'개',   perUnit:1  },
   platinum:              { name:'플레티넘 블럭',       color:'#9ab0c8', unit:'개',   perUnit:1  },
-  diorite:               { name:'섬록암',              color:'#cedab4', unit:'세트', perUnit:64 },
-  tuff:                  { name:'응회암',              color:'#8a9a7a', unit:'세트', perUnit:64 },
-  andesite:              { name:'안산암',              color:'rgb(200, 162, 112)', unit:'세트', perUnit:64 },};
+  diorite:               { name:'섬록암',              color:'#cedab4', unit:'개', perUnit:1 },
+  tuff:                  { name:'응회암',              color:'#8a9a7a', unit:'개', perUnit:1 },
+  andesite:              { name:'안산암',              color:'rgb(200, 162, 112)', unit:'개', perUnit:1 },};
 
 /* 재료 chip HTML 생성 — 색상 적용, 묶음/세트 단위 자동 변환 */
 function matChipQty(matKey, totalQty) {
