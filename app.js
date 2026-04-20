@@ -681,13 +681,8 @@ export function autoFillPrices() {
     }
   };
 
-  // ※ 주괴 단가(ingotPriceC/R/S, oCo/Ri/Se)는 자동채우기 제외
-  //   사용자가 직접 시세 입력 → 스킬 반영 여부가 명확해짐
-
-  // 보석 가격
-  fill('gemPriceC',    DEFAULT_PRICES.gem?.corum   ?? 0);
-  fill('gemPriceR',    DEFAULT_PRICES.gem?.rifton  ?? 0);
-  fill('gemPriceS',    DEFAULT_PRICES.gem?.serent  ?? 0);
+  // ※ 주괴 단가(ingotPriceC/R/S, oCo/Ri/Se)와 보석 가격은 자동채우기 제외
+  //   사용자가 직접 시세를 입력해야 스킬 반영 여부가 명확해짐
 
   // 바닐라 재료 (세트당 가격)
   fill('vCo',          DEFAULT_PRICES.vanilla?.cobblestone          ?? 0);
@@ -1091,10 +1086,60 @@ export function co() {
     swapCraftTime += c.count * c.ct;
   }
 
-  const craftLines      = buildCraftLines(craftResult);
-  const swapCraftLines  = buildCraftLines(swapCraftResult, '_swap');
+  /* ── 총 필요 재료 집계 헬퍼 ──
+     제작 결과 배열을 받아 { 재료명: 총수량 } 맵을 반환 */
+  function aggregateMats(results) {
+    const mats = {};
+    // 주괴
+    const ingotTotals = { 코룸: 0, 리프톤: 0, 세렌트: 0 };
+    for (const c of results) {
+      if (c.iC > 0) ingotTotals['코룸']   += c.iC * c.count;
+      if (c.iR > 0) ingotTotals['리프톤'] += c.iR * c.count;
+      if (c.iS > 0) ingotTotals['세렌트'] += c.iS * c.count;
 
-  const isRaw     = rawSell >= craftRev;
+      const rec = c.type === 'ls' ? RECIPES[c.key] : c.extra?.rec;
+      if (!rec) continue;
+      for (const [mat, qty] of Object.entries(rec.vanilla || {})) {
+        if (!qty) continue;
+        mats[mat] = (mats[mat] || 0) + qty * c.count;
+      }
+      if (rec.doc) {
+        mats['__doc__'] = (mats['__doc__'] || 0) + rec.doc * c.count;
+      }
+    }
+    return { ingotTotals, mats };
+  }
+
+  /* ── 총 필요 재료 HTML 생성 ── */
+  function matSummaryHtml(results, remC, remR, remS, remSellAmt) {
+    if (!results.length) return '';
+    const { ingotTotals, mats } = aggregateMats(results);
+    const ingotRows = [
+      ingotTotals['코룸']   > 0 ? `<div class="mat-summary-row"><span class="mn" style="color:${CC}">코룸 주괴</span><span class="mv">${fmtQty(ingotTotals['코룸'])}</span></div>` : '',
+      ingotTotals['리프톤'] > 0 ? `<div class="mat-summary-row"><span class="mn" style="color:${CR}">리프톤 주괴</span><span class="mv">${fmtQty(ingotTotals['리프톤'])}</span></div>` : '',
+      ingotTotals['세렌트'] > 0 ? `<div class="mat-summary-row"><span class="mn" style="color:${CS}">세렌트 주괴</span><span class="mv">${fmtQty(ingotTotals['세렌트'])}</span></div>` : '',
+    ].join('');
+    const vanillaRows = Object.entries(mats)
+      .filter(([k]) => k !== '__doc__')
+      .map(([mat, qty]) => {
+        const m = MAT_META[mat] || { name: mat, color: '#888' };
+        return `<div class="mat-summary-row"><span class="mn" style="color:${m.color}">${m.name}</span><span class="mv">${fmtQty(qty)}</span></div>`;
+      }).join('');
+    const docRow = mats['__doc__']
+      ? `<div class="mat-summary-row"><span class="mn" style="color:var(--acc)">증서</span><span class="mv">${mats['__doc__']}개 (${f(mats['__doc__'] * DOC)}원)</span></div>`
+      : '';
+    const remRow = (remC + remR + remS) > 0
+      ? `<div class="mat-summary-row" style="margin-top:4px;padding-top:4px;border-top:1px solid var(--bdr2)">
+           <span class="mn">남은 주괴 직판</span>
+           <span class="mv">${f(remSellAmt)}원</span>
+         </div>`
+      : '';
+    return `<div class="mat-summary">${ingotRows}${vanillaRows}${docRow}${remRow}</div>`;
+  }
+
+  const craftLines     = buildCraftLines(craftResult);
+  const swapCraftLines = buildCraftLines(swapCraftResult, '_swap');
+
   const swapBetter = swapResult && swapCraftRev > craftRev;
 
   const iBdg = ib > 0 ? bdg('bg',  `주괴 좀 사 주괴 +${Math.round(ib * 100)}%`) : '';
@@ -1115,49 +1160,68 @@ export function co() {
     return row(`${label} ${badge}`, `${f(net)}원 ${perHtml}`, color);
   };
 
-  /* ── 교환 계획 HTML ── */
-  let swapHtml = '';
-  if (swapResult) {
-    const kindColor = { '코룸': CC, '리프톤': CR, '세렌트': CS };
-    const swapLines = swapResult.swapLog.map(s =>
-      `<div class="rrow">
-        <span class="rl">
-          <span style="color:${kindColor[s.from]}">${s.from}</span> →
-          <span style="color:${kindColor[s.to]}">${s.to}</span>
-          교환 <b>${f(s.count)}개</b>
-          <span class="muted" style="font-size:10px;margin-left:4px">→ ${s.forItem} ${s.craftCount}개 제작용</span>
+  /* ── 좌(교환없음) 컬럼 HTML ── */
+  const noSwapCol = (() => {
+    if (!craftLines.length) return '<div class="empty-msg" style="padding:8px 0;font-size:11px">제작 가능한 옵션 없음</div>';
+    const remRow = (remCo + remRi + remSe) > 0 ? `
+      <div class="rrow" style="margin-top:4px">
+        <span class="rl" style="font-size:10px">남은 주괴 직판</span>
+        <span class="rv" style="font-size:11px">
+          ${remCo > 0 ? `<span style="color:${CC}">${f(remCo)}개</span> ` : ''}
+          ${remRi > 0 ? `<span style="color:${CR}">${f(remRi)}개</span> ` : ''}
+          ${remSe > 0 ? `<span style="color:${CS}">${f(remSe)}개</span> ` : ''}
+          → ${f(remSell)}원
         </span>
-        <span class="rv muted" style="font-size:11px">주괴당 +${f(Math.round(s.gain))}원 이득</span>
+      </div>` : '';
+    return `
+      ${craftLines.join('')}
+      ${remRow}
+      ${craftTime > 0 ? `<div class="rrow"><span class="rl">총 제작 시간</span><span class="rv b">${fmtTime(craftTime)}</span></div>` : ''}
+      ${matSummaryHtml(craftResult, remCo, remRi, remSe, remSell)}
+      <div class="rrow rrow-strong">
+        <span class="rl">예상 수익</span>
+        <span class="rv g">${f(craftRev)}원</span>
+      </div>`;
+  })();
+
+  /* ── 우(교환있음) 컬럼 HTML ── */
+  const swapCol = (() => {
+    if (!swapResult) return '<div class="empty-msg" style="padding:8px 0;font-size:11px">교환 활성화 후 계산</div>';
+    const kindColor = { '코룸': CC, '리프톤': CR, '세렌트': CS };
+    const swapInfoLines = swapResult.swapLog.map(s =>
+      `<div class="rrow" style="font-size:11px">
+        <span class="rl">
+          <span style="color:${kindColor[s.from]}">${s.from}</span>→<span style="color:${kindColor[s.to]}">${s.to}</span>
+          <b>${f(s.count)}개</b> 교환
+        </span>
+        <span class="rv muted" style="font-size:10px">+${f(Math.round(s.gain))}원/주괴</span>
       </div>`
     ).join('');
-
-    swapHtml = `
-    <div class="rsec">
-      <div class="rsec-title">🔄 주괴 교환 계획 ${swapBetter ? bdg('bg','교환 시 수익 향상') : bdg('bpu','교환 무의미')}</div>
-      ${swapLines}
-      ${swapCraftLines.length
-        ? `<div class="rsec-title" style="margin-top:8px">🔨 교환 후 최적 제작 계획</div>
-           ${swapCraftLines.join('')}`
-        : ''}
-      ${swapRemCo + swapRemRi + swapRemSe > 0 ? `
-      <div class="rrow">
-        <span class="rl">교환 후 남은 주괴 직판</span>
-        <span class="rv">
-          ${swapRemCo > 0 ? `<span style="color:${CC}">코룸 ${f(swapRemCo)}개</span> ` : ''}
-          ${swapRemRi > 0 ? `<span style="color:${CR}">리프톤 ${f(swapRemRi)}개</span> ` : ''}
-          ${swapRemSe > 0 ? `<span style="color:${CS}">세렌트 ${f(swapRemSe)}개</span> ` : ''}
+    const remRow = (swapRemCo + swapRemRi + swapRemSe) > 0 ? `
+      <div class="rrow" style="margin-top:4px">
+        <span class="rl" style="font-size:10px">남은 주괴 직판</span>
+        <span class="rv" style="font-size:11px">
+          ${swapRemCo > 0 ? `<span style="color:${CC}">${f(swapRemCo)}개</span> ` : ''}
+          ${swapRemRi > 0 ? `<span style="color:${CR}">${f(swapRemRi)}개</span> ` : ''}
+          ${swapRemSe > 0 ? `<span style="color:${CS}">${f(swapRemSe)}개</span> ` : ''}
           → ${f(swapRemSell)}원
         </span>
-      </div>` : ''}
-      ${swapCraftTime > 0 ? row('교환 후 총 제작 시간', fmtTime(swapCraftTime), 'b') : ''}
+      </div>` : '';
+    return `
+      <div style="margin-bottom:6px;padding-bottom:6px;border-bottom:1px dashed var(--bdr2)">
+        ${swapInfoLines}
+      </div>
+      ${swapCraftLines.join('')}
+      ${remRow}
+      ${swapCraftTime > 0 ? `<div class="rrow"><span class="rl">총 제작 시간</span><span class="rv b">${fmtTime(swapCraftTime)}</span></div>` : ''}
+      ${matSummaryHtml(swapCraftResult, swapRemCo, swapRemRi, swapRemSe, swapRemSell)}
       <div class="rrow rrow-strong">
-        <span class="rl">교환 포함 예상 수익</span>
+        <span class="rl">예상 수익</span>
         <span class="rv ${swapBetter ? 'g' : ''}">${f(swapCraftRev)}원
           ${swapBetter ? `<small style="color:var(--grn)"> (+${f(swapCraftRev - craftRev)}원)</small>` : ''}
         </span>
-      </div>
-    </div>`;
-  }
+      </div>`;
+  })();
 
   document.getElementById('oRes').innerHTML = `
   <div class="rsec">
@@ -1208,45 +1272,33 @@ export function co() {
   </div>
 
   <div class="rsec">
-    <div class="rrow" style="justify-content:center;padding:4px 0">
-      ${isRaw
-        ? '<span class="bdg br" style="font-size:12px;padding:4px 14px">💰 주괴 직판 권장</span>'
-        : '<span class="bdg bg" style="font-size:12px;padding:4px 14px">🔨 제작 후 판매 권장</span>'}
+    <div class="rsec-title" style="font-size:13px;color:var(--txt)">🔨 최적 제작 계획 ${fBdg}</div>
+    <div class="plan-cols">
+      <div class="plan-col">
+        <div class="plan-col-title">교환 없이</div>
+        ${noSwapCol}
+      </div>
+      <div class="plan-col${swapBetter ? ' swap-better' : ''}">
+        <div class="plan-col-title${swapBetter ? ' better' : ''}">
+          🔄 교환 있이${swapBetter ? ' ' + bdg('bg','수익↑') : ''}
+        </div>
+        ${swapCol}
+      </div>
     </div>
   </div>
-
-  ${!isRaw && craftLines.length ? `
-  <div class="rsec">
-    <div class="rsec-title">🔨 최적 제작 계획 ${fBdg}</div>
-    ${craftLines.join('')}
-    ${remCo + remRi + remSe > 0 ? `
-    <div class="rrow" style="margin-top:6px">
-      <span class="rl">남은 주괴 직판</span>
-      <span class="rv">
-        ${remCo > 0 ? `<span style="color:${CC}">코룸 ${f(remCo)}개</span> ` : ''}
-        ${remRi > 0 ? `<span style="color:${CR}">리프톤 ${f(remRi)}개</span> ` : ''}
-        ${remSe > 0 ? `<span style="color:${CS}">세렌트 ${f(remSe)}개</span> ` : ''}
-        → ${f(remSell)}원
-      </span>
-    </div>` : ''}
-    ${craftTime > 0 ? row('총 제작 시간', fmtTime(craftTime), 'b') : ''}
-  </div>` : ''}
-
-  ${swapHtml}
 
   <div class="result-box">
     <div style="display:flex;gap:12px;align-items:stretch">
       <div style="flex:1;text-align:center;padding:4px 8px">
-        <div class="rb-label">제작 최적화 수익</div>
-        <div class="rb-value">${f(isRaw ? rawSell : craftRev)}원</div>
+        <div class="rb-label">교환 없이 수익</div>
+        <div class="rb-value">${f(craftRev)}원</div>
       </div>
-      ${swapResult ? `
       <div style="width:1px;background:var(--bdr2);margin:4px 0;flex:none"></div>
       <div style="flex:1;text-align:center;padding:4px 8px">
-        <div class="rb-label">교환 포함 수익</div>
-        <div class="rb-value ${swapBetter ? 'rb-floor' : ''}">${f(swapCraftRev)}원</div>
-        ${swapBetter ? `<span class="rb-sub" style="color:var(--grn)">+${f(swapCraftRev - (isRaw ? rawSell : craftRev))}원</span>` : ''}
-      </div>` : ''}
+        <div class="rb-label">교환 있이 수익</div>
+        <div class="rb-value ${swapBetter ? 'rb-floor' : ''}">${swapResult ? f(swapCraftRev) : '—'}원</div>
+        ${swapBetter ? `<span class="rb-sub" style="color:var(--grn)">+${f(swapCraftRev - craftRev)}원</span>` : ''}
+      </div>
     </div>
   </div>`;
 }

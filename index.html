@@ -158,11 +158,12 @@ html, body {
 .cdd { position: relative; width: 100%; }
 .skrow .cdd-trigger {
   display: flex; align-items: center; justify-content: space-between; gap: 4px;
-  padding: 7px 10px;
+  padding: 6px 8px;
   border: 1.5px solid var(--bdr2); border-radius: var(--rs);
   background: var(--surf); color: var(--txt);
-  font-size: 13px !important; font-weight: 700 !important;
-  cursor: pointer; user-select: none; line-height: 1.4;
+  font-size: 11px !important; font-weight: 700 !important;
+  cursor: pointer; user-select: none; line-height: 1.3;
+  white-space: nowrap; overflow: hidden;
 }
 .skrow .cdd-trigger:hover { border-color: var(--acc); }
 .field .cdd-trigger {
@@ -170,11 +171,14 @@ html, body {
   padding: 7px 10px;
   border: 1.5px solid var(--bdr); border-radius: var(--rs);
   background: var(--bg); color: var(--txt);
-  font-size: 13px !important; font-weight: 700 !important;
-  cursor: pointer; user-select: none; line-height: 1.4;
+  font-size: 12px !important; font-weight: 700 !important;
+  cursor: pointer; user-select: none; line-height: 1.3;
   transition: border-color .15s, box-shadow .15s;
+  white-space: nowrap; overflow: hidden;
 }
 .field .cdd-trigger:hover { border-color: var(--acc); }
+/* 트리거 라벨 — 넘치면 말줄임 */
+.cdd-label { overflow: hidden; text-overflow: ellipsis; min-width: 0; flex: 1; }
 .cdd-trigger .cdd-arrow { font-size: 9px; color: var(--muted); flex-shrink: 0; transition: transform .15s; }
 .cdd.open .cdd-trigger  { border-color: var(--acc); box-shadow: 0 0 0 2px rgba(224,123,42,.15); }
 .cdd.open .cdd-arrow    { transform: rotate(180deg); }
@@ -388,6 +392,45 @@ html, body {
 .swap-row .swap-desc {
   font-size: 10px; color: var(--muted); font-weight: 500; margin-left: auto;
 }
+
+/* ── 최적 제작 계획 좌우 2단 레이아웃 ──
+   왼쪽: 교환 없이 / 오른쪽: 교환 있이
+   모바일(600px 미만)에서는 세로 단일 컬럼으로 전환 */
+.plan-cols {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  align-items: start;
+}
+@media (max-width: 600px) {
+  .plan-cols { grid-template-columns: 1fr; }
+}
+.plan-col {
+  background: var(--bg);
+  border: 1px solid var(--bdr);
+  border-radius: var(--rs);
+  padding: 8px 10px;
+}
+.plan-col-title {
+  font-family: 'Jua', sans-serif !important;
+  font-size: 12px; color: var(--muted);
+  margin-bottom: 6px;
+  padding-bottom: 4px;
+  border-bottom: 1px dashed var(--bdr2);
+  display: flex; align-items: center; gap: 5px;
+}
+.plan-col-title.better { color: var(--grn); }
+/* 총 필요 재료 테이블 */
+.mat-summary { margin-top: 4px; }
+.mat-summary-row {
+  display: flex; justify-content: space-between;
+  font-size: 11px; font-weight: 700;
+  padding: 2px 0; border-bottom: 1px dashed var(--bdr);
+  gap: 6px;
+}
+.mat-summary-row:last-child { border-bottom: none; }
+.mat-summary-row .mn { color: var(--muted); }
+.mat-summary-row .mv { color: var(--txt); text-align: right; }
 
 .empty-msg { color: var(--muted); font-size: 12px; text-align: center; padding: 14px 0; font-weight: 500; }
 ::-webkit-scrollbar { width: 5px; }
