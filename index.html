@@ -370,29 +370,6 @@ html, body {
 .appr-row   { display: flex; flex-wrap: wrap; gap: 6px; font-size: 10px; color: var(--muted); font-weight: 500; margin-top: 3px; }
 .appr-row span:last-child { font-weight: 700; color: var(--grn); }
 
-/* 주괴 교환 체크박스 행 */
-.swap-row {
-  display: flex; align-items: center; gap: 8px;
-  padding: 10px 12px;
-  background: var(--ylw-bg);
-  border: 1.5px solid var(--ylw);
-  border-radius: var(--rs);
-  margin-bottom: 4px;
-}
-.swap-row input[type="checkbox"] {
-  width: 16px; height: 16px;
-  accent-color: var(--acc);
-  cursor: pointer; flex-shrink: 0;
-}
-.swap-row label {
-  font-family: 'Jua', sans-serif !important;
-  font-size: 13px; color: var(--ylw);
-  cursor: pointer; user-select: none;
-}
-.swap-row .swap-desc {
-  font-size: 10px; color: var(--muted); font-weight: 500; margin-left: auto;
-}
-
 
 /* ── 최적 제작 계획 좌우 2단 레이아웃 ── */
 .plan-cols {
@@ -892,13 +869,6 @@ html, body {
   <!-- ══ TAB 2: 수익 최적화 ══ -->
   <div id="t2" class="panel" style="display:none">
 
-    <!-- 주괴 교환 활성화 체크박스 -->
-    <div class="swap-row">
-      <input type="checkbox" id="enableSwap" onchange="co()">
-      <label for="enableSwap">🔄 주괴 1:1 교환 최적화 활성화</label>
-      <span class="swap-desc">잔여 주괴를 교환해 더 높은 이익을 낼 수 있는지 분석합니다</span>
-    </div>
-
     <div class="card">
       <div class="card-title">📦 보유 주괴</div>
       <div class="g3">
@@ -1019,18 +989,15 @@ html, body {
     'vCo','vDc','vCu','vIr','vGo','vDi','vRe','vLa','vAm',
     'vTopaz','vSapphire','vPlatinum','vDiorite','vTuff','vAndesite',
     'tCharcoalPrice','tWoodPrice','tSellPrice',
-    // 체크박스 (checked 여부를 '1'/'0'으로 저장)
-    'enableSwap',
   ];
-  const KEY = 'miner_calc_v2'; // v1→v2: enableSwap 추가로 키 갱신
+  const KEY = 'miner_calc_v3'; // v3: 교환 체크박스 제거
 
   function saveAll() {
     const d = {};
     SAVE_IDS.forEach(id => {
       const e = document.getElementById(id);
       if (!e) return;
-      // 체크박스는 checked 값을 저장
-      d[id] = e.type === 'checkbox' ? (e.checked ? '1' : '0') : e.value;
+      d[id] = e.value;
     });
     localStorage.setItem(KEY, JSON.stringify(d));
   }
@@ -1041,8 +1008,7 @@ html, body {
       SAVE_IDS.forEach(id => {
         const e = document.getElementById(id);
         if (!e || d[id] === undefined) return;
-        if (e.type === 'checkbox') e.checked = d[id] === '1';
-        else e.value = d[id];
+        e.value = d[id];
       });
     } catch(e) {}
   }
@@ -1056,8 +1022,7 @@ html, body {
     SAVE_IDS.forEach(id => {
       const e = document.getElementById(id);
       if (!e) return;
-      if (e.type === 'checkbox') e.checked = false;
-      else if (e.tagName === 'SELECT') e.selectedIndex = 0;
+      if (e.tagName === 'SELECT') e.selectedIndex = 0;
       else e.value = '';
     });
     syncDropdownLabels();
@@ -1138,8 +1103,7 @@ html, body {
     SAVE_IDS.forEach(id => {
       const e = document.getElementById(id);
       if (!e) return;
-      const evt = e.type === 'checkbox' ? 'change'
-                : e.tagName === 'SELECT' ? 'change' : 'input';
+      const evt = e.tagName === 'SELECT' ? 'change' : 'input';
       e.addEventListener(evt, saveAll);
     });
   });

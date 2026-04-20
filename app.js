@@ -718,23 +718,13 @@ export function autoFillPrices() {
 
 
 /* ── 주괴 1:1 교환 최적화 ──────────────────────────────
-   체크박스 활성화 시, 전체 보유 주괴를 가장 주괴당 이익이 높은
+   전체 보유 주괴를 가장 주괴당 이익이 높은
    단일 종으로 몰아서 교환하는 것이 이득인지 계산.
 
    예) 세렌트(상급라스) 주괴당 2000원 > 코룸(하급라스) 주괴당 1000원
      → 코룸 100개 전량을 세렌트 100개로 교환 후 상급라스 33개 제작
-
-   알고리즘:
-   1. 각 주괴 종류별 "최대 주괴당 순이익(bestPerKind)"을 구함
-   2. 전체 보유 주괴를 bestPerKind 1위 종으로 교환할 때
-      교환 이득 = (1위 주괴당 이익 - from 직판가) × 교환 가능 수
-   3. 이득 > 0인 교환만 실행
-   4. 교환 후 그리디 재계산 → 최종 수익 비교
 ════════════════════════════════════════ */
 function calcSwapPlan(iCo, iRi, iSe, allOptions, cP, rP, sP) {
-  const swapEl = document.getElementById('enableSwap');
-  if (!swapEl || !swapEl.checked) return null;
-
   if (allOptions.length === 0) return null;
 
   /* 각 주괴 종류별 최고 주괴당 순이익 */
@@ -1218,7 +1208,7 @@ export function co() {
     if (!swapResult) return `
       <div class="plan-items-wrap">
         <div style="padding:20px 0;text-align:center;color:var(--muted);font-size:12px">
-          위의 체크박스를 활성화하면<br>교환 최적화를 계산합니다
+          교환으로 이득을 볼 수 있는<br>주괴 조합이 없습니다
         </div>
       </div>`;
     const kindColor = { '코룸': CC, '리프톤': CR, '세렌트': CS };
