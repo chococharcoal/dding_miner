@@ -134,48 +134,48 @@ export const RECIPES = {
   LS1: {  // 하급 라이프스톤 — 코룸 주괴 1개
     ingot_corum: 1, ingot_rifton: 0, ingot_serent: 0,
     vanilla: { cobblestone: 2, copper: 8, redstone: 3 },
-    craft_time_sec: 60,     // 1분
+    craft_time_sec: 60,
   },
   LS2: {  // 중급 라이프스톤 — 리프톤 주괴 2개
     ingot_corum: 0, ingot_rifton: 2, ingot_serent: 0,
     vanilla: { deepslate_cobblestone: 2, iron: 5, lapis: 5, diamond: 3 },
-    craft_time_sec: 120,    // 2분
+    craft_time_sec: 120,
   },
   LS3: {  // 상급 라이프스톤 — 세렌트 주괴 3개
     ingot_corum: 0, ingot_rifton: 0, ingot_serent: 3,
     vanilla: { copper: 30, amethyst: 20, iron: 7, gold: 7, diamond: 5 },
-    craft_time_sec: 300,    // 5분
+    craft_time_sec: 300,
   },
 
   /* 어빌리티 스톤 — 3종 주괴 각 1개 */
   ABIL: {
     ingot_corum: 1, ingot_rifton: 1, ingot_serent: 1,
     vanilla: {},
-    craft_time_sec: 120,    // 2분
+    craft_time_sec: 120,
   },
 
-  /* 귀중품 — 코룸 주괴 32개 */
+  /* 귀중품 — 코룸 주괴 20개 */
   TOPAZ_BOX: {
     ingot_corum: 20, ingot_rifton: 0, ingot_serent: 0,
     vanilla: { topaz: 3, redstone: 64, lapis: 64, gold: 10, diorite: 64 },
     doc: 1,
-    craft_time_sec: 3600,   // 1시간
+    craft_time_sec: 3600,
   },
 
-  /* 귀중품 — 리프톤 주괴 32개 */
+  /* 귀중품 — 리프톤 주괴 20개 */
   SAPPHIRE_STATUE: {
     ingot_corum: 0, ingot_rifton: 20, ingot_serent: 0,
     vanilla: { sapphire: 3, redstone: 64, lapis: 64, gold: 10, tuff: 64 },
     doc: 1,
-    craft_time_sec: 3600,   // 1시간
+    craft_time_sec: 3600,
   },
 
-  /* 귀중품 — 세렌트 주괴 32개 */
+  /* 귀중품 — 세렌트 주괴 20개 */
   PLATINUM_CROWN: {
     ingot_corum: 0, ingot_rifton: 0, ingot_serent: 20,
     vanilla: { platinum: 3, redstone: 64, lapis: 64, gold: 10, andesite: 64 },
     doc: 1,
-    craft_time_sec: 3600,   // 1시간
+    craft_time_sec: 3600,
   },
 };
 
@@ -186,9 +186,9 @@ export const RECIPES = {
 ──────────────────────────────────────── */
 export const PRECIOUS = {
   APPRAISAL: {
-    LOW:   { pct: 60, label: '낮은 품질' },  // 60% 확률
-    GOOD:  { pct: 30, label: '우수'      },  // 30% 확률
-    ROYAL: { pct: 10, label: '황실인증'  },  // 10% 확률
+    LOW:   { pct: 60, label: '낮은 품질' },
+    GOOD:  { pct: 30, label: '우수'      },
+    ROYAL: { pct: 10, label: '황실인증'  },
   },
   ITEMS: {
     TOPAZ_BOX: {
@@ -210,13 +210,13 @@ export const PRECIOUS = {
       prices: { LOW: 300000, GOOD: 420000, ROYAL: 600000 },
     },
   },
-  DOC_PRICE: 10000,  // 증서 고정 가격(원)
+  DOC_PRICE: 10000,
 };
 
 
 /* ── 강화횃불 ── */
 export const TORCH = {
-  craft_time_sec: 7,  // 1개당 제작 시간(초) — 스킬 적용 전
+  craft_time_sec: 7,
 };
 
 
@@ -226,50 +226,99 @@ export const TORCH = {
 ──────────────────────────────────────── */
 export const ENGRAVING = {
 
-  /* 광물행운 — 채굴 시 extraOrePct% 확률로 광석 1개 추가 */
+  /* 광물행운 */
   ORE_LUCK: {
     extraOrePct: [0, 25, 50, 75, 100],
   },
 
-  /* 유물탐색 — 유물 드랍 확률 추가(%) */
+  /* 유물탐색 */
   RELIC_SEARCH: {
     extraArtifactPct: [0, 1, 3, 5],
   },
 
-  /* 코비 소환 — 코비 소환 확률 추가(%) */
+  /* 코비 소환 */
   COBBY_SUMMON: {
     extraCobbyPct: [0, 1, 3, 5],
   },
 
-  /* 보석 코비 — 코비 등장 시 gemConvertPct% 확률로 보석코비로 전환
-     일반 코비 → 스킬펄스 1개 / 보석 코비 → 보석 1개 */
+  /* 보석 코비 */
   GEM_COBBY: {
     gemConvertPct: [0, 5, 10, 20, 30, 50],
   },
 
-  /* 광산수레 — 채굴 시 cartPct% 확률로 등장, 파괴 시 유물 1~3개 */
+  /* 광산수레 */
   MINE_CART: {
     cartPct:   [0, 0.5, 1, 1.5, 2, 3],
     minRelics: 1,
     maxRelics: 3,
   },
 
-  /* 광부룰렛 — 채굴 시 dicePct% 확률로 주사위 등장
-     일반 주사위: 눈수 × 6 광석
-     황금 주사위(10% 확률): 눈수 × 12 광석 */
+  /* 광부룰렛 */
   MINER_ROULETTE: {
     dicePct:    [0, 1, 2, 3, 4, 5],
-    normalMult: 6,   // 일반 주사위 눈수 배율
-    goldenMult: 12,   // 황금 주사위 눈수 배율
-    goldenPct:  10,  // 황금 주사위 등장 확률(%)
+    normalMult: 6,
+    goldenMult: 12,
+    goldenPct:  10,
   },
 };
 
 
-/* ── 기본 시장가 (미입력 시 fallback) ── */
+/* ── 기본 시장가 (미입력 시 fallback + 자동채우기 기준값) ──────
+   ※ 자동채우기 버튼 누르면 이 값으로 빈 칸만 채워집니다.
+      실제 시세 바뀌면 이 블록만 수정하세요.
+
+   단위 안내:
+     ingot   : 원/개  (주괴)
+     gem     : 원/개  (보석)
+     vanilla : 원/세트(64개)  — 조약돌·광물 블럭류
+     precious: 원/개  (특수 광물 블럭 — 토파즈·사파이어·플레티넘)
+     stone   : 원/세트(64개)  — 섬록암·응회암·안산암
+     charcoal: 원/세트(64개)  — 숯/석탄
+     wood    : 원/세트(64개)  — 원목
+     skillPulse : 원/개  (스킬펄스)
+     artifactPt : 원/100pt (유물 포인트)
+──────────────────────────────────────── */
 export const DEFAULT_PRICES = {
-  ingot: { corum: 3500, rifton: 3750, serent: 4000 },
-  gem:   { corum: 7000, rifton: 7500, serent: 8000 },
+  ingot: {
+    corum:  3500,
+    rifton: 3750,
+    serent: 4000,
+  },
+  gem: {
+    corum:  7000,
+    rifton: 7500,
+    serent: 8000,
+  },
+  /* 바닐라 재료 — 세트(64개)당 가격 */
+  vanilla: {
+    cobblestone:           18,  // 조약돌 묶음  ← 임시값
+    deepslate_cobblestone: 18,  // 심층암 조약돌 묶음  ← 임시값
+    copper:                18,  // 구리 블럭  ← 임시값
+    iron:                  18,  // 철 블럭  ← 임시값
+    gold:                  18,  // 금 블럭  ← 임시값
+    diamond:               18,  // 다이아 블럭  ← 임시값
+    redstone:              18,  // 레드스톤 블럭  ← 임시값
+    lapis:                 18,  // 청금석 블럭  ← 임시값
+    amethyst:              18,  // 자수정 블럭  ← 임시값
+  },
+  /* 귀중품 전용 특수 광물 — 개당 가격 */
+  precious: {
+    topaz:    18,  // 토파즈 블럭  ← 임시값
+    sapphire: 18,  // 사파이어 블럭  ← 임시값
+    platinum: 18,  // 플레티넘 블럭  ← 임시값
+  },
+  /* 석재류 — 세트(64개)당 가격 */
+  stone: {
+    diorite:  18,  // 섬록암  ← 임시값
+    tuff:     18,  // 응회암  ← 임시값
+    andesite: 18,  // 안산암  ← 임시값
+  },
+  /* 강화횃불 재료 — 세트(64개)당 가격 */
+  charcoal: 18,   // 숯/석탄  ← 임시값
+  wood:     18,   // 원목     ← 임시값
+  /* 기타 드랍 판매가 */
+  skillPulse: 0,  // 스킬펄스 (원/개)  — 서버마다 달라 기본 0
+  artifactPt: 0,  // 유물 포인트 (원/100pt) — 서버마다 달라 기본 0
 };
 
 
