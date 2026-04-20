@@ -503,7 +503,7 @@ export function cs() {
   const cRow = (label, oreAmt, ingotAmt, color, torchAmt) => {
     if (oreAmt <= 0.01) return '';
     const torchStr = torchAmt > 0.01
-      ? ` <span style="color:var(--blue);font-size:10px">(횃불 ${f(torchAmt)}개)</span>`
+      ? ` <span style="color:var(--blu);font-size:10px">(횃불 ${f(torchAmt)}개)</span>`
       : '';
     return `<div class="rrow">
       <span class="rl" style="color:${color};font-weight:700">${label}</span>
@@ -527,14 +527,14 @@ export function cs() {
     ${cRow('리프톤', m.oreR, m.ingotFromOreR, CR, torchR)}
     ${cRow('세렌트', m.oreS, m.ingotFromOreS, CS, torchS)}
     ${m.totalTorch > 0.01
-      ? `<div class="rrow"><span class="rl" style="color:var(--blue)">🔥 필요 강화횃불 합계</span><span class="rv b">${f(m.totalTorch)}개</span></div>`
+      ? `<div class="rrow rrow-strong"><span class="rl" style="color:var(--blu);font-family:'Noto Sans KR',sans-serif!important">🔥 필요 강화횃불 합계</span><span class="rv b" style="font-family:'Noto Sans KR',sans-serif!important">${f(m.totalTorch)}개</span></div>`
       : ''}
     ${m.fpDrops > 0.01
       ? `<div class="rrow"><span class="rl">불붙은 곡괭이 ${bdg('bg','Lv'+sk.fpl)}</span><span class="rv">+${fd(m.fpDrops)}개 주괴</span></div>`
       : ''}
     <div class="rrow rrow-strong">
-      <span class="rl" style="color:var(--text)">최종 총 주괴 (기댓값)</span>
-      <span class="rv p">${f(m.totalIngotAll)}개 &nbsp;<small>${ingotParts}</small></span>
+      <span class="rl" style="color:var(--txt);font-family:'Noto Sans KR',sans-serif!important">최종 총 주괴 (기댓값)</span>
+      <span class="rv p" style="font-family:'Noto Sans KR',sans-serif!important">${f(m.totalIngotAll)}개 &nbsp;<small>${ingotParts}</small></span>
     </div>
   </div>`;
 
@@ -589,7 +589,7 @@ export function cs() {
         <div class="rb-value">${f(totalRev)}원</div>
         <span class="rb-sub">주괴 ${f(m.totalIngotAll)}개</span>
       </div>
-      <div style="width:1px;background:var(--border2);margin:4px 0;flex:none"></div>
+      <div style="width:1px;background:var(--bdr2);margin:4px 0;flex:none"></div>
       <div style="flex:1;text-align:center;padding:4px 8px">
         <div class="rb-label">80% 확률로 최소</div>
         <div class="rb-value rb-floor">${f(totalRev80)}원</div>
@@ -658,7 +658,7 @@ export function ct() {
   </div>
   <div class="result-box">
     <div class="rb-label">${hasPrice ? '순이익' : '총 재료비'}</div>
-    <div class="rb-value" style="color:${hasPrice ? (net >= 0 ? 'var(--green)' : 'var(--red)') : 'var(--red)'}">
+    <div class="rb-value" style="color:${hasPrice ? (net >= 0 ? 'var(--grn)' : 'var(--red)') : 'var(--red)'}">
       ${f(hasPrice ? net : totalCost)}원
     </div>
   </div>`;
@@ -681,13 +681,8 @@ export function autoFillPrices() {
     }
   };
 
-  // 주괴 가격 (탭0·탭2 공용 필드 모두 채움)
-  fill('ingotPriceC',  DEFAULT_PRICES.ingot.corum);
-  fill('ingotPriceR',  DEFAULT_PRICES.ingot.rifton);
-  fill('ingotPriceS',  DEFAULT_PRICES.ingot.serent);
-  fill('oCo',          DEFAULT_PRICES.ingot.corum);
-  fill('oRi',          DEFAULT_PRICES.ingot.rifton);
-  fill('oSe',          DEFAULT_PRICES.ingot.serent);
+  // ※ 주괴 단가(ingotPriceC/R/S, oCo/Ri/Se)는 자동채우기 제외
+  //   사용자가 직접 시세 입력 → 스킬 반영 여부가 명확해짐
 
   // 보석 가격
   fill('gemPriceC',    DEFAULT_PRICES.gem?.corum   ?? 0);
@@ -728,112 +723,96 @@ export function autoFillPrices() {
 
 
 /* ── 주괴 1:1 교환 최적화 ──────────────────────────────
-   게임 내 1:1 교환 가능 → 보유 주괴를 다른 종류로 변환해
-   더 높은 순이익을 낼 수 있는지 계산.
+   체크박스 활성화 시, 전체 보유 주괴를 가장 주괴당 이익이 높은
+   단일 종으로 몰아서 교환하는 것이 이득인지 계산.
 
-   예) 코룸 주괴가 남아서 직판 단가가 낮을 때,
-       코룸 1개를 세렌트 1개로 바꿔 상급 라스를 만들면
-       순이익이 더 클 수 있음.
+   예) 세렌트(상급라스) 주괴당 2000원 > 코룸(하급라스) 주괴당 1000원
+     → 코룸 100개 전량을 세렌트 100개로 교환 후 상급라스 33개 제작
 
    알고리즘:
-   1. 교환 없이 계산한 최적 craftRev (기존 그리디 결과)
-   2. 교환 가능한 모든 (from→to) 쌍에 대해
-      "from 1개를 to 1개로 바꿨을 때 순이익 차이(delgaPerIngot)"를 계산.
-   3. delgaPerIngot > 0이면 교환 이익 → 가능한 최대한 교환 실행.
-   4. 교환 후 다시 그리디 계산 → 기존보다 나은 경우 교환 계획 표시.
+   1. 각 주괴 종류별 "최대 주괴당 순이익(bestPerKind)"을 구함
+   2. 전체 보유 주괴를 bestPerKind 1위 종으로 교환할 때
+      교환 이득 = (1위 주괴당 이익 - from 직판가) × 교환 가능 수
+   3. 이득 > 0인 교환만 실행
+   4. 교환 후 그리디 재계산 → 최종 수익 비교
 ════════════════════════════════════════ */
-function calcSwapPlan(remCo, remRi, remSe, allOptions, cP, rP, sP, fr) {
-  /* 교환 체크박스 확인 */
+function calcSwapPlan(iCo, iRi, iSe, allOptions, cP, rP, sP) {
   const swapEl = document.getElementById('enableSwap');
   if (!swapEl || !swapEl.checked) return null;
 
-  /* 교환 가능한 방향 정의
-     (교환 = 가치가 낮은 종을 높은 순이익 재료로 바꿈)
-     1:1 이므로 from 개수 = to 개수 */
-  const ingotKeys = ['C','R','S'];
-  const remMap    = { C: remCo, R: remRi, S: remSe };
+  if (allOptions.length === 0) return null;
 
-  /* 각 옵션별 "해당 주괴 종류에서 1개 더 생길 때 추가 순이익"
-     → 가장 이득인 옵션을 찾아 교환 방향 결정 */
-  const bestNetPerKind = { C: 0, R: 0, S: 0 };
+  /* 각 주괴 종류별 최고 주괴당 순이익 */
+  const bestPerKind = { C: -Infinity, R: -Infinity, S: -Infinity };
   for (const c of allOptions) {
-    const ni = c.iC > 0 ? 'C' : c.iR > 0 ? 'R' : 'S';
-    // 주괴 1개 추가로 얻을 수 있는 이익 = 개당 순이익 / 해당 주괴 소모수
-    const ingotCnt = c.iC || c.iR || c.iS || 1;
-    const perIngot = c.net / ingotCnt;
-    if (perIngot > bestNetPerKind[ni]) bestNetPerKind[ni] = perIngot;
+    const kind = c.iC > 0 ? 'C' : c.iR > 0 ? 'R' : 'S';
+    // 어빌처럼 복수 종 소모 옵션은 교환 대상에서 제외
+    const singleKind = [c.iC > 0, c.iR > 0, c.iS > 0].filter(Boolean).length === 1;
+    if (!singleKind) continue;
+    const ingotCnt = c.iC || c.iR || c.iS;
+    const npi = c.net / ingotCnt;
+    if (npi > bestPerKind[kind]) bestPerKind[kind] = npi;
   }
 
-  /* 현재 직판 단가 */
+  /* 직판 단가 */
   const sellPerKind = { C: cP, R: rP, S: sP };
+  const kindName    = { C:'코룸', R:'리프톤', S:'세렌트' };
 
-  /* 교환 후 이익이 더 큰지 판단 (교환 기회비용 = 직판가 포기) */
-  const swapPlans = [];
-  for (const from of ingotKeys) {
-    for (const to of ingotKeys) {
-      if (from === to) continue;
-      if (remMap[from] <= 0) continue;
-      /* 교환 이득 = (to 주괴 1개로 얻는 최대 이익) - (from 직판 포기) */
-      const gain = bestNetPerKind[to] - sellPerKind[from];
-      if (gain > 0) {
-        swapPlans.push({ from, to, gain });
-      }
-    }
-  }
+  /* 전체 보유량 맵 (교환 시뮬용) */
+  const holdMap = { C: iCo, R: iRi, S: iSe };
 
-  if (swapPlans.length === 0) return null;
+  /* 최고 이익 종 결정 */
+  const [bestKind] = Object.entries(bestPerKind)
+    .sort((a, b) => b[1] - a[1]);
+  if (bestPerKind[bestKind[0]] <= 0) return null;
 
-  /* 가장 이득인 교환부터 실행 */
-  swapPlans.sort((a, b) => b.gain - a.gain);
+  const toKind = bestKind[0];
+  const toBest = bestPerKind[toKind];
 
-  const kindName = { C:'코룸', R:'리프톤', S:'세렌트' };
-  const swapLog  = [];
-  let swapRemCo  = remCo;
-  let swapRemRi  = remRi;
-  let swapRemSe  = remSe;
+  /* 각 from 종에 대해 교환 여부 결정 */
+  const swapLog = [];
+  const newHold = { ...holdMap };
 
-  for (const plan of swapPlans) {
-    const avail = remMap[plan.from]; // 교환 가능 수량 = from 잔여량
-    if (avail <= 0) continue;
+  for (const fromKind of ['C','R','S']) {
+    if (fromKind === toKind) continue;
+    if (holdMap[fromKind] <= 0) continue;
 
-    /* 교환 후 to 종으로 만들 수 있는 최적 옵션 */
-    const toOpts = allOptions.filter(c =>
-      (plan.to === 'C' && c.iC > 0) ||
-      (plan.to === 'R' && c.iR > 0) ||
-      (plan.to === 'S' && c.iS > 0)
-    );
+    /* 교환 이득 = (목표 주괴당 이익 - from 직판 포기) */
+    const gain = toBest - sellPerKind[fromKind];
+    if (gain <= 0) continue;
+
+    /* 교환 가능 최대 수량 — to 종 최고 옵션의 1회 소모량 배수로 맞춤 */
+    const toOpts = allOptions.filter(c => {
+      const singleKind = [c.iC > 0, c.iR > 0, c.iS > 0].filter(Boolean).length === 1;
+      return singleKind && (toKind === 'C' ? c.iC > 0 : toKind === 'R' ? c.iR > 0 : c.iS > 0);
+    });
     if (toOpts.length === 0) continue;
 
-    const bestOpt = toOpts[0]; // 이미 정렬된 상태
-    const ingotCnt = bestOpt.iC || bestOpt.iR || bestOpt.iS || 1;
-
-    /* 교환해서 제작 가능한 최대 횟수 */
-    const maxCraft  = Math.floor(avail / ingotCnt);
+    const bestOpt  = toOpts[0]; // 이미 정렬된 allOptions에서 뽑으므로 최상위
+    const ingotCnt = bestOpt.iC || bestOpt.iR || bestOpt.iS;
+    const maxCraft  = Math.floor(holdMap[fromKind] / ingotCnt);
     if (maxCraft <= 0) continue;
-    const swapCount = maxCraft * ingotCnt; // 실제 교환 주괴 수
 
+    const swapCount = maxCraft * ingotCnt;
     swapLog.push({
-      from: kindName[plan.from],
-      to:   kindName[plan.to],
+      from: kindName[fromKind], to: kindName[toKind],
       count: swapCount,
       forItem: bestOpt.label,
       craftCount: maxCraft,
+      gain,
     });
-
-    /* 잔여량 업데이트 */
-    remMap[plan.from] -= swapCount;
-    remMap[plan.to]   += swapCount;
-    if (plan.from === 'C') swapRemCo -= swapCount;
-    if (plan.from === 'R') swapRemRi -= swapCount;
-    if (plan.from === 'S') swapRemSe -= swapCount;
-    if (plan.to   === 'C') swapRemCo += swapCount;
-    if (plan.to   === 'R') swapRemRi += swapCount;
-    if (plan.to   === 'S') swapRemSe += swapCount;
+    newHold[fromKind] -= swapCount;
+    newHold[toKind]   += swapCount;
   }
 
   if (swapLog.length === 0) return null;
 
-  return { swapLog, swapRemCo, swapRemRi, swapRemSe };
+  return {
+    swapLog,
+    swapRemCo: newHold.C,
+    swapRemRi: newHold.R,
+    swapRemSe: newHold.S,
+  };
 }
 
 
@@ -1000,12 +979,12 @@ export function co() {
     remSe -= c.iS * maxN;
   }
 
-  /* ── 교환 계획 계산 ── */
-  const swapResult = calcSwapPlan(remCo, remRi, remSe, allOptions, cP, rP, sP, fr);
+  /* ── 교환 계획 계산 (잔여분 아닌 전체 보유량 기준) ── */
+  const swapResult = calcSwapPlan(iCo, iRi, iSe, allOptions, cP, rP, sP);
 
-  /* ── 교환 후 잔여량으로 추가 제작 ── */
+  /* ── 교환 후 전체 잔여량으로 그리디 재계산 ── */
   let swapCraftResult = [];
-  let swapRemCo = remCo, swapRemRi = remRi, swapRemSe = remSe;
+  let swapRemCo = iCo, swapRemRi = iRi, swapRemSe = iSe;
   if (swapResult) {
     swapRemCo = swapResult.swapRemCo;
     swapRemRi = swapResult.swapRemRi;
@@ -1025,11 +1004,21 @@ export function co() {
   }
 
   /* ── 제작 계획 HTML 생성 헬퍼 ── */
+  /* 주괴 색상 chip 생성 헬퍼 */
+  const ingotChip = (label, color, cnt, total) =>
+    `<span class="mat-chip" style="background:${color}18;color:${color};border-color:${color}55">${label} 주괴 ${fmtQty(total)} (×${cnt}/개)</span>`;
+
   function buildCraftLines(results, suffix = '') {
     const lines = [];
     for (const c of results) {
       const rev = c.count * (c.type === 'precious' ? c.extra.avgSell : c.sell);
       const t   = c.count * c.ct;
+
+      /* ── 주괴 chip (맨 앞) ── */
+      let ingotChips = '';
+      if (c.iC > 0) ingotChips += ingotChip('코룸',   CC, c.iC, c.iC * c.count);
+      if (c.iR > 0) ingotChips += ingotChip('리프톤', CR, c.iR, c.iR * c.count);
+      if (c.iS > 0) ingotChips += ingotChip('세렌트', CS, c.iS, c.iS * c.count);
 
       let matChips = '';
       if (c.type === 'ls') {
@@ -1051,8 +1040,9 @@ export function co() {
         matChips = chips.join('');
       }
 
-      const precBadge     = c.type === 'precious' ? bdg('bpu', '귀중품') : '';
-      const countLabel    = fmtQty(c.count);
+      const allChips   = ingotChips + matChips;
+      const precBadge  = c.type === 'precious' ? bdg('bpu', '귀중품') : '';
+      const countLabel = fmtQty(c.count);
       const appraisalHtml = c.type === 'precious'
         ? `<div class="appr-row">
              <span>낮은품질 ${f(c.extra.item.prices.LOW  * (1 + pb))}원</span>
@@ -1076,7 +1066,7 @@ export function co() {
             <span class="rv">${countLabel} → <b class="g">${f(rev)}원</b></span>
           </div>
           ${appraisalHtml}
-          ${matChips ? `<div class="mat-row">${matChips}</div>` : ''}
+          ${allChips ? `<div class="mat-row">${allChips}</div>` : ''}
           ${timeHtml}
         </div>`);
     }
@@ -1135,17 +1125,18 @@ export function co() {
           <span style="color:${kindColor[s.from]}">${s.from}</span> →
           <span style="color:${kindColor[s.to]}">${s.to}</span>
           교환 <b>${f(s.count)}개</b>
+          <span class="muted" style="font-size:10px;margin-left:4px">→ ${s.forItem} ${s.craftCount}개 제작용</span>
         </span>
-        <span class="rv muted">${s.forItem} ${s.craftCount}개 제작용</span>
+        <span class="rv muted" style="font-size:11px">주괴당 +${f(Math.round(s.gain))}원 이득</span>
       </div>`
     ).join('');
 
     swapHtml = `
     <div class="rsec">
-      <div class="rsec-title">🔄 주괴 교환 계획 ${swapBetter ? bdg('bg','수익 향상') : bdg('bpu','확인 필요')}</div>
+      <div class="rsec-title">🔄 주괴 교환 계획 ${swapBetter ? bdg('bg','교환 시 수익 향상') : bdg('bpu','교환 무의미')}</div>
       ${swapLines}
       ${swapCraftLines.length
-        ? `<div class="rsec-title" style="margin-top:8px">🔨 교환 후 추가 제작</div>
+        ? `<div class="rsec-title" style="margin-top:8px">🔨 교환 후 최적 제작 계획</div>
            ${swapCraftLines.join('')}`
         : ''}
       ${swapRemCo + swapRemRi + swapRemSe > 0 ? `
@@ -1162,7 +1153,7 @@ export function co() {
       <div class="rrow rrow-strong">
         <span class="rl">교환 포함 예상 수익</span>
         <span class="rv ${swapBetter ? 'g' : ''}">${f(swapCraftRev)}원
-          ${swapBetter ? `<small style="color:var(--green)"> (+${f(swapCraftRev - craftRev)}원)</small>` : ''}
+          ${swapBetter ? `<small style="color:var(--grn)"> (+${f(swapCraftRev - craftRev)}원)</small>` : ''}
         </span>
       </div>
     </div>`;
@@ -1170,24 +1161,33 @@ export function co() {
 
   document.getElementById('oRes').innerHTML = `
   <div class="rsec">
-    <div class="rrow">
-      <span class="rl">보유 주괴</span>
-      <span class="rv">
-        ${iCo > 0 ? `<span style="color:${CC}">코룸 ${f(iCo)}개</span> ` : ''}
-        ${iRi > 0 ? `<span style="color:${CR}">리프톤 ${f(iRi)}개</span> ` : ''}
-        ${iSe > 0 ? `<span style="color:${CS}">세렌트 ${f(iSe)}개</span>` : ''}
+    <div class="rsec-title">📦 보유 주괴 &amp; 단가</div>
+    ${iCo > 0 ? `<div class="rrow">
+      <span class="rl" style="color:${CC};font-weight:700">코룸</span>
+      <span class="rv">${f(iCo)}개
+        <span class="muted" style="font-size:11px;font-weight:500">
+          (개당 ${f(cP)}원${ib > 0 && userCo === 0 ? ` · 스킬 +${Math.round(ib*100)}% 반영` : userCo > 0 ? ' · 직접 입력' : ''})
+        </span>
       </span>
-    </div>
-    ${ib > 0
-      ? `<div class="rrow"><span class="rl">주괴 단가 ${iBdg}</span>
-           <span class="rv muted" style="font-size:11px">
-             ${userCo > 0 ? `코룸 입력값 ${f(userCo)}원` : `코룸 ${f(rawC)}원 × ${1+ib} = ${f(cP)}원`} ·
-             ${userRi > 0 ? `리프톤 입력값 ${f(userRi)}원` : `리프톤 ${f(rawR)}원 × ${1+ib} = ${f(rP)}원`} ·
-             ${userSe > 0 ? `세렌트 입력값 ${f(userSe)}원` : `세렌트 ${f(rawS)}원 × ${1+ib} = ${f(sP)}원`}
-           </span>
-         </div>`
-      : ''}
-    ${row(`전량 직판 수익 ${ib > 0 ? iBdg : ''}`, `${f(rawSell)}원`)}
+    </div>` : ''}
+    ${iRi > 0 ? `<div class="rrow">
+      <span class="rl" style="color:${CR};font-weight:700">리프톤</span>
+      <span class="rv">${f(iRi)}개
+        <span class="muted" style="font-size:11px;font-weight:500">
+          (개당 ${f(rP)}원${ib > 0 && userRi === 0 ? ` · 스킬 +${Math.round(ib*100)}% 반영` : userRi > 0 ? ' · 직접 입력' : ''})
+        </span>
+      </span>
+    </div>` : ''}
+    ${iSe > 0 ? `<div class="rrow">
+      <span class="rl" style="color:${CS};font-weight:700">세렌트</span>
+      <span class="rv">${f(iSe)}개
+        <span class="muted" style="font-size:11px;font-weight:500">
+          (개당 ${f(sP)}원${ib > 0 && userSe === 0 ? ` · 스킬 +${Math.round(ib*100)}% 반영` : userSe > 0 ? ' · 직접 입력' : ''})
+        </span>
+      </span>
+    </div>` : ''}
+    ${iCo === 0 && iRi === 0 && iSe === 0 ? '<div class="empty-msg" style="padding:6px 0">보유 주괴를 입력해주세요</div>' : ''}
+    ${row(`전량 직판 수익${ib > 0 ? ' '+iBdg : ''}`, `${f(rawSell)}원`)}
   </div>
 
   <div class="rsec">
@@ -1241,11 +1241,11 @@ export function co() {
         <div class="rb-value">${f(isRaw ? rawSell : craftRev)}원</div>
       </div>
       ${swapResult ? `
-      <div style="width:1px;background:var(--border2);margin:4px 0;flex:none"></div>
+      <div style="width:1px;background:var(--bdr2);margin:4px 0;flex:none"></div>
       <div style="flex:1;text-align:center;padding:4px 8px">
         <div class="rb-label">교환 포함 수익</div>
         <div class="rb-value ${swapBetter ? 'rb-floor' : ''}">${f(swapCraftRev)}원</div>
-        ${swapBetter ? `<span class="rb-sub" style="color:var(--green)">+${f(swapCraftRev - (isRaw ? rawSell : craftRev))}원</span>` : ''}
+        ${swapBetter ? `<span class="rb-sub" style="color:var(--grn)">+${f(swapCraftRev - (isRaw ? rawSell : craftRev))}원</span>` : ''}
       </div>` : ''}
     </div>
   </div>`;
