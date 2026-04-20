@@ -291,34 +291,34 @@ export const DEFAULT_PRICES = {
   },
   /* 바닐라 재료 — 세트(64개)당 가격 */
   vanilla: {
-    cobblestone:           18,  // 조약돌 묶음  ← 임시값
-    deepslate_cobblestone: 18,  // 심층암 조약돌 묶음  ← 임시값
-    copper:                18,  // 구리 블럭  ← 임시값
-    iron:                  18,  // 철 블럭  ← 임시값
-    gold:                  18,  // 금 블럭  ← 임시값
-    diamond:               18,  // 다이아 블럭  ← 임시값
-    redstone:              18,  // 레드스톤 블럭  ← 임시값
-    lapis:                 18,  // 청금석 블럭  ← 임시값
-    amethyst:              18,  // 자수정 블럭  ← 임시값
+    cobblestone:           80000,  // 조약돌 묶음 
+    deepslate_cobblestone: 18000,  // 심층암 조약돌 묶음 
+    copper:                8000,  // 구리 블럭  
+    iron:                  71000,  // 철 블럭  
+    gold:                  130000,  // 금 블럭 
+    diamond:               188000,  // 다이아 블럭 
+    redstone:              24500,  // 레드스톤 블럭  
+    lapis:                 40000,  // 청금석 블럭 
+    amethyst:              6500,  // 자수정 블럭 
   },
   /* 귀중품 전용 특수 광물 — 개당 가격 */
   precious: {
-    topaz:    18,  // 토파즈 블럭  ← 임시값
-    sapphire: 18,  // 사파이어 블럭  ← 임시값
-    platinum: 18,  // 플레티넘 블럭  ← 임시값
+    topaz:    75855,  // 토파즈 블럭
+    sapphire: 79087,  // 사파이어 블럭 
+    platinum: 78740,  // 플레티넘 블럭  
   },
   /* 석재류 — 세트(64개)당 가격 */
   stone: {
-    diorite:  18,  // 섬록암  ← 임시값
-    tuff:     18,  // 응회암  ← 임시값
-    andesite: 18,  // 안산암  ← 임시값
+    diorite:  4450,  // 섬록암 
+    tuff:     1300,  // 응회암 
+    andesite: 4750,  // 안산암  
   },
   /* 강화횃불 재료 — 세트(64개)당 가격 */
-  charcoal: 18,   // 숯/석탄  ← 임시값
-  wood:     18,   // 원목     ← 임시값
+  charcoal: 1900,   // 숯/석탄  
+  wood:     1750,   // 원목     
   /* 기타 드랍 판매가 */
-  skillPulse: 0,  // 스킬펄스 (원/개)  — 서버마다 달라 기본 0
-  artifactPt: 0,  // 유물 포인트 (원/100pt) — 서버마다 달라 기본 0
+  skillPulse: 500,  // 스킬펄스 (원/개)  — 서버마다 달라 기본 0
+  artifactPt: 5400,  // 유물 포인트 (원/100pt) — 서버마다 달라 기본 0
 };
 
 
