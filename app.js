@@ -998,8 +998,6 @@ export function co() {
     }
   }
 
-  /* ── 제작 계획 HTML 생성 헬퍼 ── */
-
   /* ── 수익 합산 ── */
   const remSell = remCo * cP + remRi * rP + remSe * sP;
   let craftRev  = remSell;
@@ -1043,8 +1041,8 @@ export function co() {
   }
 
   /* ── 제작 계획 HTML 생성 헬퍼 (새 카드 UI) ── */
-  const ingotChip = (label, color, cnt, total) =>
-    `<span class="mat-chip" style="background:${color}18;color:${color};border-color:${color}55">${label} ${fmtQty(total)}<small style="opacity:.7"> ×${cnt}</small></span>`;
+  const ingotChip = (label, color, total) =>
+    `<span class="mat-chip" style="background:${color}18;color:${color};border-color:${color}55">${label} 주괴 ${fmtQty(total)}</span>`;
 
   function buildPlanItems(results) {
     if (!results.length) return '<div class="empty-msg" style="padding:10px 0;font-size:12px">제작 가능한 옵션 없음</div>';
@@ -1057,9 +1055,9 @@ export function co() {
 
       /* 주괴 chip */
       let ingotChips = '';
-      if (c.iC > 0) ingotChips += ingotChip('코룸',   CC, c.iC, c.iC * c.count);
-      if (c.iR > 0) ingotChips += ingotChip('리프톤', CR, c.iR, c.iR * c.count);
-      if (c.iS > 0) ingotChips += ingotChip('세렌트', CS, c.iS, c.iS * c.count);
+      if (c.iC > 0) ingotChips += ingotChip('코룸',   CC, c.iC * c.count);
+      if (c.iR > 0) ingotChips += ingotChip('리프톤', CR, c.iR * c.count);
+      if (c.iS > 0) ingotChips += ingotChip('세렌트', CS, c.iS * c.count);
 
       /* 바닐라 재료 chip */
       let vanChips = '';
@@ -1209,15 +1207,19 @@ export function co() {
 
   /* ── 좌(교환 없이) 컬럼 내용 ── */
   const noSwapInner = `
-    ${craftLines}
-    ${matSummaryHtml(craftResult, remCo, remRi, remSe, remSell)}
+    <div class="plan-items-wrap">
+      ${craftLines}
+      ${matSummaryHtml(craftResult, remCo, remRi, remSe, remSell)}
+    </div>
     ${planSummaryHtml(craftRev, craftTime, remCo, remRi, remSe, remSell, noSwapWinner)}`;
 
   /* ── 우(교환 있이) 컬럼 내용 ── */
   const swapInner = (() => {
     if (!swapResult) return `
-      <div style="padding:20px 0;text-align:center;color:var(--muted);font-size:12px">
-        위의 체크박스를 활성화하면<br>교환 최적화를 계산합니다
+      <div class="plan-items-wrap">
+        <div style="padding:20px 0;text-align:center;color:var(--muted);font-size:12px">
+          위의 체크박스를 활성화하면<br>교환 최적화를 계산합니다
+        </div>
       </div>`;
     const kindColor = { '코룸': CC, '리프톤': CR, '세렌트': CS };
     const swapInfoRows = swapResult.swapLog.map(s =>
@@ -1232,11 +1234,21 @@ export function co() {
       </div>`
     ).join('');
     return `
-      <div class="swap-info-box">${swapInfoRows}</div>
-      ${swapCraftLines}
-      ${matSummaryHtml(swapCraftResult, swapRemCo, swapRemRi, swapRemSe, swapRemSell)}
+      <div class="plan-items-wrap">
+        <div class="swap-info-box">${swapInfoRows}</div>
+        ${swapCraftLines}
+        ${matSummaryHtml(swapCraftResult, swapRemCo, swapRemRi, swapRemSe, swapRemSell)}
+      </div>
       ${planSummaryHtml(swapCraftRev, swapCraftTime, swapRemCo, swapRemRi, swapRemSe, swapRemSell, swapBetter)}`;
   })();
+
+  /* 추천 배지 — 교환 있이가 더 나으면 차액 표시 */
+  const noSwapBadge = (noSwapWinner && swapResult)
+    ? ` ${bdg('bg', `+${f(craftRev - swapCraftRev)}원`)}`
+    : '';
+  const swapBadge = swapBetter
+    ? ` ${bdg('bg', `+${f(swapCraftRev - craftRev)}원`)}`
+    : '';
 
   document.getElementById('oRes').innerHTML = `
   <div class="rsec">
@@ -1287,21 +1299,20 @@ export function co() {
   </div>
 
   <div class="rsec" style="padding:0;overflow:hidden">
-    <div style="padding:10px 12px 6px;border-bottom:1px solid var(--bdr2)">
-      <div style="font-family:'Jua',sans-serif;font-size:15px;color:var(--txt);display:flex;align-items:center;gap:6px">
-        🔨 최적 제작 계획 ${fBdg}
-      </div>
+    <div style="padding:10px 12px 8px;border-bottom:1px solid var(--bdr2);display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+      <span style="font-family:'Jua',sans-serif;font-size:15px;color:var(--txt)">🔨 최적 제작 계획</span>
+      ${fBdg}
     </div>
     <div class="plan-cols">
       <div class="plan-col${noSwapWinner ? ' winner' : ''}">
         <div class="plan-col-title${noSwapWinner ? ' winner-title' : ' loser-title'}">
-          ${noSwapWinner ? '🏆 ' : ''}교환 없이
+          ${noSwapWinner ? '✓ ' : ''}교환 없이${noSwapBadge}
         </div>
         ${noSwapInner}
       </div>
       <div class="plan-col${swapBetter ? ' winner' : ''}">
         <div class="plan-col-title${swapBetter ? ' winner-title' : ' loser-title'}">
-          ${swapBetter ? '🏆 ' : ''}🔄 교환 있이
+          ${swapBetter ? '✓ ' : ''}🔄 교환 있이${swapBadge}
         </div>
         ${swapInner}
       </div>
@@ -1310,16 +1321,14 @@ export function co() {
 
   <div class="result-box">
     <div style="display:flex;gap:0;align-items:stretch">
-      <div style="flex:1;text-align:center;padding:8px 12px;${noSwapWinner ? 'background:linear-gradient(135deg,#edf8f2,#f7fff9);border-radius:var(--rs) 0 0 var(--rs)' : ''}">
+      <div style="flex:1;text-align:center;padding:8px 12px">
         <div class="rb-label">교환 없이 수익</div>
-        <div class="rb-value${noSwapWinner ? ' rb-floor' : ''}">${f(craftRev)}원</div>
-        ${noSwapWinner && swapResult ? `<span class="rb-sub" style="color:var(--grn)">추천 ✓</span>` : ''}
+        <div class="rb-value${noSwapWinner && swapResult ? ' rb-floor' : ''}">${f(craftRev)}원</div>
       </div>
       <div style="width:1.5px;background:var(--bdr2);flex:none"></div>
-      <div style="flex:1;text-align:center;padding:8px 12px;${swapBetter ? 'background:linear-gradient(135deg,#edf8f2,#f7fff9);border-radius:0 var(--rs) var(--rs) 0' : ''}">
+      <div style="flex:1;text-align:center;padding:8px 12px">
         <div class="rb-label">교환 있이 수익</div>
         <div class="rb-value${swapBetter ? ' rb-floor' : ''}">${swapResult ? f(swapCraftRev) : '—'}${swapResult ? '원' : ''}</div>
-        ${swapBetter ? `<span class="rb-sub" style="color:var(--grn)">추천 ✓ (+${f(swapCraftRev - craftRev)}원)</span>` : ''}
       </div>
     </div>
   </div>`;

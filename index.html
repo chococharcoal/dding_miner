@@ -398,29 +398,32 @@ html, body {
 .plan-cols {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 0;           /* 컬럼 사이 간격 없음 — 구분선으로 처리 */
-  align-items: start;
+  gap: 0;
+  /* 두 컬럼 높이를 맞춰 summary가 항상 같은 높이에서 시작 */
+  align-items: stretch;
 }
 @media (max-width: 600px) {
   .plan-cols { grid-template-columns: 1fr; }
 }
 
-/* 각 컬럼 */
+/* 각 컬럼 — flex column으로 세로 정렬 */
 .plan-col {
   padding: 10px 12px;
   position: relative;
+  display: flex;
+  flex-direction: column;
 }
 /* 왼쪽 컬럼 오른쪽에 구분선 */
 .plan-col:first-child {
   border-right: 1.5px solid var(--bdr2);
 }
-/* "더 나은" 컬럼 — 연한 초록 배경 */
-.plan-col.winner {
-  background: linear-gradient(160deg, #edf8f2 0%, #f7fff9 100%);
-  border-radius: 0 var(--rs) var(--rs) 0;
-}
-.plan-col:first-child.winner {
-  border-radius: var(--rs) 0 0 var(--rs);
+
+/* winner 강조 — 배경색 대신 헤더 하단 테두리 굵게 + 제목 색 */
+.plan-col.winner { /* 배경 없음 */ }
+
+/* 제작 아이템 목록 영역 — flex:1로 늘려서 summary를 하단으로 밀기 */
+.plan-items-wrap {
+  flex: 1;
 }
 
 /* 컬럼 헤더 */
@@ -433,12 +436,13 @@ html, body {
   border-bottom: 2px solid var(--bdr2);
   display: flex; align-items: center; gap: 6px;
   letter-spacing: -.3px;
+  flex-wrap: wrap;
 }
 .plan-col-title.winner-title {
-  color: var(--grn);
-  border-bottom-color: var(--grn);
+  color: var(--acc);
+  border-bottom: 3px solid var(--acc);  /* 굵은 주황 밑줄로 강조 */
 }
-.plan-col-title.loser-title  { color: var(--muted); opacity: .7; }
+.plan-col-title.loser-title { color: var(--muted); opacity: .65; }
 
 /* 개별 제작 아이템 — 카드형 */
 .plan-craft-item {
@@ -514,11 +518,14 @@ html, body {
 .swap-info-row .si-label { color: var(--txt); }
 .swap-info-row .si-gain  { color: var(--grn); white-space: nowrap; font-size: 10px; }
 
-/* 요약 행 (남은주괴, 총시간, 예상수익) */
+/* 요약 섹션 — 항상 컬럼 하단에 붙음 */
 .plan-summary {
-  margin-top: 6px;
-  border-top: 1.5px solid var(--bdr2);
-  padding-top: 6px;
+  margin-top: auto;        /* flex:1 남은 공간 이후 하단 붙이기 */
+  padding-top: 8px;
+  border-top: 2px solid var(--bdr2);
+}
+.plan-col.winner .plan-summary {
+  border-top-color: var(--acc);  /* winner는 주황 구분선 */
 }
 .plan-summary-row {
   display: flex; justify-content: space-between; align-items: center;
@@ -526,20 +533,29 @@ html, body {
   padding: 3px 0;
   gap: 6px;
 }
-.plan-summary-row .sl { color: var(--muted); }
+.plan-summary-row .sl { color: var(--muted); white-space: nowrap; }
 .plan-summary-row .sv { color: var(--txt); text-align: right; }
+.plan-summary-row.rev-row {
+  margin-top: 4px;
+  padding-top: 4px;
+  border-top: 1px dashed var(--bdr2);
+}
+.plan-summary-row.rev-row .sl {
+  font-family: 'Jua', sans-serif !important;
+  font-size: 13px; color: var(--muted);
+}
 .plan-summary-row.rev-row .sv {
   font-family: 'Jua', sans-serif !important;
-  font-size: 18px; color: var(--acc);
+  font-size: 20px; color: var(--acc);
 }
-.plan-col.winner .plan-summary-row.rev-row .sv { color: var(--grn); }
+.plan-col.winner .plan-summary-row.rev-row .sv { color: var(--acc); }
 
 /* 총 필요 재료 — 접기/펼치기 */
 .mat-toggle {
   font-size: 10px; font-weight: 700; color: var(--blu);
   cursor: pointer; user-select: none;
   display: flex; align-items: center; gap: 3px;
-  margin-top: 4px; padding: 2px 0;
+  padding: 3px 0;
 }
 .mat-toggle:hover { color: var(--acc); }
 .mat-detail { display: none; margin-top: 4px; }
@@ -558,6 +574,7 @@ html, body {
 .empty-msg { color: var(--muted); font-size: 12px; text-align: center; padding: 14px 0; font-weight: 500; }
 ::-webkit-scrollbar { width: 5px; }
 ::-webkit-scrollbar-thumb { background: var(--bdr2); border-radius: 3px; }
+
 
 
 </style>
