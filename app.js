@@ -494,16 +494,20 @@ export function cs() {
     p80.tC80 > 0.01 ? `<span style="color:${CC}">코룸 ${f(p80.tC80)}개</span>` : '',
     p80.tR80 > 0.01 ? `<span style="color:${CR}">리프톤 ${f(p80.tR80)}개</span>` : '',
     p80.tS80 > 0.01 ? `<span style="color:${CS}">세렌트 ${f(p80.tS80)}개</span>` : '',
-  ].filter(Boolean).join(' · ');
+  ].filter(Boolean);
 
-  /* 스킬 배지: 사용자가 가격 직접 입력한 경우에는 배지 숨김 */
-  const iBdgC = (sk.ib > 0 && userIC === 0) ? bdg('bg', `주괴 좀 사 주괴 +${Math.round(sk.ib * 100)}%`) : '';
-  const gBdg  = sk.gb > 0 ? bdg('bg', `눈이 부셔 +${Math.round(sk.gb * 100)}%`) : '';
+  /* 결과박스 sub 항목들 — 각각 nowrap span으로 줄바꿈 방지 */
+  const subSpan = (txt) => `<span style="white-space:nowrap">${txt}</span>`;
+  const sub80Items = [
+    ...ingot80Parts.map(s => subSpan(s.replace(/<[^>]+>/g, s => s))),
+    p80.totalGems80 > 0   ? subSpan(`보석 ${fd(p80.totalGems80)}개`) : '',
+    p80.normalCobby80 > 0 ? subSpan(`펄스 ${fd(p80.normalCobby80)}개`) : '',
+  ].filter(Boolean);
 
   const cRow = (label, oreAmt, ingotAmt, color, torchAmt) => {
     if (oreAmt <= 0.01) return '';
     const torchStr = torchAmt > 0.01
-      ? ` <span style="color:var(--blu);font-size:10px">(횃불 ${f(torchAmt)}개)</span>`
+      ? ` <span style="font-size:10px;color:var(--muted)">(횃불 ${f(torchAmt)}개)</span>`
       : '';
     return `<div class="rrow">
       <span class="rl" style="color:${color};font-weight:700">${label}</span>
@@ -516,9 +520,9 @@ export function cs() {
     ${row('곡괭이', `${m.enh}강 — 기본 ${m.px.oresPerUse}개/회 · 유물 ${m.px.artifactPct}% · 코비 ${m.px.cobbyPct}%`)}
     ${row('채굴 횟수', `${f(m.miningCount)}회`)}
     ${m.oresPerUse !== m.px.oresPerUse
-      ? row('회당 평균 광석 (보정 후)', `${fd(m.oresPerUse)}개`, 'g')
-      : row('회당 광석', `${m.px.oresPerUse}개`, 'g')}
-    ${row('총 획득 광석', `${f(m.totalOres)}개`, 'g')}
+      ? row('회당 평균 광석 (보정 후)', `${fd(m.oresPerUse)}개`)
+      : row('회당 광석', `${m.px.oresPerUse}개`)}
+    ${row('총 획득 광석', `${f(m.totalOres)}개`)}
   </div>
 
   <div class="rsec">
@@ -527,10 +531,10 @@ export function cs() {
     ${cRow('리프톤', m.oreR, m.ingotFromOreR, CR, torchR)}
     ${cRow('세렌트', m.oreS, m.ingotFromOreS, CS, torchS)}
     ${m.totalTorch > 0.01
-      ? `<div class="rrow rrow-strong"><span class="rl" style="color:var(--blu);font-family:'Noto Sans KR',sans-serif!important">🔥 필요 강화횃불 합계</span><span class="rv b" style="font-family:'Noto Sans KR',sans-serif!important">${f(m.totalTorch)}개</span></div>`
+      ? `<div class="rrow rrow-strong"><span class="rl" style="font-family:'Noto Sans KR',sans-serif!important">🔥 필요 강화횃불 합계</span><span class="rv" style="font-family:'Noto Sans KR',sans-serif!important">${f(m.totalTorch)}개</span></div>`
       : ''}
     ${m.fpDrops > 0.01
-      ? `<div class="rrow"><span class="rl">불붙은 곡괭이 ${bdg('bg','Lv'+sk.fpl)}</span><span class="rv">+${fd(m.fpDrops)}개 주괴</span></div>`
+      ? `<div class="rrow"><span class="rl">불붙은 곡괭이 드랍</span><span class="rv">+${fd(m.fpDrops)}개 주괴</span></div>`
       : ''}
     <div class="rrow rrow-strong">
       <span class="rl" style="color:var(--txt);font-family:'Noto Sans KR',sans-serif!important">최종 총 주괴 (기댓값)</span>
@@ -542,12 +546,12 @@ export function cs() {
     html += `
   <div class="rsec">
     <div class="rsec-title">💎 보석 & 코비</div>
-    ${m.sparkleGems > 0 ? row(`반짝임의 시작 ${bdg('bg','Lv'+sk.sl)}`, `${fd(m.sparkleGems)}개`) : ''}
+    ${m.sparkleGems > 0 ? row('반짝임의 시작', `${fd(m.sparkleGems)}개`) : ''}
     ${m.cobbyCount  > 0 ? row(`코비 소환 (${fd(m.totalCobbyPct)}%)`, `${fd(m.cobbyCount)}회`) : ''}
-    ${m.gemCobby    > 0 ? row(`└ 보석코비 ${bdg('bpu', eng.gp+'%')}`, `${fd(m.gemCobby)}개`) : ''}
+    ${m.gemCobby    > 0 ? row('└ 보석코비 드랍', `${fd(m.gemCobby)}개`) : ''}
     ${m.normalCobby > 0 ? row('└ 일반코비 (스킬펄스)', `${fd(m.normalCobby)}개`) : ''}
-    ${m.totalGems   > 0 ? `<div class="rrow rrow-strong"><span class="rl">총 보석 (기댓값)</span><span class="rv p">${fd(m.totalGems)}개</span></div>` : ''}
-    ${m.normalCobby > 0 ? `<div class="rrow rrow-strong"><span class="rl">스킬펄스 (기댓값)</span><span class="rv p">${fd(m.normalCobby)}개</span></div>` : ''}
+    ${m.totalGems   > 0 ? `<div class="rrow rrow-strong"><span class="rl">예상 보석</span><span class="rv p">${fd(m.totalGems)}개</span></div>` : ''}
+    ${m.normalCobby > 0 ? `<div class="rrow rrow-strong"><span class="rl">예상 스킬펄스</span><span class="rv p">${fd(m.normalCobby)}개</span></div>` : ''}
   </div>`;
   }
 
@@ -557,18 +561,21 @@ export function cs() {
     <div class="rsec-title">🗿 유물</div>
     ${row(`유물 드랍 (${fd(m.px.artifactPct + eng.ap)}%)`, `${fd(m.artDrops)}개`)}
     ${m.cartDrops > 0
-      ? row(`광산수레 ${bdg('bb','Lv'+eng.ca)}`, `${fd(m.cartDrops)}회 → ${fd(m.cartDrops*2)}개`)
+      ? row('광산수레', `${fd(m.cartDrops)}회 → ${fd(m.cartDrops*2)}개`)
       : ''}
-    <div class="rrow rrow-strong"><span class="rl">총 유물 포인트 (기댓값)</span><span class="rv b">${f(m.totalArtPts)}pt</span></div>
+    <div class="rrow rrow-strong">
+      <span class="rl">예상 유물</span>
+      <span class="rv">${fd(m.totalArtifacts)}개 &nbsp;<small style="color:var(--muted)">${f(m.totalArtPts)}pt</small></span>
+    </div>
   </div>`;
   }
 
   html += `
   <div class="rsec">
     <div class="rsec-title">💰 기댓값 수익 (전량 판매)</div>
-    ${row(`주괴 수익 ${iBdgC}`, `${f(ingotRev)}원`, 'g')}
+    ${row('주괴 수익', `${f(ingotRev)}원`, 'g')}
     ${m.totalGems > 0
-      ? row(`보석 수익 ${gBdg}`, `${f(gemRev)}원`, 'g')
+      ? row('보석 수익', `${f(gemRev)}원`, 'g')
       : ''}
     ${m.normalCobby > 0
       ? (spPrice > 0
@@ -587,17 +594,26 @@ export function cs() {
       <div style="flex:1;text-align:center;padding:4px 8px">
         <div class="rb-label">하루 평균 수익</div>
         <div class="rb-value">${f(totalRev)}원</div>
-        <span class="rb-sub">주괴 ${f(m.totalIngotAll)}개</span>
+        <div class="rb-sub" style="display:flex;flex-wrap:wrap;justify-content:center;gap:4px 8px;margin-top:4px">
+          ${[
+            ...ingotParts.split(' · ').filter(Boolean).map(s => `<span style="white-space:nowrap">${s}</span>`),
+            m.totalGems   > 0.01 ? `<span style="white-space:nowrap">보석 ${fd(m.totalGems)}개</span>` : '',
+            m.normalCobby > 0.01 ? `<span style="white-space:nowrap">펄스 ${fd(m.normalCobby)}개</span>` : '',
+            m.totalArtifacts > 0.01 ? `<span style="white-space:nowrap">유물 ${fd(m.totalArtifacts)}개</span>` : '',
+          ].filter(Boolean).join('')}
+        </div>
       </div>
       <div style="width:1px;background:var(--bdr2);margin:4px 0;flex:none"></div>
       <div style="flex:1;text-align:center;padding:4px 8px">
         <div class="rb-label">80% 확률로 최소</div>
         <div class="rb-value rb-floor">${f(totalRev80)}원</div>
-        <span class="rb-sub">
-          ${ingot80Parts}
-          ${p80.totalGems80 > 0 ? ` · 보석 ${fd(p80.totalGems80)}개` : ''}
-          ${p80.normalCobby80 > 0 ? ` · 펄스 ${fd(p80.normalCobby80)}개` : ''}
-        </span>
+        <div class="rb-sub" style="display:flex;flex-wrap:wrap;justify-content:center;gap:4px 8px;margin-top:4px">
+          ${[
+            ...ingot80Parts.map(s => `<span style="white-space:nowrap">${s.replace(/<span[^>]*>|<\/span>/g,'')}</span>`),
+            p80.totalGems80   > 0 ? `<span style="white-space:nowrap">보석 ${fd(p80.totalGems80)}개</span>` : '',
+            p80.normalCobby80 > 0 ? `<span style="white-space:nowrap">펄스 ${fd(p80.normalCobby80)}개</span>` : '',
+          ].filter(Boolean).join('')}
+        </div>
       </div>
     </div>
   </div>`;
@@ -643,18 +659,10 @@ export function ct() {
 
   document.getElementById('tRes').innerHTML = `
   <div class="rsec">
-    ${row('숯/석탄 개당', `${charU.toFixed(1)}원`)}
-    ${row('원목 세트당', `${f(woodSetPrice)}원 → 막대기 개당 ${stickU.toFixed(1)}원`)}
-    ${row('횃불 1개 재료비', `${costEa.toFixed(1)}원`, 'r')}
-  </div>
-  <div class="rsec">
-    ${row('필요 숯/석탄', fmtQty(wantN), 'g')}
-    ${row('필요 원목', fmtQty(Math.ceil(needWoodLogs)), 'g')}
-    ${row('총 재료비', `${f(totalCost)}원`, 'r')}
-  </div>
-  <div class="rsec">
-    ${row(`1개당 제작 시간 ${fBdg}`, fmtTime(timePerTorch), 'b')}
-    ${row('총 제작 시간', fmtTime(totalTime), 'b')}
+    ${row('횃불 1개 재료비', `${costEa.toFixed(1)}원`)}
+    ${row('필요 숯/석탄', fmtQty(wantN))}
+    ${row('필요 원목', fmtQty(Math.ceil(needWoodLogs)))}
+    ${row('총 제작 시간', fmtTime(totalTime))}
   </div>
   <div class="result-box">
     <div class="rb-label">${hasPrice ? '순이익' : '총 재료비'}</div>
@@ -1042,8 +1050,6 @@ export function co() {
       const npi        = totalIngots(c);
       const npiTxt     = npi > 0 ? `주괴당 ${f(c.net / npi)}원 이익` : '';
       const precBadge  = c.type === 'precious' ? bdg('bpu','귀중품') + ' ' : '';
-
-      /* 주괴 chip */
       let ingotChips = '';
       if (c.iC > 0) ingotChips += ingotChip('코룸',   CC, c.iC * c.count);
       if (c.iR > 0) ingotChips += ingotChip('리프톤', CR, c.iR * c.count);
@@ -1062,7 +1068,7 @@ export function co() {
           .filter(([, q]) => q > 0)
           .map(([mat, qty]) => matChipQty(mat, qty * c.count));
         if (rec.doc) {
-          chips.push(`<span class="mat-chip" style="background:#ff980018;color:#e07b2a;border-color:#e07b2a55">증서 ${c.count}개 (${f(DOC * c.count)}원)</span>`);
+          chips.push(`<span class="mat-chip" style="background:#ff980018;color:#e07b2a;border-color:#e07b2a55">증서 ${c.count}개</span>`);
         }
         vanChips = chips.join('');
       }
@@ -1084,11 +1090,11 @@ export function co() {
         <div class="plan-item-head">
           <div class="plan-item-name">
             ${precBadge}${c.label}
-            ${npiTxt ? `<span class="npi">↑ ${npiTxt}</span>` : ''}
+            ${npiTxt ? `<span class="npi">${npiTxt}</span>` : ''}
           </div>
           <div style="text-align:right;flex-shrink:0">
             <div class="plan-item-rev">${f(rev)}원</div>
-            <span class="plan-item-count">${fmtQty(c.count)}개</span>
+            <span class="plan-item-count">${fmtQty(c.count)}</span>
           </div>
         </div>
         ${apprHtml}
@@ -1129,10 +1135,10 @@ export function co() {
     ].join('');
     const vanRows = Object.entries(mats).filter(([k]) => k !== '__doc__').map(([mat, qty]) => {
       const m = MAT_META[mat] || { name: mat, color: '#888' };
-      return `<div class="mat-summary-row"><span class="mn" style="color:${m.color}">${m.name}</span><span class="mv">${fmtQty(qty)}</span></div>`;
+      return `<div class="mat-summary-row"><span class="mn">${m.name}</span><span class="mv">${fmtQty(qty)}</span></div>`;
     }).join('');
     const docRow = mats['__doc__']
-      ? `<div class="mat-summary-row"><span class="mn" style="color:var(--acc)">증서</span><span class="mv">${mats['__doc__']}개 · ${f(mats['__doc__'] * DOC)}원</span></div>` : '';
+      ? `<div class="mat-summary-row"><span class="mn">증서</span><span class="mv">${mats['__doc__']}개</span></div>` : '';
     return `
       <div class="mat-toggle" onclick="this.nextElementSibling.classList.toggle('open');this.querySelector('.mat-arr').textContent=this.nextElementSibling.classList.contains('open')?'▲':'▼'">
         📋 총 필요 재료 <span class="mat-arr">▼</span>
@@ -1142,29 +1148,28 @@ export function co() {
       </div>`;
   }
 
-  /* ── 컬럼 요약 HTML (남은주괴 직판 + 총시간 + 예상수익) ── */
-  function planSummaryHtml(rev, time, remC, remR, remS, remSellAmt, isWinner) {
+  /* ── 컬럼 요약 HTML ── */
+  function planSummaryHtml(rev, time, remC, remR, remS) {
     const remRow = (remC + remR + remS) > 0 ? `
       <div class="plan-summary-row">
-        <span class="sl">남은 주괴 직판</span>
+        <span class="sl">남은 주괴</span>
         <span class="sv" style="font-size:11px">
           ${remC > 0 ? `<span style="color:${CC}">${f(remC)}개</span> ` : ''}
           ${remR > 0 ? `<span style="color:${CR}">${f(remR)}개</span> ` : ''}
-          ${remS > 0 ? `<span style="color:${CS}">${f(remS)}개</span> ` : ''}
-          <span style="color:var(--muted)">→ ${f(remSellAmt)}원</span>
+          ${remS > 0 ? `<span style="color:${CS}">${f(remS)}개</span>` : ''}
         </span>
       </div>` : '';
     const timeRow = time > 0 ? `
       <div class="plan-summary-row">
         <span class="sl">총 제작 시간</span>
-        <span class="sv" style="color:var(--blu)">${fmtTime(time)}</span>
+        <span class="sv">${fmtTime(time)}</span>
       </div>` : '';
     return `
       <div class="plan-summary">
         ${remRow}
         ${timeRow}
         <div class="plan-summary-row rev-row">
-          <span class="sl">예상 수익${isWinner ? ' 🏆' : ''}</span>
+          <span class="sl">예상 수익</span>
           <span class="sv">${f(rev)}원</span>
         </div>
       </div>`;
@@ -1177,9 +1182,7 @@ export function co() {
   // 교환 없이가 더 나은 경우: !swapBetter (swapResult 없거나 교환이 더 작은 경우)
   const noSwapWinner = !swapBetter;
 
-  const iBdg = ib > 0 ? bdg('bg',  `주괴 좀 사 주괴 +${Math.round(ib * 100)}%`) : '';
   const fBdg = fr > 0 ? bdg('bg',  `초고속 용광로 -${Math.round(fr * 100)}%`) : '';
-  const pBdg = pb > 0 ? bdg('bpu', `귀하신 몸값 +${Math.round(pb * 100)}%`) : '';
 
   const netSummaryRow = (label, net, iC, iR, iS, badge = '') => {
     if (!label || net === 0) return '';
@@ -1192,7 +1195,7 @@ export function co() {
     const perHtml = n > 0
       ? ` <small style="color:var(--muted)">· ${ingotKindLabel}주괴당 ${f(net / n)}원</small>`
       : '';
-    return row(`${label} ${badge}`, `${f(net)}원 ${perHtml}`, color);
+    return row(`${label}`, `${f(net)}원 ${perHtml}`, color);
   };
 
   /* ── 좌(교환 없이) 컬럼 내용 ── */
@@ -1201,7 +1204,7 @@ export function co() {
       ${craftLines}
       ${matSummaryHtml(craftResult, remCo, remRi, remSe, remSell)}
     </div>
-    ${planSummaryHtml(craftRev, craftTime, remCo, remRi, remSe, remSell, noSwapWinner)}`;
+    ${planSummaryHtml(craftRev, craftTime, remCo, remRi, remSe)}`;
 
   /* ── 우(교환 있이) 컬럼 내용 ── */
   const swapInner = (() => {
@@ -1220,16 +1223,18 @@ export function co() {
           <span style="color:${kindColor[s.to]}">${s.to}</span>
           &nbsp;<b>${f(s.count)}개</b> 교환
         </span>
-        <span class="si-gain">+${f(Math.round(s.gain))}원/주괴</span>
       </div>`
     ).join('');
     return `
       <div class="plan-items-wrap">
-        <div class="swap-info-box">${swapInfoRows}</div>
+        <div class="swap-info-box">
+          <div class="swap-info-box-title">교환</div>
+          ${swapInfoRows}
+        </div>
         ${swapCraftLines}
         ${matSummaryHtml(swapCraftResult, swapRemCo, swapRemRi, swapRemSe, swapRemSell)}
       </div>
-      ${planSummaryHtml(swapCraftRev, swapCraftTime, swapRemCo, swapRemRi, swapRemSe, swapRemSell, swapBetter)}`;
+      ${planSummaryHtml(swapCraftRev, swapCraftTime, swapRemCo, swapRemRi, swapRemSe)}`;
   })();
 
   /* 추천 배지 — 교환 있이가 더 나으면 차액 표시 */
@@ -1245,30 +1250,18 @@ export function co() {
     <div class="rsec-title">📦 보유 주괴 &amp; 단가</div>
     ${iCo > 0 ? `<div class="rrow">
       <span class="rl" style="color:${CC};font-weight:700">코룸</span>
-      <span class="rv">${f(iCo)}개
-        <span class="muted" style="font-size:11px;font-weight:500">
-          (개당 ${f(cP)}원${ib > 0 && userCo === 0 ? ` · 스킬 +${Math.round(ib*100)}% 반영` : userCo > 0 ? ' · 직접 입력' : ''})
-        </span>
-      </span>
+      <span class="rv">${f(iCo)}개 <span class="muted" style="font-size:11px;font-weight:500">(개당 ${f(cP)}원)</span></span>
     </div>` : ''}
     ${iRi > 0 ? `<div class="rrow">
       <span class="rl" style="color:${CR};font-weight:700">리프톤</span>
-      <span class="rv">${f(iRi)}개
-        <span class="muted" style="font-size:11px;font-weight:500">
-          (개당 ${f(rP)}원${ib > 0 && userRi === 0 ? ` · 스킬 +${Math.round(ib*100)}% 반영` : userRi > 0 ? ' · 직접 입력' : ''})
-        </span>
-      </span>
+      <span class="rv">${f(iRi)}개 <span class="muted" style="font-size:11px;font-weight:500">(개당 ${f(rP)}원)</span></span>
     </div>` : ''}
     ${iSe > 0 ? `<div class="rrow">
       <span class="rl" style="color:${CS};font-weight:700">세렌트</span>
-      <span class="rv">${f(iSe)}개
-        <span class="muted" style="font-size:11px;font-weight:500">
-          (개당 ${f(sP)}원${ib > 0 && userSe === 0 ? ` · 스킬 +${Math.round(ib*100)}% 반영` : userSe > 0 ? ' · 직접 입력' : ''})
-        </span>
-      </span>
+      <span class="rv">${f(iSe)}개 <span class="muted" style="font-size:11px;font-weight:500">(개당 ${f(sP)}원)</span></span>
     </div>` : ''}
     ${iCo === 0 && iRi === 0 && iSe === 0 ? '<div class="empty-msg" style="padding:6px 0">보유 주괴를 입력해주세요</div>' : ''}
-    ${row(`전량 직판 수익${ib > 0 ? ' '+iBdg : ''}`, `${f(rawSell)}원`)}
+    ${row('전량 직판 수익', `${f(rawSell)}원`)}
   </div>
 
   <div class="rsec">
@@ -1283,7 +1276,6 @@ export function co() {
         p.ingotKey === 'C' ? p.ingotCnt : 0,
         p.ingotKey === 'R' ? p.ingotCnt : 0,
         p.ingotKey === 'S' ? p.ingotCnt : 0,
-        pBdg,
       )
     ).join('')}
   </div>

@@ -431,6 +431,7 @@ html, body {
   display: flex;
   flex-direction: column;
   gap: 4px;
+  font-family: 'Noto Sans KR', sans-serif !important;
 }
 /* 제작 아이템 첫 번째 행 — 이름 + 수량·수익 */
 .plan-item-head {
@@ -451,13 +452,14 @@ html, body {
   display: block; margin-top: 1px;
 }
 .plan-item-rev {
-  font-family: 'Jua', sans-serif !important;
-  font-size: 13px; color: var(--grn);
+  font-family: 'Noto Sans KR', sans-serif !important;
+  font-size: 13px; font-weight: 900; color: var(--grn);
   white-space: nowrap; flex-shrink: 0;
   text-align: right;
 }
 .plan-item-count {
-  font-size: 10px; font-weight: 700; color: var(--muted);
+  font-family: 'Noto Sans KR', sans-serif !important;
+  font-size: 11px; font-weight: 700; color: var(--muted);
   display: block; text-align: right; margin-top: 1px;
 }
 /* 감정 등급 행 */
@@ -479,18 +481,26 @@ html, body {
   margin-top: 2px; padding-top: 4px;
 }
 
-/* 교환 정보 박스 */
+/* 교환 정보 박스 — 라이프스톤 카드와 동일 스타일 */
 .swap-info-box {
-  background: #fffbe8;
-  border: 1px solid var(--ylw);
+  background: var(--surf);
+  border: 1px solid var(--bdr);
   border-radius: var(--rs);
-  padding: 7px 10px;
+  padding: 9px 10px;
   margin-bottom: 8px;
+}
+.swap-info-box-title {
+  font-family: 'Jua', sans-serif !important;
+  font-size: 13px; color: var(--txt);
+  margin-bottom: 6px;
+  padding-bottom: 4px;
+  border-bottom: 1px dashed var(--bdr);
 }
 .swap-info-row {
   display: flex; justify-content: space-between; align-items: center;
   font-size: 11px; font-weight: 700; padding: 2px 0;
   gap: 6px;
+  font-family: 'Noto Sans KR', sans-serif !important;
 }
 .swap-info-row .si-label { color: var(--txt); }
 .swap-info-row .si-gain  { color: var(--grn); white-space: nowrap; font-size: 10px; }
@@ -540,12 +550,12 @@ html, body {
 .mat-summary { }
 .mat-summary-row {
   display: flex; justify-content: space-between;
-  font-size: 11px; font-weight: 700;
-  padding: 2px 0; border-bottom: 1px dashed var(--bdr);
+  font-size: 12px; font-weight: 700;
+  padding: 3px 0; border-bottom: 1px dashed var(--bdr);
   gap: 6px;
 }
 .mat-summary-row:last-child { border-bottom: none; }
-.mat-summary-row .mn { color: var(--muted); white-space: nowrap; }
+.mat-summary-row .mn { color: var(--txt); white-space: nowrap; }
 .mat-summary-row .mv { color: var(--txt); text-align: right; }
 
 .empty-msg { color: var(--muted); font-size: 12px; text-align: center; padding: 14px 0; font-weight: 500; }
