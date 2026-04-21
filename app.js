@@ -644,12 +644,15 @@ export function ct() {
     ? bdg('bg', `용광로 Lv${sk.fl} -${Math.round(sk.fr * 100)}%`)
     : '';
 
+  const mRow = (l, v) =>
+    `<div class="rrow"><span class="rl" style="color:var(--muted)">${l}</span><span class="rv" style="color:var(--muted)">${v}</span></div>`;
+
   document.getElementById('tRes').innerHTML = `
   <div class="rsec">
-    ${row('횃불 1개 재료비', `${costEa.toFixed(1)}원`)}
-    ${row('필요 숯/석탄', fmtQty(wantN))}
-    ${row('필요 원목', fmtQty(Math.ceil(needWoodLogs)))}
-    ${row('총 제작 시간', fmtTime(totalTime))}
+    ${mRow('횃불 1개 재료비', `${costEa.toFixed(1)}원`)}
+    ${mRow('필요 숯/석탄', fmtQty(wantN))}
+    ${mRow('필요 원목', fmtQty(Math.ceil(needWoodLogs)))}
+    ${mRow('총 제작 시간', fmtTime(totalTime))}
   </div>
   <div class="result-box">
     <div class="rb-label">${hasPrice ? '순이익' : '총 재료비'}</div>
