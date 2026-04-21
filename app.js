@@ -25,9 +25,7 @@ export const fd = (n, d = 2) =>
     ? Math.round(n).toString()
     : n.toFixed(d).replace(/\.?0+$/, '');
 
-/* 수량을 "X상자 Y세트 Z개" 형식으로 포맷 (내림)
-   config의 vanilla 수량은 모두 "개수" 단위.
-   64개=1세트, 3456개(64×54)=1상자로 자동 변환. */
+/* 수량을 "X상자 Y세트 Z개" 형식으로 포맷 (내림) */
 export function fmtQty(n) {
   n = Math.floor(n);
   if (n <= 0) return '0개';
@@ -67,7 +65,7 @@ export function fmtTime(sec) {
     .join(' ');
 }
 
-/* DOM 요소의 숫자값을 읽어옴 (없거나 음수면 0) */
+/* DOM 요소의 숫자값을 읽어옴 */
 export function gi(id) {
   const e = document.getElementById(id);
   return e ? Math.max(0, +e.value || 0) : 0;
@@ -88,19 +86,10 @@ const row = (l, v, vc = '') =>
 
 /* ════════════════════════════════════════
    ① - 주괴 단가 헬퍼
-   ─────────────────────────────────────
-   스킬 "주괴 좀 사 주괴" 적용 규칙:
-     - 사용자가 직접 가격 입력(>0)  → 입력값 그대로 (스킬 미반영)
-       이유: 이미 스킬 보너스가 적용된 실제 판매가를 입력했다고 가정
-     - 미입력(0)                    → DEFAULT_PRICES × (1 + ib)
-   순이익 계산 시 "코스트 쪽 주괴 가격"은 항상 스킬 미반영 원가(rawPrice)를 써야 하므로
-   두 값을 분리해서 반환:
-     sellPrice : 판매 수익 계산에 사용 (스킬 반영 or 입력값)
-     costPrice : 재료 원가 계산에 사용 (스킬 미반영 원가)
 ════════════════════════════════════════ */
 
 function getIngotPrices(ib) {
-  const userC = gi('oCo') || gi('ingotPriceC'); // 탭2 입력 우선, 없으면 탭0 입력
+  const userC = gi('oCo') || gi('ingotPriceC');
   const userR = gi('oRi') || gi('ingotPriceR');
   const userS = gi('oSe') || gi('ingotPriceS');
 
@@ -109,11 +98,9 @@ function getIngotPrices(ib) {
   const rawS = userS > 0 ? userS : DEFAULT_PRICES.ingot.serent;
 
   return {
-    // 판매가: 사용자 입력이 있으면 그대로, 없으면 디폴트 × (1+ib)
     sellC: userC > 0 ? userC : rawC * (1 + ib),
     sellR: userR > 0 ? userR : rawR * (1 + ib),
     sellS: userS > 0 ? userS : rawS * (1 + ib),
-    // 원가: 항상 스킬 미반영 (제작 비용 계산용)
     costC: rawC,
     costR: rawR,
     costS: rawS,
@@ -153,7 +140,6 @@ function matChipQty(matKey, totalQty) {
    ③ 탭 전환
 ════════════════════════════════════════ */
 
-/* 탭별 페이지 타이틀 정의 */
 const TAB_TITLES = [
   '⛏ 채광 계산기',
   '🔥 강화횃불 제작기',
@@ -169,10 +155,8 @@ export function sw(i, el) {
   el.classList.add('on');
   document.getElementById('t' + i).style.display = 'block';
 
-  // 페이지 타이틀 업데이트
   const titleEl = document.getElementById('pageTabTitle');
   if (titleEl && TAB_TITLES[i]) titleEl.textContent = TAB_TITLES[i];
-  // <title> 태그도 함께 변경 (브라우저 탭 이름)
   document.title = `광부 계산기 — ${TAB_TITLES[i]}`;
 }
 
@@ -438,11 +422,6 @@ const CC = '#e07b2a';
 const CR = '#3a9e68';
 const CS = '#d94f3d';
 
-/* ════════════════════════════════════════
-   ⑧ TAB 0: 채굴 수익 계산기  (cs 함수 교체본)
-   아래 함수만 app.js의 기존 cs() 함수와 교체하면 됩니다.
-════════════════════════════════════════ */
-
 export function cs() {
   const m   = calcMining();
   const p80 = calc80Ingots(m);
@@ -504,58 +483,71 @@ export function cs() {
   };
 
   /* ── 80% 요약 span 목록 ── */
-  const floor80Items = [
+  /* 주괴 따로, 나머지 따로 두 줄로 구성 */
+  const ingot80Items = [
     p80.tC80 > 0.01 ? `<span style="color:${CC};white-space:nowrap">코룸 ${f(p80.tC80)}개</span>` : '',
     p80.tR80 > 0.01 ? `<span style="color:${CR};white-space:nowrap">리프톤 ${f(p80.tR80)}개</span>` : '',
     p80.tS80 > 0.01 ? `<span style="color:${CS};white-space:nowrap">세렌트 ${f(p80.tS80)}개</span>` : '',
+  ].filter(Boolean);
+
+  const extra80Items = [
     p80.totalGems80   > 0 ? `<span style="white-space:nowrap">보석 ${fd(p80.totalGems80)}개</span>` : '',
     p80.normalCobby80 > 0 ? `<span style="white-space:nowrap">펄스 ${fd(p80.normalCobby80)}개</span>` : '',
+    p80.artPts80      > 0 ? `<span style="white-space:nowrap">유물 ${f(p80.artPts80)}pt</span>` : '',
   ].filter(Boolean);
 
   /* ── 기댓값 요약 span 목록 ── */
-  const avgItems = [
+  const ingotAvgItems = [
     m.totalIngotC > 0.01 ? `<span style="color:${CC};white-space:nowrap">코룸 ${f(m.totalIngotC)}개</span>` : '',
     m.totalIngotR > 0.01 ? `<span style="color:${CR};white-space:nowrap">리프톤 ${f(m.totalIngotR)}개</span>` : '',
     m.totalIngotS > 0.01 ? `<span style="color:${CS};white-space:nowrap">세렌트 ${f(m.totalIngotS)}개</span>` : '',
+  ].filter(Boolean);
+
+  const extraAvgItems = [
     m.totalGems   > 0.01 ? `<span style="white-space:nowrap">보석 ${fd(m.totalGems)}개</span>` : '',
     m.normalCobby > 0.01 ? `<span style="white-space:nowrap">펄스 ${fd(m.normalCobby)}개</span>` : '',
-    m.totalArtifacts > 0.01 ? `<span style="white-space:nowrap">유물 ${fd(m.totalArtifacts)}개</span>` : '',
+    m.totalArtifacts > 0.01 ? `<span style="white-space:nowrap">유물 ${f(m.totalArtPts)}pt</span>` : '',
   ].filter(Boolean);
+
+  /* ── 요약 서브텍스트 HTML 생성 (두 줄) ── */
+  function subHtml(ingotItems, extraItems) {
+    const line1 = ingotItems.length ? `<div style="display:flex;flex-wrap:wrap;justify-content:center;gap:4px 8px">${ingotItems.join('')}</div>` : '';
+    const line2 = extraItems.length ? `<div style="display:flex;flex-wrap:wrap;justify-content:center;gap:4px 8px;margin-top:2px">${extraItems.join('')}</div>` : '';
+    return line1 + line2;
+  }
 
   /* ── HTML 조립 ── */
   let html = `
-  <div class="rsec">
-    <div class="rsec-title">📊 계산 결과</div>
-  </div>
-
   <div class="rsec">
     <div class="rsec-title">⛏ 획득 주괴 수</div>
     ${ingotRow('코룸',   CC, m.ingotFromOreC, m.fpC, m.totalIngotC)}
     ${ingotRow('리프톤', CR, m.ingotFromOreR, m.fpR, m.totalIngotR)}
     ${ingotRow('세렌트', CS, m.ingotFromOreS, m.fpS, m.totalIngotS)}
+    ${m.totalTorch > 0.01 ? `
+    <div class="rrow" style="border-top:1px dashed var(--bdr2);margin-top:4px;padding-top:5px">
+      <span class="rl" style="color:var(--muted)">필요 강화횃불 합계</span>
+      <span class="rv" style="color:var(--muted)">${f(m.totalTorch)}개</span>
+    </div>` : ''}
   </div>`;
-
-  /* 강화횃불 */
-  if (m.totalTorch > 0.01) {
-    html += `
-  <div class="rsec">
-    <div class="rrow rrow-strong">
-      <span class="rl" style="font-family:'Noto Sans KR',sans-serif!important">필요 강화횃불 합계</span>
-      <span class="rv p" style="font-family:'Noto Sans KR',sans-serif!important">${f(m.totalTorch)}개</span>
-    </div>
-  </div>`;
-  }
 
   /* 보석 & 코비 */
   if (m.totalGems > 0 || m.cobbyCount > 0) {
     html += `
   <div class="rsec">
     <div class="rsec-title">💎 보석 &amp; 코비</div>
-    ${m.totalGems   > 0 ? `<div class="rrow rrow-strong"><span class="rl">보석</span><span class="rv p">${fd(m.totalGems)}개</span></div>` : ''}
-    ${m.sparkleGems > 0 ? row('└ 반짝임의 시작', `${fd(m.sparkleGems)}개`) : ''}
-    ${m.gemCobby    > 0 ? row('└ 보석코비', `${fd(m.gemCobby)}개`) : ''}
-    ${m.normalCobby > 0 ? `<div class="rrow rrow-strong"><span class="rl">스킬펄스</span><span class="rv p">${fd(m.normalCobby)}개</span></div>` : ''}
-    ${m.cobbyCount  > 0 ? row(`└ 코비 소환 (${fd(m.totalCobbyPct)}%)`, `${fd(m.cobbyCount)}회`) : ''}
+    ${m.totalGems > 0 ? `
+    <div class="rrow rrow-strong">
+      <span class="rl" style="color:var(--txt);font-weight:900">보석</span>
+      <span class="rv" style="color:var(--txt)">${fd(m.totalGems)}개</span>
+    </div>` : ''}
+    ${m.sparkleGems > 0 ? `<div class="rrow"><span class="rl" style="color:var(--muted)">└ 반짝임의 시작</span><span class="rv" style="color:var(--muted)">${fd(m.sparkleGems)}개</span></div>` : ''}
+    ${m.gemCobby    > 0 ? `<div class="rrow"><span class="rl" style="color:var(--muted)">└ 보석코비</span><span class="rv" style="color:var(--muted)">${fd(m.gemCobby)}개</span></div>` : ''}
+    ${m.normalCobby > 0 ? `
+    <div class="rrow rrow-strong" style="margin-top:4px">
+      <span class="rl" style="color:var(--txt);font-weight:900">스킬펄스</span>
+      <span class="rv" style="color:var(--txt)">${fd(m.normalCobby)}개</span>
+    </div>` : ''}
+    ${m.cobbyCount  > 0 ? `<div class="rrow"><span class="rl" style="color:var(--muted)">└ 코비 소환 (${fd(m.totalCobbyPct)}%)</span><span class="rv" style="color:var(--muted)">${fd(m.cobbyCount)}회</span></div>` : ''}
   </div>`;
   }
 
@@ -565,11 +557,11 @@ export function cs() {
   <div class="rsec">
     <div class="rsec-title">🗿 유물</div>
     <div class="rrow rrow-strong">
-      <span class="rl">유물 드랍</span>
-      <span class="rv">${fd(m.totalArtifacts)}개 <small style="color:var(--muted)">${f(m.totalArtPts)}pt</small></span>
+      <span class="rl" style="color:var(--txt);font-weight:900">유물 포인트</span>
+      <span class="rv" style="color:var(--txt)">${f(m.totalArtPts)}pt <small style="color:var(--muted)">${fd(m.totalArtifacts)}개</small></span>
     </div>
-    ${row(`└ 드랍율 (${fd(m.px.artifactPct + eng.ap)}%)`, `${fd(m.artDrops)}개`)}
-    ${m.cartDrops > 0 ? row('└ 광산수레', `${fd(m.cartDrops)}회 → ${fd(m.cartDrops*2)}개`) : ''}
+    <div class="rrow"><span class="rl" style="color:var(--muted)">└ 드랍율 (${fd(m.px.artifactPct + eng.ap)}%)</span><span class="rv" style="color:var(--muted)">${fd(m.artDrops)}개</span></div>
+    ${m.cartDrops > 0 ? `<div class="rrow"><span class="rl" style="color:var(--muted)">└ 광산수레</span><span class="rv" style="color:var(--muted)">${fd(m.cartDrops)}회 → ${fd(m.cartDrops*2)}개</span></div>` : ''}
   </div>`;
   }
 
@@ -598,16 +590,16 @@ export function cs() {
       <div style="flex:1;text-align:center;padding:4px 8px">
         <div class="rb-label">하루 평균 수익</div>
         <div class="rb-value">${f(totalRev)}원</div>
-        <div class="rb-sub" style="display:flex;flex-wrap:wrap;justify-content:center;gap:4px 8px;margin-top:4px">
-          ${avgItems.join('')}
+        <div class="rb-sub" style="margin-top:4px">
+          ${subHtml(ingotAvgItems, extraAvgItems)}
         </div>
       </div>
       <div style="width:1px;background:var(--bdr2);margin:4px 0;flex:none"></div>
       <div style="flex:1;text-align:center;padding:4px 8px">
         <div class="rb-label">80% 확률로 최소</div>
         <div class="rb-value rb-floor">${f(totalRev80)}원</div>
-        <div class="rb-sub" style="display:flex;flex-wrap:wrap;justify-content:center;gap:4px 8px;margin-top:4px">
-          ${floor80Items.join('')}
+        <div class="rb-sub" style="margin-top:4px">
+          ${subHtml(ingot80Items, extra80Items)}
         </div>
       </div>
     </div>
@@ -672,22 +664,15 @@ export function ct() {
    ⑩ TAB 2: 주괴 & 귀중품 통합 최적화
 ════════════════════════════════════════ */
 
-/* ── 자동채우기: 빈칸(0)만 DEFAULT_PRICES 값으로 채움 ──
-   config.js의 DEFAULT_PRICES에 정의된 현재 시세를 반영.
-   이미 값이 입력된 칸은 건드리지 않음. */
 export function autoFillPrices() {
   const fill = (id, val) => {
     const el = document.getElementById(id);
     if (el && (!el.value || +el.value === 0)) {
       el.value = val;
-      el.dispatchEvent(new Event('input')); // 입력 이벤트 발생 → 실시간 계산 트리거
+      el.dispatchEvent(new Event('input'));
     }
   };
 
-  // ※ 주괴 단가(ingotPriceC/R/S, oCo/Ri/Se)와 보석 가격은 자동채우기 제외
-  //   사용자가 직접 시세를 입력해야 스킬 반영 여부가 명확해짐
-
-  // 바닐라 재료 (세트당 가격)
   fill('vCo',          DEFAULT_PRICES.vanilla?.cobblestone          ?? 0);
   fill('vDc',          DEFAULT_PRICES.vanilla?.deepslate_cobblestone ?? 0);
   fill('vCu',          DEFAULT_PRICES.vanilla?.copper               ?? 0);
@@ -698,21 +683,17 @@ export function autoFillPrices() {
   fill('vLa',          DEFAULT_PRICES.vanilla?.lapis                ?? 0);
   fill('vAm',          DEFAULT_PRICES.vanilla?.amethyst             ?? 0);
 
-  // 귀중품 전용 재료 (개당 가격)
   fill('vTopaz',       DEFAULT_PRICES.precious?.topaz    ?? 0);
   fill('vSapphire',    DEFAULT_PRICES.precious?.sapphire ?? 0);
   fill('vPlatinum',    DEFAULT_PRICES.precious?.platinum ?? 0);
 
-  // 석재류 (세트당 가격)
   fill('vDiorite',     DEFAULT_PRICES.stone?.diorite  ?? 0);
   fill('vTuff',        DEFAULT_PRICES.stone?.tuff     ?? 0);
   fill('vAndesite',    DEFAULT_PRICES.stone?.andesite ?? 0);
 
-  // 스킬펄스·유물
   fill('skillPulsePrice', DEFAULT_PRICES.skillPulse ?? 0);
   fill('artifactPtPrice', DEFAULT_PRICES.artifactPt ?? 0);
 
-  // 횃불 재료
   fill('tCharcoalPrice', DEFAULT_PRICES.charcoal ?? 0);
   fill('tWoodPrice',     DEFAULT_PRICES.wood     ?? 0);
 
@@ -720,21 +701,12 @@ export function autoFillPrices() {
 }
 
 
-/* ── 주괴 1:1 교환 최적화 ──────────────────────────────
-   전체 보유 주괴를 가장 주괴당 이익이 높은
-   단일 종으로 몰아서 교환하는 것이 이득인지 계산.
-
-   예) 세렌트(상급라스) 주괴당 2000원 > 코룸(하급라스) 주괴당 1000원
-     → 코룸 100개 전량을 세렌트 100개로 교환 후 상급라스 33개 제작
-════════════════════════════════════════ */
 function calcSwapPlan(iCo, iRi, iSe, allOptions, cP, rP, sP) {
   if (allOptions.length === 0) return null;
 
-  /* 각 주괴 종류별 최고 주괴당 순이익 */
   const bestPerKind = { C: -Infinity, R: -Infinity, S: -Infinity };
   for (const c of allOptions) {
     const kind = c.iC > 0 ? 'C' : c.iR > 0 ? 'R' : 'S';
-    // 어빌처럼 복수 종 소모 옵션은 교환 대상에서 제외
     const singleKind = [c.iC > 0, c.iR > 0, c.iS > 0].filter(Boolean).length === 1;
     if (!singleKind) continue;
     const ingotCnt = c.iC || c.iR || c.iS;
@@ -742,14 +714,11 @@ function calcSwapPlan(iCo, iRi, iSe, allOptions, cP, rP, sP) {
     if (npi > bestPerKind[kind]) bestPerKind[kind] = npi;
   }
 
-  /* 직판 단가 */
   const sellPerKind = { C: cP, R: rP, S: sP };
   const kindName    = { C:'코룸', R:'리프톤', S:'세렌트' };
 
-  /* 전체 보유량 맵 (교환 시뮬용) */
   const holdMap = { C: iCo, R: iRi, S: iSe };
 
-  /* 최고 이익 종 결정 */
   const [bestKind] = Object.entries(bestPerKind)
     .sort((a, b) => b[1] - a[1]);
   if (bestPerKind[bestKind[0]] <= 0) return null;
@@ -757,7 +726,6 @@ function calcSwapPlan(iCo, iRi, iSe, allOptions, cP, rP, sP) {
   const toKind = bestKind[0];
   const toBest = bestPerKind[toKind];
 
-  /* 각 from 종에 대해 교환 여부 결정 */
   const swapLog = [];
   const newHold = { ...holdMap };
 
@@ -765,18 +733,16 @@ function calcSwapPlan(iCo, iRi, iSe, allOptions, cP, rP, sP) {
     if (fromKind === toKind) continue;
     if (holdMap[fromKind] <= 0) continue;
 
-    /* 교환 이득 = (목표 주괴당 이익 - from 직판 포기) */
     const gain = toBest - sellPerKind[fromKind];
     if (gain <= 0) continue;
 
-    /* 교환 가능 최대 수량 — to 종 최고 옵션의 1회 소모량 배수로 맞춤 */
     const toOpts = allOptions.filter(c => {
       const singleKind = [c.iC > 0, c.iR > 0, c.iS > 0].filter(Boolean).length === 1;
       return singleKind && (toKind === 'C' ? c.iC > 0 : toKind === 'R' ? c.iR > 0 : c.iS > 0);
     });
     if (toOpts.length === 0) continue;
 
-    const bestOpt  = toOpts[0]; // 이미 정렬된 allOptions에서 뽑으므로 최상위
+    const bestOpt  = toOpts[0];
     const ingotCnt = bestOpt.iC || bestOpt.iR || bestOpt.iS;
     const maxCraft  = Math.floor(holdMap[fromKind] / ingotCnt);
     if (maxCraft <= 0) continue;
@@ -820,10 +786,6 @@ export function co() {
   showParsed('iRiParsed', iRi);
   showParsed('iSeParsed', iSe);
 
-  /* ── 주괴 단가 (주괴 좀 사주괴 스킬 반영 규칙 적용) ──
-     사용자 입력 > 0 → 스킬 미반영 그대로 사용
-     미입력(0)       → DEFAULT_PRICES × (1 + ib)
-     순이익 계산 시 원가는 항상 스킬 미반영(rawC/R/S) 사용 */
   const userCo = gi('oCo');
   const userRi = gi('oRi');
   const userSe = gi('oSe');
@@ -832,20 +794,16 @@ export function co() {
   const rawR = userRi > 0 ? userRi : DEFAULT_PRICES.ingot.rifton;
   const rawS = userSe > 0 ? userSe : DEFAULT_PRICES.ingot.serent;
 
-  // 판매가: 사용자 입력이 없을 때만 스킬 보너스 적용
   const cP = userCo > 0 ? userCo : rawC * (1 + ib);
   const rP = userRi > 0 ? userRi : rawR * (1 + ib);
   const sP = userSe > 0 ? userSe : rawS * (1 + ib);
 
-  /* ── 라이프스톤·어빌리티 스톤 판매가 & 제작시간 ── */
   const oL1 = gi('oL1'), oL2 = gi('oL2'), oL3 = gi('oL3'), oAb = gi('oAb');
   const ctL1 = RECIPES.LS1.craft_time_sec  * (1 - fr);
   const ctL2 = RECIPES.LS2.craft_time_sec  * (1 - fr);
   const ctL3 = RECIPES.LS3.craft_time_sec  * (1 - fr);
   const ctAb = RECIPES.ABIL.craft_time_sec * (1 - fr);
 
-  /* ── 바닐라 재료 개당 가격 ──
-     순이익 계산 원가: rawC/R/S (스킬 미반영) 사용 */
   const vp = {
     cobblestone:           gi('vCo') / SET_SIZE,
     deepslate_cobblestone: gi('vDc') / SET_SIZE,
@@ -877,20 +835,16 @@ export function co() {
   const AP  = PRECIOUS.APPRAISAL;
   const DOC = PRECIOUS.DOC_PRICE;
 
-  /* ── 귀중품 3종 기댓값 & 순이익 ──
-     원가 계산 시 ingotCost는 rawC/R/S (스킬 미반영) 사용 */
   const precItems = Object.entries(PRECIOUS.ITEMS).map(([key, item]) => {
     const rec = RECIPES[item.recipe];
 
-    // 원가용 주괴 단가: 스킬 미반영
     const iCostPrice = item.ingotType === 'corum'  ? rawC
                      : item.ingotType === 'rifton' ? rawR : rawS;
-    // 판매가용 주괴 단가: 스킬 반영 (직판 가치 비교용)
     const iSellPrice = item.ingotType === 'corum'  ? cP
                      : item.ingotType === 'rifton' ? rP : sP;
 
     const ingotCnt  = rec.ingot_corum || rec.ingot_rifton || rec.ingot_serent || 0;
-    const ingotCost = ingotCnt * iCostPrice; // 원가는 스킬 미반영
+    const ingotCost = ingotCnt * iCostPrice;
 
     const vanCost = Object.entries(rec.vanilla || {})
       .reduce((s, [mat, qty]) => s + qty * (pvp[mat] || 0), 0)
@@ -911,10 +865,8 @@ export function co() {
              iCostPrice, iSellPrice };
   });
 
-  /* ── 전량 직판 수익 ── */
   const rawSell = iCo * cP + iRi * rP + iSe * sP;
 
-  /* ── 각 옵션 개당 순이익 (원가는 스킬 미반영 주괴 단가 사용) ── */
   const netLS1  = oL1 - RECIPES.LS1.ingot_corum  * rawC - vc('LS1');
   const netLS2  = oL2 - RECIPES.LS2.ingot_rifton * rawR - vc('LS2');
   const netLS3  = oL3 - RECIPES.LS3.ingot_serent * rawS - vc('LS3');
@@ -967,10 +919,9 @@ export function co() {
     remSe -= c.iS * maxN;
   }
 
-  /* ── 교환 계획 계산 (잔여분 아닌 전체 보유량 기준) ── */
+  /* ── 교환 계획 계산 ── */
   const swapResult = calcSwapPlan(iCo, iRi, iSe, allOptions, cP, rP, sP);
 
-  /* ── 교환 후 전체 잔여량으로 그리디 재계산 ── */
   let swapCraftResult = [];
   let swapRemCo = iCo, swapRemRi = iRi, swapRemSe = iSe;
   if (swapResult) {
@@ -1000,103 +951,12 @@ export function co() {
     craftTime += c.count * c.ct;
   }
 
-  /* 교환 포함 수익 */
   const swapRemSell = swapRemCo * cP + swapRemRi * rP + swapRemSe * sP;
   let swapCraftRev  = swapRemSell;
   let swapCraftTime = 0;
   for (const c of swapCraftResult) {
     swapCraftRev  += c.count * (c.type === 'precious' ? c.extra.avgSell : c.sell);
     swapCraftTime += c.count * c.ct;
-  }
-
-  /* ── 총 필요 재료 집계 헬퍼 ──
-     제작 결과 배열을 받아 { 재료명: 총수량 } 맵을 반환 */
-  function aggregateMats(results) {
-    const mats = {};
-    // 주괴
-    const ingotTotals = { 코룸: 0, 리프톤: 0, 세렌트: 0 };
-    for (const c of results) {
-      if (c.iC > 0) ingotTotals['코룸']   += c.iC * c.count;
-      if (c.iR > 0) ingotTotals['리프톤'] += c.iR * c.count;
-      if (c.iS > 0) ingotTotals['세렌트'] += c.iS * c.count;
-
-      const rec = c.type === 'ls' ? RECIPES[c.key] : c.extra?.rec;
-      if (!rec) continue;
-      for (const [mat, qty] of Object.entries(rec.vanilla || {})) {
-        if (!qty) continue;
-        mats[mat] = (mats[mat] || 0) + qty * c.count;
-      }
-      if (rec.doc) {
-        mats['__doc__'] = (mats['__doc__'] || 0) + rec.doc * c.count;
-      }
-    }
-    return { ingotTotals, mats };
-  }
-
-  /* ── 제작 계획 HTML 생성 헬퍼 (새 카드 UI) ── */
-  const ingotChip = (label, color, total) =>
-    `<span class="mat-chip" style="background:${color}18;color:${color};border-color:${color}55">${label} 주괴 ${fmtQty(total)}</span>`;
-
-  function buildPlanItems(results) {
-    if (!results.length) return '<div class="empty-msg" style="padding:10px 0;font-size:12px">제작 가능한 옵션 없음</div>';
-    return results.map(c => {
-      const rev        = c.count * (c.type === 'precious' ? c.extra.avgSell : c.sell);
-      const t          = c.count * c.ct;
-      const npi        = totalIngots(c);
-      const npiTxt     = npi > 0 ? `주괴당 ${f(c.net / npi)}원 이익` : '';
-      const precBadge  = c.type === 'precious' ? bdg('bpu','귀중품') + ' ' : '';
-      let ingotChips = '';
-      if (c.iC > 0) ingotChips += ingotChip('코룸',   CC, c.iC * c.count);
-      if (c.iR > 0) ingotChips += ingotChip('리프톤', CR, c.iR * c.count);
-      if (c.iS > 0) ingotChips += ingotChip('세렌트', CS, c.iS * c.count);
-
-      /* 바닐라 재료 chip */
-      let vanChips = '';
-      if (c.type === 'ls') {
-        vanChips = Object.entries(RECIPES[c.key].vanilla || {})
-          .filter(([, q]) => q > 0)
-          .map(([mat, qty]) => matChipQty(mat, qty * c.count))
-          .join('');
-      } else {
-        const rec = c.extra.rec;
-        const chips = Object.entries(rec.vanilla || {})
-          .filter(([, q]) => q > 0)
-          .map(([mat, qty]) => matChipQty(mat, qty * c.count));
-        if (rec.doc) {
-          chips.push(`<span class="mat-chip" style="background:#ff980018;color:#e07b2a;border-color:#e07b2a55">증서 ${c.count}개</span>`);
-        }
-        vanChips = chips.join('');
-      }
-
-      /* 감정 행 (귀중품만) */
-      const apprHtml = c.type === 'precious'
-        ? `<div class="plan-appr-row">
-             <span>하 ${f(c.extra.item.prices.LOW  * (1+pb))}원</span>
-             <span>우수 ${f(c.extra.item.prices.GOOD * (1+pb))}원</span>
-             <span>황실 ${f(c.extra.item.prices.ROYAL*(1+pb))}원</span>
-             <span class="best">기댓값 ${f(c.extra.avgSell)}원</span>
-           </div>` : '';
-
-      const timeHtml = t > 0
-        ? `<div class="plan-item-time">⏱ ${fmtTime(t)}</div>` : '';
-
-      return `
-      <div class="plan-craft-item">
-        <div class="plan-item-head">
-          <div class="plan-item-name">
-            ${precBadge}${c.label}
-            ${npiTxt ? `<span class="npi">${npiTxt}</span>` : ''}
-          </div>
-          <div style="text-align:right;flex-shrink:0">
-            <div class="plan-item-rev">${f(rev)}원</div>
-            <span class="plan-item-count">${fmtQty(c.count)}</span>
-          </div>
-        </div>
-        ${apprHtml}
-        ${ingotChips || vanChips ? `<div class="plan-mat-row">${ingotChips}${vanChips}</div>` : ''}
-        ${timeHtml}
-      </div>`;
-    }).join('');
   }
 
   /* ── 총 필요 재료 집계 ── */
@@ -1117,23 +977,88 @@ export function co() {
     return { ingotTotals, mats };
   }
 
-  /* ── 총 필요 재료 HTML (접기/펼치기, uid로 구분) ── */
+  /* ── 제작 계획 HTML 생성 헬퍼 (새 카드 UI) ── */
+  const ingotChip = (label, color, total) =>
+    `<span class="mat-chip" style="background:${color}18;color:${color};border-color:${color}55">${label} 주괴 ${fmtQty(total)}</span>`;
+
+  function buildPlanItems(results) {
+    if (!results.length) return '<div class="empty-msg" style="padding:10px 0;font-size:12px">제작 가능한 옵션 없음</div>';
+    return results.map(c => {
+      const rev        = c.count * (c.type === 'precious' ? c.extra.avgSell : c.sell);
+      const t          = c.count * c.ct;
+      const npi        = totalIngots(c);
+      const npiTxt     = npi > 0 ? `주괴당 ${f(c.net / npi)}원 이익` : '';
+      /* ── 귀중품 뱃지: 이름 뒤에 배치 ── */
+      const precBadge  = c.type === 'precious' ? ' ' + bdg('bpu','귀중품') : '';
+      let ingotChips = '';
+      if (c.iC > 0) ingotChips += ingotChip('코룸',   CC, c.iC * c.count);
+      if (c.iR > 0) ingotChips += ingotChip('리프톤', CR, c.iR * c.count);
+      if (c.iS > 0) ingotChips += ingotChip('세렌트', CS, c.iS * c.count);
+
+      let vanChips = '';
+      if (c.type === 'ls') {
+        vanChips = Object.entries(RECIPES[c.key].vanilla || {})
+          .filter(([, q]) => q > 0)
+          .map(([mat, qty]) => matChipQty(mat, qty * c.count))
+          .join('');
+      } else {
+        const rec = c.extra.rec;
+        const chips = Object.entries(rec.vanilla || {})
+          .filter(([, q]) => q > 0)
+          .map(([mat, qty]) => matChipQty(mat, qty * c.count));
+        if (rec.doc) {
+          chips.push(`<span class="mat-chip" style="background:#ff980018;color:#e07b2a;border-color:#e07b2a55">증서 ${c.count}개</span>`);
+        }
+        vanChips = chips.join('');
+      }
+
+      const apprHtml = c.type === 'precious'
+        ? `<div class="plan-appr-row">
+             <span>하 ${f(c.extra.item.prices.LOW  * (1+pb))}원</span>
+             <span>우수 ${f(c.extra.item.prices.GOOD * (1+pb))}원</span>
+             <span>황실 ${f(c.extra.item.prices.ROYAL*(1+pb))}원</span>
+             <span class="best">기댓값 ${f(c.extra.avgSell)}원</span>
+           </div>` : '';
+
+      const timeHtml = t > 0
+        ? `<div class="plan-item-time">⏱ ${fmtTime(t)}</div>` : '';
+
+      return `
+      <div class="plan-craft-item">
+        <div class="plan-item-head">
+          <div class="plan-item-name">
+            ${c.label}${precBadge}
+            ${npiTxt ? `<span class="npi">${npiTxt}</span>` : ''}
+          </div>
+          <div style="text-align:right;flex-shrink:0">
+            <div class="plan-item-rev">${f(rev)}원</div>
+            <span class="plan-item-count">${fmtQty(c.count)}</span>
+          </div>
+        </div>
+        ${apprHtml}
+        ${ingotChips || vanChips ? `<div class="plan-mat-row">${ingotChips}${vanChips}</div>` : ''}
+        ${timeHtml}
+      </div>`;
+    }).join('');
+  }
+
+  /* ── 총 필요 재료 HTML (접기/펼치기) ── */
   let _matToggleIdx = 0;
   function matSummaryHtml(results, remC, remR, remS, remSellAmt) {
     if (!results.length) return '';
     const uid = 'mt' + (++_matToggleIdx);
     const { ingotTotals, mats } = aggregateMats(results);
     const ingotRows = [
-      ingotTotals['코룸']   > 0 ? `<div class="mat-summary-row"><span class="mn" style="color:${CC}">코룸 주괴</span><span class="mv">${fmtQty(ingotTotals['코룸'])}</span></div>` : '',
-      ingotTotals['리프톤'] > 0 ? `<div class="mat-summary-row"><span class="mn" style="color:${CR}">리프톤 주괴</span><span class="mv">${fmtQty(ingotTotals['리프톤'])}</span></div>` : '',
-      ingotTotals['세렌트'] > 0 ? `<div class="mat-summary-row"><span class="mn" style="color:${CS}">세렌트 주괴</span><span class="mv">${fmtQty(ingotTotals['세렌트'])}</span></div>` : '',
+      ingotTotals['코룸']   > 0 ? `<div class="mat-summary-row"><span class="mn" style="color:${CC}">${ingotTotals['코룸'] > 0 ? '● ' : ''}코룸 주괴</span><span class="mv">${fmtQty(ingotTotals['코룸'])}</span></div>` : '',
+      ingotTotals['리프톤'] > 0 ? `<div class="mat-summary-row"><span class="mn" style="color:${CR}">● 리프톤 주괴</span><span class="mv">${fmtQty(ingotTotals['리프톤'])}</span></div>` : '',
+      ingotTotals['세렌트'] > 0 ? `<div class="mat-summary-row"><span class="mn" style="color:${CS}">● 세렌트 주괴</span><span class="mv">${fmtQty(ingotTotals['세렌트'])}</span></div>` : '',
     ].join('');
     const vanRows = Object.entries(mats).filter(([k]) => k !== '__doc__').map(([mat, qty]) => {
       const m = MAT_META[mat] || { name: mat, color: '#888' };
-      return `<div class="mat-summary-row"><span class="mn">${m.name}</span><span class="mv">${fmtQty(qty)}</span></div>`;
+      return `<div class="mat-summary-row"><span class="mn" style="color:${m.color}">● ${m.name}</span><span class="mv">${fmtQty(qty)}</span></div>`;
     }).join('');
     const docRow = mats['__doc__']
-      ? `<div class="mat-summary-row"><span class="mn">증서</span><span class="mv">${mats['__doc__']}개</span></div>` : '';
+      ? `<div class="mat-summary-row"><span class="mn" style="color:#e07b2a">● 증서</span><span class="mv">${mats['__doc__']}개</span></div>` : '';
     return `
       <div class="mat-toggle" onclick="this.nextElementSibling.classList.toggle('open');this.querySelector('.mat-arr').textContent=this.nextElementSibling.classList.contains('open')?'▲':'▼'">
         📋 총 필요 재료 <span class="mat-arr">▼</span>
@@ -1174,7 +1099,6 @@ export function co() {
   const swapCraftLines = buildPlanItems(swapCraftResult);
 
   const swapBetter = swapResult && swapCraftRev > craftRev;
-  // 교환 없이가 더 나은 경우: !swapBetter (swapResult 없거나 교환이 더 작은 경우)
   const noSwapWinner = !swapBetter;
 
   const fBdg = fr > 0 ? bdg('bg',  `초고속 용광로 -${Math.round(fr * 100)}%`) : '';
@@ -1232,7 +1156,6 @@ export function co() {
       ${planSummaryHtml(swapCraftRev, swapCraftTime, swapRemCo, swapRemRi, swapRemSe)}`;
   })();
 
-  /* 추천 배지 — 교환 있이가 더 나으면 차액 표시 */
   const noSwapBadge = (noSwapWinner && swapResult)
     ? ` ${bdg('bg', `+${f(craftRev - swapCraftRev)}원`)}`
     : '';
@@ -1313,11 +1236,10 @@ export function co() {
 
 
 /* ════════════════════════════════════════
-   ⑪ 초기화 — 페이지 로드 시 1회 실행
+   ⑪ 초기화
 ════════════════════════════════════════ */
 
 export function init() {
-  // 초기 탭 타이틀 설정
   const titleEl = document.getElementById('pageTabTitle');
   if (titleEl) titleEl.textContent = TAB_TITLES[0];
   document.title = `광부 계산기 — ${TAB_TITLES[0]}`;

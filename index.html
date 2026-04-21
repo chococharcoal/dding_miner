@@ -16,7 +16,7 @@
 ════════════════════════════════════════ */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 *, input, select, button, textarea {
-  font-family: 'Noto Sans KR', 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif !important;
+  font-family: 'Noto Sans KR', 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif;
   font-weight: 700;
 }
 
@@ -57,15 +57,14 @@ html, body {
 ════════════════════════════════════════ */
 .hdr { text-align: center; padding: 22px 16px 16px; }
 .hdr-title {
-  font-family: 'Jua', sans-serif !important;
+  font-family: 'Jua', sans-serif;
   font-size: 28px; color: var(--acc); letter-spacing: -.5px;
 }
 .hdr-title em { color: var(--txt); font-style: normal; }
 .hdr-sub { font-size: 12px; color: var(--muted); margin-top: 3px; font-weight: 500; }
 
-/* 현재 탭 이름 표시 — 헤더 아래 서브텍스트 */
 .hdr-tab-name {
-  font-family: 'Jua', sans-serif !important;
+  font-family: 'Jua', sans-serif;
   font-size: 13px; color: var(--muted);
   margin-top: 4px; letter-spacing: .3px;
 }
@@ -119,7 +118,7 @@ html, body {
 }
 @media (min-width: 860px) { .skpanel { margin-bottom: 0; } }
 .skpanel-title {
-  font-family: 'Jua', sans-serif !important;
+  font-family: 'Jua', sans-serif;
   font-size: 15px; color: var(--acc);
   display: flex; align-items: center; gap: 6px;
   cursor: pointer; user-select: none;
@@ -144,7 +143,7 @@ html, body {
   display: flex; flex-direction: column; gap: 4px;
 }
 .skname {
-  font-family: 'Jua', sans-serif !important;
+  font-family: 'Jua', sans-serif;
   font-size: 13px; color: var(--txt);
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
@@ -161,7 +160,7 @@ html, body {
   padding: 6px 8px;
   border: 1.5px solid var(--bdr2); border-radius: var(--rs);
   background: var(--surf); color: var(--txt);
-  font-size: 11px !important; font-weight: 700 !important;
+  font-size: 11px; font-weight: 700;
   cursor: pointer; user-select: none; line-height: 1.3;
   white-space: nowrap; overflow: hidden;
 }
@@ -171,13 +170,12 @@ html, body {
   padding: 7px 10px;
   border: 1.5px solid var(--bdr); border-radius: var(--rs);
   background: var(--bg); color: var(--txt);
-  font-size: 12px !important; font-weight: 700 !important;
+  font-size: 12px; font-weight: 700;
   cursor: pointer; user-select: none; line-height: 1.3;
   transition: border-color .15s, box-shadow .15s;
   white-space: nowrap; overflow: hidden;
 }
 .field .cdd-trigger:hover { border-color: var(--acc); }
-/* 트리거 라벨 — 넘치면 말줄임 */
 .cdd-label { overflow: hidden; text-overflow: ellipsis; min-width: 0; flex: 1; }
 .cdd-trigger .cdd-arrow { font-size: 9px; color: var(--muted); flex-shrink: 0; transition: transform .15s; }
 .cdd.open .cdd-trigger  { border-color: var(--acc); box-shadow: 0 0 0 2px rgba(224,123,42,.15); }
@@ -194,14 +192,14 @@ html, body {
 .cdd.open .cdd-menu { display: block; }
 .cdd-item {
   padding: 5px 10px;
-  font-size: 11px !important; font-weight: 700 !important;
+  font-size: 11px; font-weight: 700;
   color: var(--txt); cursor: pointer;
   border-bottom: 1px solid var(--bdr); line-height: 1.3;
-  white-space: nowrap;    /* 줄바꿈 방지 */
+  white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
-.skrow .cdd-item   { font-size: 11px !important; }
+.skrow .cdd-item   { font-size: 11px; }
 .cdd-item:last-child { border-bottom: none; }
 .cdd-item:hover    { background: var(--ylw-bg); color: var(--acc); }
 .cdd-item.selected { background: var(--acc); color: #fff; }
@@ -214,7 +212,7 @@ html, body {
   gap: 7px; margin-bottom: 12px;
 }
 .tab {
-  font-family: 'Jua', sans-serif !important;
+  font-family: 'Jua', sans-serif;
   font-size: 14px; padding: 8px 16px;
   border-radius: 20px; border: 2px solid var(--bdr2);
   background: var(--surf); color: var(--muted);
@@ -224,7 +222,7 @@ html, body {
 .tab.on    { background: var(--acc); border-color: var(--acc); color: #fff; box-shadow: 0 3px 10px rgba(224,123,42,.3); }
 .reset-btn {
   margin-left: auto;
-  font-family: 'Jua', sans-serif !important;
+  font-family: 'Jua', sans-serif;
   font-size: 12px; padding: 5px 11px;
   border-radius: 20px; border: 1.5px solid var(--bdr2);
   background: var(--surf); color: var(--muted);
@@ -233,9 +231,8 @@ html, body {
 }
 .reset-btn:hover { border-color: var(--red); color: var(--red); background: var(--red-bg); }
 
-/* 자동채우기 버튼 */
 .autofill-btn {
-  font-family: 'Jua', sans-serif !important;
+  font-family: 'Jua', sans-serif;
   font-size: 12px; padding: 5px 11px;
   border-radius: 20px; border: 1.5px solid var(--grn);
   background: var(--grn-bg); color: var(--grn);
@@ -256,7 +253,7 @@ html, body {
   box-shadow: var(--sh);
 }
 .card-title {
-  font-family: 'Jua', sans-serif !important;
+  font-family: 'Jua', sans-serif;
   font-size: 14px; color: var(--txt);
   margin-bottom: 12px;
   display: flex; align-items: center; gap: 6px;
@@ -281,7 +278,7 @@ html, body {
 .field { display: flex; flex-direction: column; gap: 3px; }
 .field label { font-size: 11px; font-weight: 700; color: var(--muted); }
 .field input, .field select {
-  font-size: 13px !important; font-weight: 700 !important;
+  font-size: 13px; font-weight: 700;
   border: 1.5px solid var(--bdr); border-radius: var(--rs);
   padding: 7px 10px;
   background: var(--bg); color: var(--txt);
@@ -306,7 +303,7 @@ html, body {
    구분 라벨
 ════════════════════════════════════════ */
 .slabel {
-  font-family: 'Jua', sans-serif !important;
+  font-family: 'Jua', sans-serif;
   font-size: 12px; color: var(--acc);
   margin: 8px 0 5px;
   display: flex; align-items: center; gap: 5px;
@@ -320,18 +317,14 @@ html, body {
   display: flex; justify-content: space-between; align-items: center;
   padding: 5px 0; border-bottom: 1px dashed var(--bdr);
   gap: 8px; font-size: 12px;
-  font-family: 'Noto Sans KR', sans-serif !important;
 }
 .rrow:last-child  { border-bottom: none; }
-.rrow-strong      { border-top: 1px solid var(--bdr2); margin-top: 4px; padding-top: 6px; font-size: 13px;
-                    font-family: 'Noto Sans KR', sans-serif !important; font-weight: 900 !important; }
-.rl   { color: var(--muted); flex-shrink: 0; font-weight: 700;
-        font-family: 'Noto Sans KR', sans-serif !important; }
-.rv   { font-weight: 900; text-align: right;
-        font-family: 'Noto Sans KR', sans-serif !important; }
+.rrow-strong      { border-top: 1px solid var(--bdr2); margin-top: 4px; padding-top: 6px; font-size: 13px; font-weight: 900; }
+.rl   { color: var(--muted); flex-shrink: 0; font-weight: 700; }
+.rv   { font-weight: 900; text-align: right; }
 .rv small { font-size: 10px; font-weight: 500; }
 .rsec { background: var(--bg); border-radius: var(--rs); padding: 8px 10px; margin: 6px 0; border: 1px solid var(--bdr); }
-.rsec-title { font-family: 'Jua', sans-serif !important; font-size: 12px; color: var(--muted); margin-bottom: 5px; }
+.rsec-title { font-family: 'Jua', sans-serif; font-size: 12px; color: var(--muted); margin-bottom: 5px; }
 .g { color: var(--grn); }
 .r { color: var(--red); }
 .b { color: var(--blu); }
@@ -356,7 +349,7 @@ html, body {
   padding: 13px; margin: 8px 0 0;
 }
 .rb-label { font-size: 11px; color: var(--muted); font-weight: 700; margin-bottom: 3px; }
-.rb-value { font-family: 'Jua', sans-serif !important; font-size: 22px; color: var(--acc); }
+.rb-value { font-family: 'Jua', sans-serif; font-size: 22px; color: var(--acc); }
 .rb-floor { color: var(--grn); }
 .rb-sub   { display: block; font-size: 10px; color: var(--muted); font-weight: 500; margin-top: 2px; }
 
@@ -376,36 +369,28 @@ html, body {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 0;
-  /* 두 컬럼 높이를 맞춰 summary가 항상 같은 높이에서 시작 */
   align-items: stretch;
 }
 @media (max-width: 600px) {
   .plan-cols { grid-template-columns: 1fr; }
 }
 
-/* 각 컬럼 — flex column으로 세로 정렬 */
 .plan-col {
   padding: 10px 12px;
   position: relative;
   display: flex;
   flex-direction: column;
 }
-/* 왼쪽 컬럼 오른쪽에 구분선 */
 .plan-col:first-child {
   border-right: 1.5px solid var(--bdr2);
 }
 
-/* winner 강조 — 배경색 대신 헤더 하단 테두리 굵게 + 제목 색 */
-.plan-col.winner { /* 배경 없음 */ }
-
-/* 제작 아이템 목록 영역 — flex:1로 늘려서 summary를 하단으로 밀기 */
 .plan-items-wrap {
   flex: 1;
 }
 
-/* 컬럼 헤더 */
 .plan-col-title {
-  font-family: 'Jua', sans-serif !important;
+  font-family: 'Jua', sans-serif;
   font-size: 15px;
   color: var(--muted);
   margin-bottom: 10px;
@@ -417,11 +402,10 @@ html, body {
 }
 .plan-col-title.winner-title {
   color: var(--acc);
-  border-bottom: 3px solid var(--acc);  /* 굵은 주황 밑줄로 강조 */
+  border-bottom: 3px solid var(--acc);
 }
 .plan-col-title.loser-title { color: var(--muted); opacity: .65; }
 
-/* 개별 제작 아이템 — 카드형 */
 .plan-craft-item {
   background: var(--surf);
   border: 1px solid var(--bdr);
@@ -431,9 +415,7 @@ html, body {
   display: flex;
   flex-direction: column;
   gap: 4px;
-  font-family: 'Noto Sans KR', sans-serif !important;
 }
-/* 제작 아이템 첫 번째 행 — 이름 + 수량·수익 */
 .plan-item-head {
   display: flex;
   justify-content: space-between;
@@ -441,39 +423,33 @@ html, body {
   gap: 6px;
 }
 .plan-item-name {
-  font-family: 'Jua', sans-serif !important;
+  font-family: 'Jua', sans-serif;
   font-size: 13px; color: var(--txt);
   flex: 1; min-width: 0;
   line-height: 1.3;
 }
 .plan-item-name .npi {
-  font-family: 'Noto Sans KR', sans-serif !important;
   font-size: 10px; font-weight: 500; color: var(--muted);
   display: block; margin-top: 1px;
 }
 .plan-item-rev {
-  font-family: 'Noto Sans KR', sans-serif !important;
   font-size: 13px; font-weight: 900; color: var(--grn);
   white-space: nowrap; flex-shrink: 0;
   text-align: right;
 }
 .plan-item-count {
-  font-family: 'Noto Sans KR', sans-serif !important;
   font-size: 11px; font-weight: 700; color: var(--muted);
   display: block; text-align: right; margin-top: 1px;
 }
-/* 감정 등급 행 */
 .plan-appr-row {
   display: flex; flex-wrap: wrap; gap: 4px;
   font-size: 10px; color: var(--muted); font-weight: 500;
 }
 .plan-appr-row .best { color: var(--grn); font-weight: 700; }
-/* 재료 chip 행 */
 .plan-mat-row {
   display: flex; flex-wrap: wrap; gap: 3px;
   margin-top: 1px;
 }
-/* 시간 행 — 항상 하단 고정 */
 .plan-item-time {
   display: flex; align-items: center; gap: 4px;
   font-size: 10px; font-weight: 700; color: var(--blu);
@@ -481,7 +457,6 @@ html, body {
   margin-top: 2px; padding-top: 4px;
 }
 
-/* 교환 정보 박스 — 라이프스톤 카드와 동일 스타일 */
 .swap-info-box {
   background: var(--surf);
   border: 1px solid var(--bdr);
@@ -490,7 +465,7 @@ html, body {
   margin-bottom: 8px;
 }
 .swap-info-box-title {
-  font-family: 'Jua', sans-serif !important;
+  font-family: 'Jua', sans-serif;
   font-size: 13px; color: var(--txt);
   margin-bottom: 6px;
   padding-bottom: 4px;
@@ -500,19 +475,17 @@ html, body {
   display: flex; justify-content: space-between; align-items: center;
   font-size: 11px; font-weight: 700; padding: 2px 0;
   gap: 6px;
-  font-family: 'Noto Sans KR', sans-serif !important;
 }
 .swap-info-row .si-label { color: var(--txt); }
 .swap-info-row .si-gain  { color: var(--grn); white-space: nowrap; font-size: 10px; }
 
-/* 요약 섹션 — 항상 컬럼 하단에 붙음 */
 .plan-summary {
-  margin-top: auto;        /* flex:1 남은 공간 이후 하단 붙이기 */
+  margin-top: auto;
   padding-top: 8px;
   border-top: 2px solid var(--bdr2);
 }
 .plan-col.winner .plan-summary {
-  border-top-color: var(--acc);  /* winner는 주황 구분선 */
+  border-top-color: var(--acc);
 }
 .plan-summary-row {
   display: flex; justify-content: space-between; align-items: center;
@@ -528,35 +501,60 @@ html, body {
   border-top: 1px dashed var(--bdr2);
 }
 .plan-summary-row.rev-row .sl {
-  font-family: 'Jua', sans-serif !important;
+  font-family: 'Jua', sans-serif;
   font-size: 13px; color: var(--muted);
 }
 .plan-summary-row.rev-row .sv {
-  font-family: 'Jua', sans-serif !important;
+  font-family: 'Jua', sans-serif;
   font-size: 20px; color: var(--acc);
 }
 .plan-col.winner .plan-summary-row.rev-row .sv { color: var(--acc); }
 
 /* 총 필요 재료 — 접기/펼치기 */
 .mat-toggle {
-  font-size: 10px; font-weight: 700; color: var(--blu);
+  font-size: 10px; font-weight: 700;
+  /* 파란색 제거 → 기본 텍스트 색(muted) */
+  color: var(--muted);
   cursor: pointer; user-select: none;
   display: flex; align-items: center; gap: 3px;
-  padding: 3px 0;
+  padding: 5px 0;
+  margin-top: 2px;
 }
 .mat-toggle:hover { color: var(--acc); }
+/* 화살표도 같은 색 */
+.mat-toggle .mat-arr {
+  color: var(--txt);
+  font-size: 9px;
+}
 .mat-detail { display: none; margin-top: 4px; }
 .mat-detail.open { display: block; }
-.mat-summary { }
+
+/* 총 필요 재료 내용 — 가독성 개선 */
+.mat-summary {
+  background: var(--bg);
+  border: 1px solid var(--bdr);
+  border-radius: var(--rs);
+  padding: 6px 10px;
+  margin-top: 4px;
+}
 .mat-summary-row {
-  display: flex; justify-content: space-between;
+  display: flex; justify-content: space-between; align-items: center;
   font-size: 12px; font-weight: 700;
-  padding: 3px 0; border-bottom: 1px dashed var(--bdr);
-  gap: 6px;
+  padding: 4px 2px;
+  border-bottom: 1px dashed var(--bdr);
+  gap: 10px;
 }
 .mat-summary-row:last-child { border-bottom: none; }
-.mat-summary-row .mn { color: var(--txt); white-space: nowrap; }
-.mat-summary-row .mv { color: var(--txt); text-align: right; }
+/* mn: 재료명 — 색은 JS에서 인라인으로 지정 */
+.mat-summary-row .mn {
+  white-space: nowrap;
+  display: flex; align-items: center; gap: 5px;
+}
+.mat-summary-row .mv {
+  color: var(--txt);
+  text-align: right;
+  white-space: nowrap;
+}
 
 .empty-msg { color: var(--muted); font-size: 12px; text-align: center; padding: 14px 0; font-weight: 500; }
 ::-webkit-scrollbar { width: 5px; }
@@ -584,7 +582,6 @@ html, body {
 ══════════════════════════════ -->
 <div class="hdr">
   <div class="hdr-title"><span class="bounce">⛏</span> 채광전문가 계산기</div>
-  <!-- 현재 탭 이름 — app.js sw()가 갱신 -->
 </div>
 
 <!-- ══════════════════════════════
@@ -762,7 +759,6 @@ html, body {
     <div class="tab"    onclick="sw(1,this)">🔥 강화 횃불</div>
     <div class="tab"    onclick="sw(2,this)">⚖ 수익 최적화</div>
     <div style="margin-left:auto;display:flex;gap:6px;align-items:center">
-      <!-- 자동채우기: config.js DEFAULT_PRICES 기준으로 빈 칸만 채움 (주괴 단가 제외) -->
       <button class="autofill-btn" onclick="autoFillPrices()">시세 자동채우기</button>
       <button class="reset-btn"    onclick="resetAll()">🗑 초기화</button>
     </div>
@@ -982,7 +978,7 @@ html, body {
     'vTopaz','vSapphire','vPlatinum','vDiorite','vTuff','vAndesite',
     'tCharcoalPrice','tWoodPrice','tSellPrice',
   ];
-  const KEY = 'miner_calc_v3'; // v3: 교환 체크박스 제거
+  const KEY = 'miner_calc_v3';
 
   function saveAll() {
     const d = {};
