@@ -247,7 +247,7 @@ html, body {
 /* ════════════════════════════════════════
    패널·카드
 ════════════════════════════════════════ */
-.panel { display: flex; flex-direction: column; gap: 12px; }
+.panel { display: flex; flex-direction: column; gap: 20px; }
 .card {
   background: var(--surf);
   border: 1.5px solid var(--bdr);
@@ -620,7 +620,7 @@ html, body {
           <option value="1">1레벨 — +5%</option><option value="2">2레벨 — +7%</option>
           <option value="3">3레벨 — +10%</option><option value="4">4레벨 — +15%</option>
           <option value="5">5레벨 — +20%</option><option value="6">6레벨 — +30%</option>
-        </select>
+        </select>>
       </div>
       <div class="skrow">
         <span class="skname">🔥 초고속 용광로</span>
@@ -755,7 +755,7 @@ html, body {
     <div class="tab"    onclick="sw(2,this)">⚖ 수익 최적화</div>
     <div style="margin-left:auto;display:flex;gap:6px;align-items:center">
       <!-- 자동채우기: config.js DEFAULT_PRICES 기준으로 빈 칸만 채움 (주괴 단가 제외) -->
-      <button class="autofill-btn" onclick="autoFillPrices()">시세 자동채우기</button>
+      <button class="autofill-btn" onclick="autoFillPrices()">✨ 시세 자동채우기</button>
       <button class="reset-btn"    onclick="resetAll()">🗑 초기화</button>
     </div>
   </div>
@@ -957,6 +957,7 @@ html, body {
   window.onSkillChange   = onSkillChange;
   window.onEngravingChange = onEngravingChange;
   window.autoFillPrices  = autoFillPrices;
+  window.init            = init;
 
   /* ── localStorage 저장 대상 ── */
   const SAVE_IDS = [
@@ -973,7 +974,7 @@ html, body {
     'vTopaz','vSapphire','vPlatinum','vDiorite','vTuff','vAndesite',
     'tCharcoalPrice','tWoodPrice','tSellPrice',
   ];
-  const KEY = 'miner_calc_v4'; // v4: 수수료 적용 + 라스/어빌 자동채우기
+  const KEY = 'miner_calc_v5'; // v5: 주괴 좀 사 주괴 스킬 제거
 
   function saveAll() {
     const d = {};
