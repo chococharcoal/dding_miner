@@ -5,7 +5,7 @@
 
 import {
   SKILLS, MINING, PICKAXE, ARTIFACT, ENGRAVING,
-  INGOT_RECIPES, RECIPES, TORCH, UNITS, PRECIOUS, DEFAULT_PRICES, MARKET_FEE,
+  INGOT_RECIPES, RECIPES, TORCH, UNITS, PRECIOUS, DEFAULT_PRICES,
 } from './config.js';
 
 const { SET_SIZE, BOX_SIZE } = UNITS;
@@ -22,7 +22,7 @@ export const fd = (n, d = 2) =>
   +n.toFixed(d) === Math.round(+n.toFixed(d))
     ? Math.round(n).toString()
     : n.toFixed(d).replace(/\.?0+$/, '');
-``
+
 export function fmtQty(n) {
   n = Math.floor(n);
   if (n <= 0) return '0개';
@@ -419,16 +419,14 @@ export function cs() {
   const sk  = m.sk;
   const eng = m.eng;
 
-  /* ── 판매가 읽기 (수수료 5% 차감) ── */
+  /* ── 판매가 읽기 ── */
   const userIC = gi('ingotPriceC');
   const userIR = gi('ingotPriceR');
   const userIS = gi('ingotPriceS');
 
-  /* 수수료 5% 차감 — 거래소 판매 기준 */
-  const FEE_CS = 1 - MARKET_FEE;  // 0.95
-  const bC = (userIC > 0 ? userIC : DEFAULT_PRICES.ingot.corum  * (1 + sk.ib)) * FEE_CS;
-  const bR = (userIR > 0 ? userIR : DEFAULT_PRICES.ingot.rifton * (1 + sk.ib)) * FEE_CS;
-  const bS = (userIS > 0 ? userIS : DEFAULT_PRICES.ingot.serent * (1 + sk.ib)) * FEE_CS;
+  const bC = userIC > 0 ? userIC : DEFAULT_PRICES.ingot.corum  * (1 + sk.ib);
+  const bR = userIR > 0 ? userIR : DEFAULT_PRICES.ingot.rifton * (1 + sk.ib);
+  const bS = userIS > 0 ? userIS : DEFAULT_PRICES.ingot.serent * (1 + sk.ib);
 
   const rawGC = gi('gemPriceC')   || DEFAULT_PRICES.gem.corum;
   const rawGR = gi('gemPriceR')   || DEFAULT_PRICES.gem.rifton;
@@ -655,7 +653,7 @@ export function ct() {
    ⑩ TAB 2: 주괴 & 귀중품 통합 최적화
 ════════════════════════════════════════ */
 
-/* ── 자동채우기 (config 개당→세트당 변환 + 라스/어빌 수수료 적용) ── */
+/* ── 자동채우기 (config 개당→세트당 변환) ── */
 export function autoFillPrices() {
   const fill = (id, val) => {
     if (!val || val <= 0) return;
@@ -666,14 +664,13 @@ export function autoFillPrices() {
     }
   };
 
-  const fee = 1 - MARKET_FEE;  // 0.95
-  const S   = SET_SIZE;         // 64
+  const S = SET_SIZE;  // 64
 
-  /* 라이프스톤·어빌리티 스톤 — 등록가 × 0.95 */
-  fill('oL1', (DEFAULT_PRICES.ls1  ?? 0) * fee);
-  fill('oL2', (DEFAULT_PRICES.ls2  ?? 0) * fee);
-  fill('oL3', (DEFAULT_PRICES.ls3  ?? 0) * fee);
-  fill('oAb', (DEFAULT_PRICES.abil ?? 0) * fee);
+  /* 라이프스톤·어빌리티 스톤 — 등록가 그대로 */
+  fill('oL1', DEFAULT_PRICES.ls1  ?? 0);
+  fill('oL2', DEFAULT_PRICES.ls2  ?? 0);
+  fill('oL3', DEFAULT_PRICES.ls3  ?? 0);
+  fill('oAb', DEFAULT_PRICES.abil ?? 0);
 
   /* 바닐라 재료 — 개당 × 64 → 세트당 */
   fill('vCo',  (DEFAULT_PRICES.vanilla?.cobblestone           ?? 0) * S);
@@ -801,11 +798,9 @@ export function co() {
   const rawR = userRi > 0 ? userRi : DEFAULT_PRICES.ingot.rifton;
   const rawS = userSe > 0 ? userSe : DEFAULT_PRICES.ingot.serent;
 
-  /* 수수료 5% 차감 */
-  const FEE = 1 - MARKET_FEE;
-  const cP = (userCo > 0 ? userCo : rawC * (1 + ib)) * FEE;
-  const rP = (userRi > 0 ? userRi : rawR * (1 + ib)) * FEE;
-  const sP = (userSe > 0 ? userSe : rawS * (1 + ib)) * FEE;
+  const cP = userCo > 0 ? userCo : rawC * (1 + ib);
+  const rP = userRi > 0 ? userRi : rawR * (1 + ib);
+  const sP = userSe > 0 ? userSe : rawS * (1 + ib);
 
   const oL1 = gi('oL1'), oL2 = gi('oL2'), oL3 = gi('oL3'), oAb = gi('oAb');
   const ctL1 = RECIPES.LS1.craft_time_sec  * (1 - fr);
