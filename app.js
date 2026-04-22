@@ -89,9 +89,9 @@ function getIngotPrices(ib) {
   const rawS = userS > 0 ? userS : DEFAULT_PRICES.ingot.serent;
 
   return {
-    sellC: userC > 0 ? userC : rawC * (1 + ib),
-    sellR: userR > 0 ? userR : rawR * (1 + ib),
-    sellS: userS > 0 ? userS : rawS * (1 + ib),
+    sellC: userC > 0 ? userC : rawC,
+    sellR: userR > 0 ? userR : rawR,
+    sellS: userS > 0 ? userS : rawS,
     costC: rawC,
     costR: rawR,
     costS: rawS,
@@ -158,7 +158,6 @@ export function sw(i, el) {
 
 export function getSK() {
   const fl  = gi('skillFurnace');
-  const il  = gi('skillIngotSell');
   const gl  = gi('skillGemSell');
   const cl  = gi('skillCobby');
   const sl  = gi('skillSparkle');
@@ -171,7 +170,7 @@ export function getSK() {
 
   return {
     fr: (SKILLS.FURNACE.reductionPct[fl]  ?? 0) / 100,
-    ib: (SKILLS.INGOT_SELL.bonusPct[il]   ?? 0) / 100,
+    ib: 0,
     gb: (SKILLS.GEM_SELL.bonusPct[gl]     ?? 0) / 100,
     ca: SKILLS.COBYTIME.dropPct[cl]       ?? 0,
     sp: sp.pct, sc: sp.count,
@@ -212,8 +211,6 @@ export function onSkillChange() {
 
   st('skillFurnaceInfo',
     fl === 0 ? '기본' : `Lv${fl} — ${SKILLS.FURNACE.reductionPct[fl]}% 감소`);
-  st('skillIngotSellInfo',
-    il === 0 ? '기본' : `Lv${il} — 주괴 +${SKILLS.INGOT_SELL.bonusPct[il]}%`);
   st('skillGemSellInfo',
     gl === 0 ? '기본' : `Lv${gl} — 보석 +${SKILLS.GEM_SELL.bonusPct[gl]}%`);
   st('skillPreciousInfo',
@@ -424,9 +421,9 @@ export function cs() {
   const userIR = gi('ingotPriceR');
   const userIS = gi('ingotPriceS');
 
-  const bC = userIC > 0 ? userIC : DEFAULT_PRICES.ingot.corum  * (1 + sk.ib);
-  const bR = userIR > 0 ? userIR : DEFAULT_PRICES.ingot.rifton * (1 + sk.ib);
-  const bS = userIS > 0 ? userIS : DEFAULT_PRICES.ingot.serent * (1 + sk.ib);
+  const bC = userIC > 0 ? userIC : DEFAULT_PRICES.ingot.corum;
+  const bR = userIR > 0 ? userIR : DEFAULT_PRICES.ingot.rifton;
+  const bS = userIS > 0 ? userIS : DEFAULT_PRICES.ingot.serent;
 
   const rawGC = gi('gemPriceC')   || DEFAULT_PRICES.gem.corum;
   const rawGR = gi('gemPriceR')   || DEFAULT_PRICES.gem.rifton;
@@ -798,9 +795,9 @@ export function co() {
   const rawR = userRi > 0 ? userRi : DEFAULT_PRICES.ingot.rifton;
   const rawS = userSe > 0 ? userSe : DEFAULT_PRICES.ingot.serent;
 
-  const cP = userCo > 0 ? userCo : rawC * (1 + ib);
-  const rP = userRi > 0 ? userRi : rawR * (1 + ib);
-  const sP = userSe > 0 ? userSe : rawS * (1 + ib);
+  const cP = userCo > 0 ? userCo : rawC;
+  const rP = userRi > 0 ? userRi : rawR;
+  const sP = userSe > 0 ? userSe : rawS;
 
   const oL1 = gi('oL1'), oL2 = gi('oL2'), oL3 = gi('oL3'), oAb = gi('oAb');
   const ctL1 = RECIPES.LS1.craft_time_sec  * (1 - fr);
