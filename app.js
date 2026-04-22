@@ -177,7 +177,7 @@ export function getSK() {
     lp: lk.pct, lc: lk.count,
     fp: SKILLS.FIRE_PICK.dropPct[fpl]     ?? 0,
     pb: (SKILLS.PRECIOUS.bonusPct[pl]     ?? 0) / 100,
-    fl, il, gl, cl, sl, ll, fpl, pl,
+    fl, gl, cl, sl, ll, fpl, pl,
   };
 }
 
@@ -207,7 +207,7 @@ export function getENG() {
 
 export function onSkillChange() {
   const st = (id, txt) => { const e = document.getElementById(id); if (e) e.textContent = txt; };
-  const { fl, il, gl, cl, sl, ll, fpl, pl } = getSK();
+  const { fl, gl, cl, sl, ll, fpl, pl } = getSK();
 
   st('skillFurnaceInfo',
     fl === 0 ? '기본' : `Lv${fl} — ${SKILLS.FURNACE.reductionPct[fl]}% 감소`);
