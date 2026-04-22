@@ -1,0 +1,709 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>🌊 해양 계산기</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Jua&family=Noto+Sans+KR:wght@500;700;900&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+*,input,select,button,textarea{font-family:'Noto Sans KR','Apple SD Gothic Neo',sans-serif!important;font-weight:700}
+:root{
+  --bg:#f0f5fd;--surf:#ffffff;--bdr:#c8d8f0;--bdr2:#9ab8e4;
+  --txt:#1a2540;--muted:#607090;--acc:#3d6fd4;--acc2:#6090e8;
+  --grn:#3a9e68;--grn-bg:#edf8f2;--red:#d94f3d;--red-bg:#fef0ee;
+  --ylw:#c89c00;--ylw-bg:#fffbe8;--r:12px;--rs:8px;--sh:0 2px 10px rgba(40,80,180,.10);
+}
+html,body{min-height:100vh;background:var(--bg) radial-gradient(circle at 10% 15%,rgba(61,111,212,.08) 0%,transparent 55%),radial-gradient(circle at 90% 85%,rgba(96,144,232,.05) 0%,transparent 55%);color:var(--txt)}
+.page{padding:0 0 60px}
+.hdr{text-align:center;padding:22px 16px 16px;position:relative}
+.hdr-back{position:absolute;left:16px;top:50%;transform:translateY(-50%);font-family:'Jua',sans-serif!important;font-size:13px;color:var(--muted);text-decoration:none;display:inline-flex;align-items:center;gap:4px;padding:6px 12px;border-radius:20px;border:1.5px solid var(--bdr2);background:var(--surf);transition:all .15s}
+.hdr-back:hover{border-color:var(--acc);color:var(--acc)}
+.hdr-title{font-family:'Jua',sans-serif!important;font-size:26px;color:var(--acc);letter-spacing:-.5px}
+.hdr-tab-name{font-family:'Jua',sans-serif!important;font-size:13px;color:var(--muted);margin-top:4px}
+.bounce{display:inline-block;animation:bounce 2s ease-in-out infinite}
+@keyframes bounce{0%,100%{transform:translateY(0)}50%{transform:translateY(-5px)}}
+.layout{display:block;padding:0 16px}
+@media(min-width:860px){
+  .layout{display:block;padding:0}
+  .sidebar{position:fixed;top:0;left:0;width:360px;height:100vh;overflow-y:auto;padding:16px 12px;background:var(--bg);border-right:1.5px solid var(--bdr);box-sizing:border-box;z-index:100}
+  .hdr{padding:22px 16px 16px 376px}
+  .main{padding:0 16px 0 376px;display:flex;flex-direction:column;align-items:center}
+  .main>*{width:100%;max-width:700px;box-sizing:border-box}
+}
+.skpanel{background:var(--surf);border:1.5px solid var(--bdr);border-radius:var(--r);padding:14px;box-shadow:var(--sh);margin-bottom:14px}
+.skpanel-title{font-family:'Jua',sans-serif!important;font-size:15px;color:var(--acc);display:flex;align-items:center;gap:6px;cursor:pointer;user-select:none;margin-bottom:10px}
+.skpanel-title:hover{color:var(--acc2)}
+.toggle-arrow{font-size:11px;margin-left:auto;transition:transform .2s}
+.skpanel.collapsed .toggle-arrow{transform:rotate(-90deg)}
+.skpanel.collapsed .skbody{display:none}
+.sksec{font-size:11px;font-weight:700;color:var(--muted);letter-spacing:.5px;margin:12px 0 7px;padding-bottom:4px;border-bottom:1px dashed var(--bdr2)}
+.skgrid{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.skrow{background:var(--bg);border:1px solid var(--bdr);border-radius:var(--rs);padding:9px 11px;display:flex;flex-direction:column;gap:4px}
+.skname{font-family:'Jua',sans-serif!important;font-size:13px;color:var(--txt);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.skinfo{font-size:11px;color:var(--muted);font-weight:500;min-height:14px}
+.cdd{position:relative;width:100%}
+.skrow .cdd-trigger,.field .cdd-trigger{display:flex;align-items:center;justify-content:space-between;gap:4px;padding:6px 8px;border:1.5px solid var(--bdr2);border-radius:var(--rs);background:var(--surf);color:var(--txt);font-size:11px!important;font-weight:700!important;cursor:pointer;user-select:none;white-space:nowrap;overflow:hidden}
+.field .cdd-trigger{padding:7px 10px;font-size:12px!important;background:var(--bg);border-color:var(--bdr)}
+.skrow .cdd-trigger:hover,.field .cdd-trigger:hover{border-color:var(--acc)}
+.cdd-label{overflow:hidden;text-overflow:ellipsis;min-width:0;flex:1}
+.cdd-arrow{font-size:9px;color:var(--muted);flex-shrink:0;transition:transform .15s}
+.cdd.open .cdd-trigger{border-color:var(--acc);box-shadow:0 0 0 2px rgba(61,111,212,.15)}
+.cdd.open .cdd-arrow{transform:rotate(180deg)}
+.cdd-menu{display:none;position:absolute;top:calc(100% + 3px);left:0;right:0;background:var(--surf);border:1.5px solid var(--acc);border-radius:var(--rs);box-shadow:0 6px 20px rgba(0,0,0,.12);z-index:9999;max-height:220px;overflow-y:auto}
+.cdd.open .cdd-menu{display:block}
+.cdd-item{padding:5px 10px;font-size:11px!important;font-weight:700!important;color:var(--txt);cursor:pointer;border-bottom:1px solid var(--bdr)}
+.cdd-item:last-child{border-bottom:none}
+.cdd-item:hover{background:var(--ylw-bg);color:var(--acc)}
+.cdd-item.selected{background:var(--acc);color:#fff}
+.tabbar{display:flex;align-items:center;flex-wrap:wrap;gap:7px;margin-bottom:12px}
+.tab{font-family:'Jua',sans-serif!important;font-size:14px;padding:8px 16px;border-radius:20px;border:2px solid var(--bdr2);background:var(--surf);color:var(--muted);cursor:pointer;transition:all .15s;white-space:nowrap}
+.tab:hover{border-color:var(--acc);color:var(--acc)}
+.tab.on{background:var(--acc);border-color:var(--acc);color:#fff;box-shadow:0 3px 10px rgba(61,111,212,.3)}
+.reset-btn{margin-left:auto;font-family:'Jua',sans-serif!important;font-size:12px;padding:5px 11px;border-radius:20px;border:1.5px solid var(--bdr2);background:var(--surf);color:var(--muted);cursor:pointer;transition:all .15s}
+.reset-btn:hover{border-color:var(--red);color:var(--red);background:var(--red-bg)}
+.panel{display:flex;flex-direction:column;gap:20px}
+.card{background:var(--surf);border:1.5px solid var(--bdr);border-radius:var(--r);padding:15px 16px;box-shadow:var(--sh)}
+.card-title{font-family:'Jua',sans-serif!important;font-size:14px;color:var(--txt);margin-bottom:12px;display:flex;align-items:center;gap:6px}
+.card-title::before{content:'';display:inline-block;width:4px;height:14px;background:var(--acc);border-radius:2px}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:9px}
+.g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:9px}
+@media(max-width:500px){.g3{grid-template-columns:1fr 1fr}}
+.field{display:flex;flex-direction:column;gap:3px}
+.field label{font-size:11px;font-weight:700;color:var(--muted)}
+.field input,.field select{font-size:13px!important;font-weight:700!important;border:1.5px solid var(--bdr);border-radius:var(--rs);padding:7px 10px;background:var(--bg);color:var(--txt);outline:none;width:100%;transition:border-color .15s,box-shadow .15s}
+.field input:focus,.field select:focus{border-color:var(--acc);box-shadow:0 0 0 3px rgba(61,111,212,.12);background:var(--surf)}
+.field input::placeholder{color:#a0b8d8;font-weight:500}
+.slabel{font-family:'Jua',sans-serif!important;font-size:12px;color:var(--acc);margin:8px 0 5px;display:flex;align-items:center;gap:5px}
+.slabel::after{content:'';flex:1;height:1px;background:var(--bdr2)}
+.fnote{font-size:10px;color:var(--muted);font-weight:500;margin-top:3px}
+.rrow{display:flex;justify-content:space-between;align-items:center;padding:5px 0;border-bottom:1px dashed var(--bdr);gap:8px;font-size:12px}
+.rrow:last-child{border-bottom:none}
+.rrow-strong{border-top:1px solid var(--bdr2);margin-top:4px;padding-top:6px;font-size:13px;font-weight:900!important}
+.rl{color:var(--muted);flex-shrink:0;font-weight:700}
+.rv{font-weight:900;text-align:right}
+.rv small{font-size:10px;font-weight:500}
+.rsec{background:var(--bg);border-radius:var(--rs);padding:8px 10px;margin:6px 0;border:1px solid var(--bdr)}
+.rsec-title{font-family:'Jua',sans-serif!important;font-size:12px;color:var(--muted);margin-bottom:5px}
+.g{color:var(--grn)}.r{color:var(--red)}.muted{color:var(--muted)}
+.bdg{display:inline-block;font-size:10px;font-weight:700;padding:1px 6px;border-radius:20px;vertical-align:middle}
+.bg{background:var(--grn-bg);color:var(--grn);border:1px solid var(--grn)}
+.result-box{background:linear-gradient(135deg,#f0f5ff,#e8eeff);border:2px solid var(--acc2);border-radius:var(--rs);padding:13px;margin:8px 0 0}
+.rb-label{font-size:11px;color:var(--muted);font-weight:700;margin-bottom:3px}
+.rb-value{font-family:'Jua',sans-serif!important;font-size:22px;color:var(--acc)}
+.rb-sub{display:block;font-size:10px;color:var(--muted);font-weight:500;margin-top:2px}
+/* 가공품 최적화 */
+.proc-card{background:var(--surf);border:1.5px solid var(--bdr);border-radius:var(--rs);padding:12px 14px;margin-bottom:8px}
+.proc-card.winner{border-color:var(--acc);box-shadow:0 3px 12px rgba(61,111,212,.15)}
+.proc-head{display:flex;justify-content:space-between;align-items:flex-start;gap:8px}
+.proc-name{font-family:'Jua',sans-serif!important;font-size:14px;color:var(--txt)}
+.proc-net{font-family:'Jua',sans-serif!important;font-size:16px;font-weight:900}
+.proc-net.pos{color:var(--grn)}.proc-net.neg{color:var(--red)}
+.proc-detail{font-size:11px;color:var(--muted);font-weight:500;margin-top:4px;line-height:1.6}
+.mat-chip{font-size:10px;font-weight:700;border-radius:4px;padding:1px 6px;border:1px solid var(--bdr2);background:var(--bg);color:var(--txt)}
+.proc-mats{display:flex;flex-wrap:wrap;gap:4px;margin-top:6px}
+.tier-bdg{display:inline-block;font-size:10px;font-weight:700;padding:1px 7px;border-radius:20px;vertical-align:middle}
+.empty-msg{color:var(--muted);font-size:12px;text-align:center;padding:14px 0;font-weight:500}
+::-webkit-scrollbar{width:5px}
+::-webkit-scrollbar-thumb{background:var(--bdr2);border-radius:3px}
+</style>
+</head>
+<body>
+<div class="page">
+
+<div class="hdr">
+  <a class="hdr-back" href="index.html">← 허브</a>
+  <div class="hdr-title"><span class="bounce">🌊</span> 해양 계산기</div>
+  <div class="hdr-tab-name" id="pageTabTitle">🐟 하루 수익 예상</div>
+</div>
+
+<div class="layout">
+<div class="sidebar">
+
+  <div class="skpanel" id="skillPanel">
+    <div class="skpanel-title" onclick="toggleSkillPanel()">⚡ 스킬 설정<span class="toggle-arrow">▼</span></div>
+    <div class="skbody">
+      <div class="sksec">💧 제작 시간</div>
+      <div class="skgrid">
+        <div class="skrow">
+          <span class="skname">💧 물 흐르듯 술술</span>
+          <select id="skillFurnace" onchange="onSkillChange()">
+            <option value="0">0레벨</option><option value="1">1레벨 -10%</option><option value="2">2레벨 -20%</option>
+            <option value="3">3레벨 -30%</option><option value="4">4레벨 -50%</option><option value="5">5레벨 -70%</option>
+          </select>
+          <span class="skinfo" id="skillFurnaceInfo">기본</span>
+        </div>
+      </div>
+      <div class="sksec">💰 판매 보너스</div>
+      <div class="skgrid">
+        <div class="skrow">
+          <span class="skname">🐚 조개 좀 사조개</span>
+          <select id="skillCraftBonus" onchange="onSkillChange()">
+            <option value="0">0레벨</option><option value="1">1레벨 +5%</option><option value="2">2레벨 +7%</option>
+            <option value="3">3레벨 +10%</option><option value="4">4레벨 +15%</option><option value="5">5레벨 +20%</option>
+            <option value="6">6레벨 +30%</option><option value="7">7레벨 +40%</option><option value="8">8레벨 +50%</option>
+          </select>
+          <span class="skinfo" id="skillCraftBonusInfo">기본</span>
+        </div>
+        <div class="skrow">
+          <span class="skname">🧪 프리미엄 한정가</span>
+          <select id="skillAlchBonus" onchange="onSkillChange()">
+            <option value="0">0레벨</option><option value="1">1레벨 +5%</option><option value="2">2레벨 +7%</option>
+            <option value="3">3레벨 +9%</option><option value="4">4레벨 +12%</option><option value="5">5레벨 +15%</option>
+            <option value="6">6레벨 +20%</option><option value="7">7레벨 +25%</option><option value="8">8레벨 +30%</option>
+          </select>
+          <span class="skinfo" id="skillAlchBonusInfo">기본</span>
+        </div>
+      </div>
+      <div class="sksec">🌊 어획 드롭</div>
+      <div class="skgrid">
+        <div class="skrow">
+          <span class="skname">⚓ 심해 채집꾼</span>
+          <select id="skillDeepHarvest" onchange="onSkillChange()">
+            <option value="0">0레벨</option><option value="1">1레벨 +5%</option><option value="2">2레벨 +7%</option>
+            <option value="3">3레벨 +10%</option><option value="4">4레벨 +15%</option><option value="5">5레벨 +20%</option>
+          </select>
+          <span class="skinfo" id="skillDeepHarvestInfo">기본</span>
+        </div>
+        <div class="skrow">
+          <span class="skname">⭐ 별별별!</span>
+          <select id="skillStarBonus" onchange="onSkillChange()">
+            <option value="0">0레벨</option><option value="1">1레벨 +1%</option><option value="2">2레벨 +3%</option>
+            <option value="3">3레벨 +5%</option><option value="4">4레벨 +7%</option><option value="5">5레벨 +10%</option>
+            <option value="6">6레벨 +15%</option>
+          </select>
+          <span class="skinfo" id="skillStarBonusInfo">기본</span>
+        </div>
+        <div class="skrow">
+          <span class="skname">🐚 조개 무한리필</span>
+          <select id="skillClamBonus" onchange="onSkillChange()">
+            <option value="0">0레벨</option><option value="1">1레벨 +1%</option><option value="2">2레벨 +2%</option>
+            <option value="3">3레벨 +3%</option><option value="4">4레벨 +4%</option><option value="5">5레벨 +5%</option>
+            <option value="6">6레벨 +6%</option><option value="7">7레벨 +7%</option><option value="8">8레벨 +8%</option>
+            <option value="9">9레벨 +9%</option><option value="10">10레벨 +10%</option>
+          </select>
+          <span class="skinfo" id="skillClamBonusInfo">기본</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="skpanel" id="engPanel" style="margin-top:10px">
+    <div class="skpanel-title" onclick="toggleEngPanel()">🪨 각인석 설정<span class="toggle-arrow">▼</span></div>
+    <div class="skbody">
+      <div class="skgrid">
+        <div class="skrow">
+          <span class="skname">조개 탐색</span>
+          <select id="engClamSearch" onchange="onEngChange()">
+            <option value="0">없음</option><option value="1">I — +1%</option><option value="2">II — +3%</option>
+            <option value="3">III — +5%</option>
+          </select>
+          <span class="skinfo" id="engClamSearchInfo">없음</span>
+        </div>
+        <div class="skrow">
+          <span class="skname">🦪 어패 행운</span>
+          <select id="engSeafoodLuck" onchange="onEngChange()">
+            <option value="0">없음</option><option value="1">I — 25%/+1개</option><option value="2">II — 50%/+1개</option>
+            <option value="3">III — 75%/+1개</option><option value="4">IV — 100%/+1개</option>
+          </select>
+          <span class="skinfo" id="engSeafoodLuckInfo">없음</span>
+        </div>
+        <div class="skrow">
+          <span class="skname">🎲 어부 룰렛</span>
+          <select id="engFisherRoulette" onchange="onEngChange()">
+            <option value="0">없음</option><option value="1">I — 1%</option><option value="2">II — 2%</option>
+            <option value="3">III — 3%</option><option value="4">IV — 4%</option><option value="5">V — 5%</option>
+          </select>
+          <span class="skinfo" id="engFisherRouletteInfo">없음</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /sidebar -->
+
+<div class="main">
+  <div class="tabbar">
+    <div class="tab on" onclick="sw(0,this)">🐟 하루 수익</div>
+    <div class="tab" onclick="sw(1,this)">📦 재료 시세</div>
+    <div class="tab" onclick="sw(2,this)">⚗️ 가공 최적화</div>
+    <div style="margin-left:auto;display:flex;gap:6px;align-items:center">
+      <button class="reset-btn" onclick="resetAll()">🗑 초기화</button>
+    </div>
+  </div>
+
+  <!-- TAB 0: 하루 수익 -->
+  <div id="t0" class="panel">
+    <div class="card">
+      <div class="card-title">🎣 낚싯대 &amp; 스태미나</div>
+      <div class="g2">
+        <div class="field">
+          <label>세이지 낚싯대 강화</label>
+          <select id="rodLevel" onchange="calcDaily()">
+            <option value="0">0강</option><option value="1">1강</option><option value="2">2강</option>
+            <option value="3">3강</option><option value="4">4강</option><option value="5">5강</option>
+            <option value="6">6강</option><option value="7">7강</option><option value="8">8강</option>
+            <option value="9">9강</option><option value="10">10강</option><option value="11">11강</option>
+            <option value="12">12강</option><option value="13">13강</option><option value="14">14강</option>
+            <option value="15">15강</option>
+          </select>
+        </div>
+        <div class="field"><label>총 스태미나</label><input id="totalStamina" type="number" inputmode="numeric" placeholder="0" oninput="calcDaily()"></div>
+      </div>
+      <div class="fnote" style="margin-top:6px">수중 어획 1회 스태미나: 15</div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">💰 어패류 단가 (원/개)</div>
+      <div class="g3">
+        <div class="field"><label>1성 어패류</label><input id="price1Star" type="number" inputmode="numeric" placeholder="0" oninput="calcDaily()"></div>
+        <div class="field"><label>2성 어패류</label><input id="price2Star" type="number" inputmode="numeric" placeholder="0" oninput="calcDaily()"></div>
+        <div class="field"><label>3성 어패류</label><input id="price3Star" type="number" inputmode="numeric" placeholder="0" oninput="calcDaily()"></div>
+      </div>
+      <div class="fnote">어패류 종류 무관, 등급만 적용 / 3성 등장 확률은 스킬에서 조정</div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">🐚 알쏭달쏭 조개 &amp; 진주 (원/개)</div>
+      <div class="g3">
+        <div class="field"><label>노란빛 진주</label><input id="priceYellow" type="number" inputmode="numeric" placeholder="0" oninput="calcDaily()"></div>
+        <div class="field"><label>푸른빛 진주</label><input id="priceBlue" type="number" inputmode="numeric" placeholder="0" oninput="calcDaily()"></div>
+        <div class="field"><label>청록빛 진주</label><input id="priceCyan" type="number" inputmode="numeric" placeholder="0" oninput="calcDaily()"></div>
+        <div class="field"><label>분홍빛 진주</label><input id="pricePink" type="number" inputmode="numeric" placeholder="0" oninput="calcDaily()"></div>
+        <div class="field"><label>보라빛 진주</label><input id="pricePurple" type="number" inputmode="numeric" placeholder="0" oninput="calcDaily()"></div>
+        <div class="field"><label>흑진주</label><input id="priceBlack" type="number" inputmode="numeric" placeholder="0" oninput="calcDaily()"></div>
+      </div>
+      <div class="fnote">📌 진주는 공예품 기준 100% 가격 입력 → 조개껍데기 브로치~흑진주 시계 평균값으로 계산</div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">📊 하루 수익 예상</div>
+      <div id="dailyRes"><div class="empty-msg">스태미나를 입력하면 계산됩니다</div></div>
+    </div>
+  </div>
+
+  <!-- TAB 1: 재료 시세 -->
+  <div id="t1" class="panel" style="display:none">
+    <div class="card">
+      <div class="card-title">🌿 해양 재료 가격 (원/세트)</div>
+      <div class="g2">
+        <div class="field"><label>해초</label><input id="pSeaweed" type="number" inputmode="numeric" placeholder="0" oninput="onPriceChange()"></div>
+        <div class="field"><label>켈프</label><input id="pKelp" type="number" inputmode="numeric" placeholder="0" oninput="onPriceChange()"></div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title">⚗️ 연금품 판매가 — 고정 (자동 적용)</div>
+      <div class="fnote" style="margin-bottom:8px">📌 연금품은 상점 고정가입니다. 스킬 보너스만 반영합니다</div>
+      <div id="alchPriceList"></div>
+    </div>
+    <div class="card">
+      <div class="card-title">🏺 공예품 가격 (최대가 기준, 원/개)</div>
+      <div class="fnote" style="margin-bottom:8px">포스(무역상) 최대 판매가 기준. 실제 변동 적용 시 수정</div>
+      <div class="g2">
+        <div class="field"><label>조개껍데기 브로치</label><input id="pBrooch" type="number" inputmode="numeric" placeholder="50000" oninput="onPriceChange()"></div>
+        <div class="field"><label>푸른 향수병</label><input id="pPerfume" type="number" inputmode="numeric" placeholder="150000" oninput="onPriceChange()"></div>
+        <div class="field"><label>자개 손거울</label><input id="pMirror" type="number" inputmode="numeric" placeholder="300000" oninput="onPriceChange()"></div>
+        <div class="field"><label>분홍 헤어핀</label><input id="pHairpin" type="number" inputmode="numeric" placeholder="500000" oninput="onPriceChange()"></div>
+        <div class="field"><label>자개 부채</label><input id="pFan" type="number" inputmode="numeric" placeholder="700000" oninput="onPriceChange()"></div>
+        <div class="field"><label>흑진주 시계</label><input id="pWatch" type="number" inputmode="numeric" placeholder="1000000" oninput="onPriceChange()"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TAB 2: 가공 최적화 -->
+  <div id="t2" class="panel" style="display:none">
+    <div class="card">
+      <div class="card-title">📦 현재 보유 어패류</div>
+      <div class="g3">
+        <div class="field"><label>1성 어패류</label><input id="have1Star" type="text" placeholder="예) 2상자 3개" oninput="calcProc()"></div>
+        <div class="field"><label>2성 어패류</label><input id="have2Star" type="text" placeholder="예) 1세트" oninput="calcProc()"></div>
+        <div class="field"><label>3성 어패류</label><input id="have3Star" type="text" placeholder="0" oninput="calcProc()"></div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title">⚗️ 보유 가공품 (연금품)</div>
+      <div id="haveAlchGrid" class="g3"><!-- 동적 생성 --></div>
+    </div>
+    <div class="card">
+      <div class="card-title">🐚 보유 깨진 조개껍데기</div>
+      <div class="g2">
+        <div class="field"><label>깨진 조개껍데기</label><input id="haveShell" type="number" inputmode="numeric" placeholder="0" oninput="calcProc()"></div>
+        <div class="field"><label>각 진주 보유 (개)</label><input id="havePearlMix" type="number" inputmode="numeric" placeholder="0" oninput="calcProc()"></div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title">📋 최대 수익 계획</div>
+      <div id="procRes"><div class="empty-msg">보유 어패류를 입력하면 계산됩니다</div></div>
+    </div>
+  </div>
+
+</div><!-- /main -->
+</div><!-- /layout -->
+</div><!-- /page -->
+
+<script type="module">
+import {
+  SKILLS, ENGRAVING, ROD, OCEAN, CLAM, CRAFTS, WHALE, ALCHEMY_PRICES, DEFAULT_PRICES, UNITS,
+} from './ocean-config.js';
+
+const {SET_SIZE,BOX_SIZE}=UNITS;
+const f=n=>Math.round(n).toLocaleString('ko-KR');
+const fd=(n,d=2)=>+n.toFixed(d)===Math.round(+n.toFixed(d))?Math.round(n).toString():n.toFixed(d).replace(/\.?0+$/,'');
+const gi=id=>{const e=document.getElementById(id);return e?Math.max(0,+e.value||0):0;};
+const gv=id=>{const e=document.getElementById(id);return e?e.value:'';};
+
+function fmtQty(n){
+  n=Math.floor(n);if(n<=0)return'0개';
+  const boxes=Math.floor(n/BOX_SIZE),rem=n%BOX_SIZE,sets=Math.floor(rem/SET_SIZE),items=rem%SET_SIZE;
+  return[[boxes,'상자'],[sets,'세트'],[items,'개']].filter(([v])=>v>0).map(([v,u])=>v+u).join(' ')||'0개';
+}
+function parseQty(str){
+  if(!str?.trim())return 0;
+  if(/^\d+$/.test(str.trim()))return Math.max(0,parseInt(str.trim(),10));
+  let t=0;
+  const bm=str.match(/(\d+)\s*상자/);if(bm)t+=parseInt(bm[1],10)*BOX_SIZE;
+  const sm=str.match(/(\d+)\s*세트/);if(sm)t+=parseInt(sm[1],10)*SET_SIZE;
+  const im=str.match(/(\d+)\s*개/);  if(im)t+=parseInt(im[1],10);
+  return t;
+}
+
+const TAB_TITLES=['🐟 하루 수익 예상','📦 재료 시세 입력','⚗️ 가공 최적화'];
+window.sw=(i,el)=>{
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('on'));
+  [0,1,2].forEach(k=>{const p=document.getElementById('t'+k);if(p)p.style.display='none';});
+  el.classList.add('on');
+  document.getElementById('t'+i).style.display='block';
+  const t=document.getElementById('pageTabTitle');if(t)t.textContent=TAB_TITLES[i];
+  document.title=`해양 계산기 — ${TAB_TITLES[i]}`;
+};
+
+function getSK(){
+  const fl=gi('skillFurnace'),cb=gi('skillCraftBonus'),ab=gi('skillAlchBonus');
+  const dh=gi('skillDeepHarvest'),sb=gi('skillStarBonus'),clm=gi('skillClamBonus');
+  return{
+    fr:(SKILLS.FURNACE.reductionPct[fl]??0)/100,
+    cb:(SKILLS.CRAFT_BONUS.bonusPct[cb]??0)/100,
+    ab:(SKILLS.ALCH_BONUS.bonusPct[ab]??0)/100,
+    dhPct:SKILLS.DEEP_HARVEST.pct[dh]??0,
+    sbPct:SKILLS.STAR_BONUS.pct[sb]??0,
+    clmPct:SKILLS.CLAM_BONUS.pct[clm]??0,
+    fl,cb:cb,ab,dh,sb,clm,
+  };
+}
+function getENG(){
+  const cs=gi('engClamSearch'),sl=gi('engSeafoodLuck'),fr=gi('engFisherRoulette');
+  const slD=ENGRAVING.SEAFOOD_LUCK.drops[sl]||{pct:0,count:0};
+  return{
+    csPct:ENGRAVING.CLAM_SEARCH.pct[cs]??0,
+    slPct:slD.pct,slCnt:slD.count,
+    frPct:ENGRAVING.FISHER_ROULETTE.dicePct[fr]??0,
+    cs,sl,fr,
+  };
+}
+
+window.onSkillChange=()=>{
+  const st=(id,txt)=>{const e=document.getElementById(id);if(e)e.textContent=txt;};
+  const sk=getSK();
+  st('skillFurnaceInfo',sk.fl===0?'기본':`Lv${sk.fl} — -${SKILLS.FURNACE.reductionPct[sk.fl]}%`);
+  st('skillCraftBonusInfo',sk.cb===0?'기본':`Lv${gi('skillCraftBonus')} — +${SKILLS.CRAFT_BONUS.bonusPct[gi('skillCraftBonus')]}%`);
+  st('skillAlchBonusInfo',sk.ab===0?'기본':`Lv${gi('skillAlchBonus')} — +${SKILLS.ALCH_BONUS.bonusPct[gi('skillAlchBonus')]}%`);
+  st('skillDeepHarvestInfo',sk.dh===0?'기본':`Lv${sk.dh} — +${sk.dhPct}%`);
+  st('skillStarBonusInfo',sk.sb===0?'기본':`Lv${sk.sb} — +${sk.sbPct}%`);
+  st('skillClamBonusInfo',sk.clm===0?'기본':`Lv${sk.clm} — +${sk.clmPct}%`);
+  calcDaily();calcProc();
+};
+window.onEngChange=()=>{
+  const st=(id,txt)=>{const e=document.getElementById(id);if(e)e.textContent=txt;};
+  const eng=getENG();
+  st('engClamSearchInfo',eng.cs===0?'없음':`+${eng.csPct}%`);
+  const slD=ENGRAVING.SEAFOOD_LUCK.drops[eng.sl];
+  st('engSeafoodLuckInfo',eng.sl===0?'없음':slD?`${slD.pct}%/+${slD.count}개`:'');
+  st('engFisherRouletteInfo',eng.fr===0?'없음':`${eng.frPct}% 룰렛`);
+  calcDaily();
+};
+window.onPriceChange=()=>{calcDaily();calcProc();};
+
+/* 연금품 가격 목록 렌더링 */
+function buildAlchPriceList(){
+  const el=document.getElementById('alchPriceList');if(!el)return;
+  const sk=getSK();
+  const tiers={1:'★',2:'★★',3:'★★★'};
+  const tierColors={0:'#607090',1:'#3a9e68',2:'#3d6fd4',3:'#7c52c8'};
+  let html='';
+  for(const[key,item]of Object.entries(ALCHEMY_PRICES)){
+    const bonus=item.tier===0?0:sk.ab;
+    const price=Math.round(item.price*(1+bonus));
+    const color=tierColors[item.tier]||'#607090';
+    html+=`<div class="rrow"><span class="rl" style="color:${color}">${item.name}</span><span class="rv" style="color:${color}">${f(price)}원${bonus>0?` <small>(+${Math.round(bonus*100)}%)</small>`:''}</span></div>`;
+  }
+  el.innerHTML=html;
+}
+
+/* TAB 0: 하루 수익 */
+window.calcDaily=()=>{
+  buildAlchPriceList();
+  const sk=getSK(),eng=getENG();
+  const rodLevel=gi('rodLevel'),stamina=gi('totalStamina');
+  const rod=ROD[rodLevel]??ROD[0];
+  const harvestCount=stamina>0?Math.floor(stamina/OCEAN.STAMINA_PER_USE):0;
+
+  const p1=gi('price1Star'),p2=gi('price2Star'),p3=gi('price3Star');
+  const totalClamPct=rod.clamPct+sk.clmPct+eng.csPct; // 조개 등장 확률
+
+  // 어패류 기본 드롭
+  const baseSeafoodDrop=rod.seafoodDrop;
+  // 심해 채집꾼 추가
+  const deepExtra=sk.dhPct/100;
+  // 어패 행운 각인
+  const luckExtra=eng.slPct/100*eng.slCnt;
+  // 어부 룰렛
+  const avgDice=3.5;
+  const rouletteExtra=eng.frPct/100*(0.9*avgDice*ENGRAVING.FISHER_ROULETTE.normalMult+0.1*avgDice*ENGRAVING.FISHER_ROULETTE.goldenMult);
+
+  const totalSeafoodPerHarvest=baseSeafoodDrop+deepExtra+luckExtra+rouletteExtra;
+  const totalSeafood=harvestCount*totalSeafoodPerHarvest;
+
+  // 3성 등장 확률 (기본 어패류에서 비율만 증가, 기본 1/3 균등 후 보너스 적용)
+  // sbPct = 3성 등장 확률 증가량(%)
+  // 단순화: 기본 3성 비율 33.3%, 스킬로 +sbPct% 증가
+  const base3StarRatio=1/3;
+  const extra3Star=sk.sbPct/100;
+  const total3StarRatio=Math.min(1,base3StarRatio+extra3Star);
+  const total1StarRatio=Math.max(0,(1-total3StarRatio)/2);
+  const total2StarRatio=Math.max(0,(1-total3StarRatio)/2);
+
+  const sf1=totalSeafood*total1StarRatio;
+  const sf2=totalSeafood*total2StarRatio;
+  const sf3=totalSeafood*total3StarRatio;
+  const sfRev=sf1*p1+sf2*p2+sf3*p3;
+
+  // 조개 계산
+  const clamCount=harvestCount*(totalClamPct/100);
+  // 조개 처치 → 50% 드랍
+  const clamDropped=clamCount*CLAM.dropPct/100;
+  // 조개 내용물
+  const shellCount=clamDropped*CLAM.contents.shell.pct/100; // 껍데기 (0원)
+  const pearlCounts={
+    yellow: clamDropped*CLAM.contents.yellow.pct/100,
+    blue:   clamDropped*CLAM.contents.blue.pct/100,
+    cyan:   clamDropped*CLAM.contents.cyan.pct/100,
+    pink:   clamDropped*CLAM.contents.pink.pct/100,
+    purple: clamDropped*CLAM.contents.purple.pct/100,
+    black:  clamDropped*CLAM.contents.black.pct/100,
+  };
+  const pearlPrices={
+    yellow:gi('priceYellow'),blue:gi('priceBlue'),cyan:gi('priceCyan'),
+    pink:gi('pricePink'),purple:gi('pricePurple'),black:gi('priceBlack'),
+  };
+  const pearlRevs=Object.fromEntries(Object.entries(pearlCounts).map(([k,cnt])=>[k,cnt*pearlPrices[k]]));
+  const totalPearlRev=Object.values(pearlRevs).reduce((a,b)=>a+b,0);
+  const avgPearlRev=clamDropped>0?totalPearlRev/clamDropped:0;
+  const clamRev=totalPearlRev;
+
+  const totalRev=sfRev+clamRev;
+
+  // 진주 목록 (가격 있는 것만)
+  const pearlNames={yellow:'노란빛',blue:'푸른빛',cyan:'청록빛',pink:'분홍빛',purple:'보라빛',black:'흑'};
+  const pearlRows=Object.entries(pearlCounts).filter(([k,cnt])=>cnt>0&&pearlPrices[k]>0)
+    .map(([k,cnt])=>`<div class="rrow"><span class="rl">└ ${pearlNames[k]} 진주 (${CLAM.contents[k].pct}%)</span><span class="rv g">${fd(cnt)}개 → ${f(pearlRevs[k])}원</span></div>`).join('');
+
+  document.getElementById('dailyRes').innerHTML=`
+  <div class="rsec">
+    <div class="rsec-title">🦀 어패류 획득</div>
+    <div class="rrow"><span class="rl">수중 어획 횟수</span><span class="rv">${f(harvestCount)}회</span></div>
+    <div class="rrow"><span class="rl">회당 어패류 기댓값</span><span class="rv">${fd(totalSeafoodPerHarvest)}개</span></div>
+    <div class="rrow rrow-strong"><span class="rl" style="font-weight:900">총 어패류</span><span class="rv">${fmtQty(totalSeafood)}</span></div>
+    ${sf1>0?`<div class="rrow"><span class="rl">└ 1성 (${f(total1StarRatio*100)}%)</span><span class="rv">${f(sf1)}개 → <b class="g">${f(sf1*p1)}원</b></span></div>`:''}
+    ${sf2>0?`<div class="rrow"><span class="rl">└ 2성 (${f(total2StarRatio*100)}%)</span><span class="rv">${f(sf2)}개 → <b class="g">${f(sf2*p2)}원</b></span></div>`:''}
+    ${sf3>0?`<div class="rrow"><span class="rl">└ 3성 (${f(total3StarRatio*100)}%)</span><span class="rv">${f(sf3)}개 → <b class="g">${f(sf3*p3)}원</b></span></div>`:''}
+  </div>
+  ${clamCount>0?`
+  <div class="rsec">
+    <div class="rsec-title">🐚 알쏭달쏭 조개 (등장 ${fd(totalClamPct)}%)</div>
+    <div class="rrow"><span class="rl">조개 등장</span><span class="rv">${fd(clamCount)}마리</span></div>
+    <div class="rrow"><span class="rl">└ 처치 후 드롭 (50%)</span><span class="rv">${fd(clamDropped)}개</span></div>
+    <div class="rrow"><span class="rl">└ 조개껍데기 (70%)</span><span class="rv muted">${fd(shellCount)}개 (0원)</span></div>
+    ${pearlRows}
+    ${totalPearlRev>0?`<div class="rrow rrow-strong"><span class="rl" style="font-weight:900">진주 수익</span><span class="rv g">${f(totalPearlRev)}원</span></div>`:''}
+  </div>`:''}
+  <div class="result-box">
+    <div style="display:flex;gap:12px;align-items:stretch">
+      <div style="flex:1;text-align:center;padding:4px 8px">
+        <div class="rb-label">어패류 수익</div>
+        <div class="rb-value">${f(sfRev)}원</div>
+      </div>
+      ${clamCount>0?`
+      <div style="width:1px;background:var(--bdr2);margin:4px 0;flex:none"></div>
+      <div style="flex:1;text-align:center;padding:4px 8px">
+        <div class="rb-label">조개(진주) 수익</div>
+        <div class="rb-value">${f(clamRev)}원</div>
+      </div>`:''}
+      <div style="width:1px;background:var(--bdr2);margin:4px 0;flex:none"></div>
+      <div style="flex:1;text-align:center;padding:4px 8px">
+        <div class="rb-label">하루 합계</div>
+        <div class="rb-value" style="color:var(--grn)">${f(totalRev)}원</div>
+      </div>
+    </div>
+  </div>`;
+};
+
+/* TAB 2: 가공 최적화 */
+function buildHaveAlchGrid(){
+  const grid=document.getElementById('haveAlchGrid');if(!grid)return;
+  grid.innerHTML=Object.entries(ALCHEMY_PRICES).map(([key,item])=>`
+    <div class="field">
+      <label>${item.name}</label>
+      <input id="haveAlch_${key}" type="number" inputmode="numeric" placeholder="0" oninput="calcProc()">
+    </div>`).join('');
+}
+
+window.calcProc=()=>{
+  const sk=getSK();
+  const have1=parseQty(document.getElementById('have1Star')?.value||'');
+  const have2=parseQty(document.getElementById('have2Star')?.value||'');
+  const have3=parseQty(document.getElementById('have3Star')?.value||'');
+  const p1=gi('price1Star'),p2=gi('price2Star'),p3=gi('price3Star');
+
+  // 보유 연금품 가치
+  let alchRev=0;
+  for(const[key,item]of Object.entries(ALCHEMY_PRICES)){
+    const cnt=gi('haveAlch_'+key);
+    if(cnt<=0)continue;
+    const bonus=item.tier===0?0:sk.ab;
+    alchRev+=cnt*Math.round(item.price*(1+bonus));
+  }
+
+  // 어패류 직판 수익
+  const directRev=have1*p1+have2*p2+have3*p3;
+  const totalHave=have1+have2+have3;
+
+  if(totalHave===0&&alchRev===0){
+    document.getElementById('procRes').innerHTML='<div class="empty-msg">보유 어패류를 입력하면 계산됩니다</div>';
+    return;
+  }
+
+  // 정밀 연금 최적화 (보유 어패류로 만들 수 있는 연금품 계산은 레시피 복잡도로 인해 가이드 형태 제공)
+  // 1성 어패류: 1성 정수 재료, 2성: 2성 에센스, 3성: 3성 엘릭서
+  const tierBestAlch={
+    1:Object.entries(ALCHEMY_PRICES).filter(([k,v])=>v.tier===1).sort((a,b)=>b[1].price-a[1].price)[0],
+    2:Object.entries(ALCHEMY_PRICES).filter(([k,v])=>v.tier===2).sort((a,b)=>b[1].price-a[1].price)[0],
+    3:Object.entries(ALCHEMY_PRICES).filter(([k,v])=>v.tier===3).sort((a,b)=>b[1].price-a[1].price)[0],
+  };
+
+  const tierColors={0:'#607090',1:'#3a9e68',2:'#3d6fd4',3:'#7c52c8'};
+
+  let html=`
+  <div class="rsec">
+    <div class="rsec-title">📦 보유 현황</div>
+    ${have1>0?`<div class="rrow"><span class="rl">1성 어패류</span><span class="rv">${fmtQty(have1)} (직판 ${f(have1*p1)}원)</span></div>`:''}
+    ${have2>0?`<div class="rrow"><span class="rl">2성 어패류</span><span class="rv">${fmtQty(have2)} (직판 ${f(have2*p2)}원)</span></div>`:''}
+    ${have3>0?`<div class="rrow"><span class="rl">3성 어패류</span><span class="rv">${fmtQty(have3)} (직판 ${f(have3*p3)}원)</span></div>`:''}
+    ${alchRev>0?`<div class="rrow"><span class="rl">보유 연금품 가치</span><span class="rv g">${f(alchRev)}원</span></div>`:''}
+  </div>`;
+
+  // 최적 연금품 추천
+  html+=`<div class="rsec"><div class="rsec-title">⚗️ 최적 연금 방향 (개당 수익 기준)</div>`;
+  for(const tier of[1,2,3]){
+    const best=tierBestAlch[tier];
+    if(!best)continue;
+    const[key,item]=best;
+    const bonus=sk.ab;
+    const price=Math.round(item.price*(1+bonus));
+    const color=tierColors[tier];
+    html+=`<div class="rrow"><span class="rl" style="color:${color}">${'★'.repeat(tier)}성 최고가</span><span class="rv" style="color:${color}">${item.name}: ${f(price)}원/개</span></div>`;
+  }
+  html+=`</div>`;
+
+  const totalRev=directRev+alchRev;
+  html+=`<div class="result-box">
+    <div style="display:flex;gap:12px;align-items:stretch">
+      <div style="flex:1;text-align:center;padding:4px 8px">
+        <div class="rb-label">어패류 직판</div>
+        <div class="rb-value">${f(directRev)}원</div>
+      </div>
+      ${alchRev>0?`
+      <div style="width:1px;background:var(--bdr2);margin:4px 0;flex:none"></div>
+      <div style="flex:1;text-align:center;padding:4px 8px">
+        <div class="rb-label">보유 연금품</div>
+        <div class="rb-value">${f(alchRev)}원</div>
+      </div>`:''}
+    </div>
+    <div style="text-align:center;margin-top:8px;padding-top:8px;border-top:1px dashed var(--bdr2)">
+      <div class="rb-label">합산 수익</div>
+      <div class="rb-value" style="color:var(--grn)">${f(totalRev)}원</div>
+    </div>
+  </div>`;
+
+  document.getElementById('procRes').innerHTML=html;
+};
+
+/* localStorage */
+const SAVE_IDS=[
+  'skillFurnace','skillCraftBonus','skillAlchBonus','skillDeepHarvest','skillStarBonus','skillClamBonus',
+  'engClamSearch','engSeafoodLuck','engFisherRoulette',
+  'rodLevel','totalStamina',
+  'price1Star','price2Star','price3Star',
+  'priceYellow','priceBlue','priceCyan','pricePink','pricePurple','priceBlack',
+  'pSeaweed','pKelp',
+  'pBrooch','pPerfume','pMirror','pHairpin','pFan','pWatch',
+  'have1Star','have2Star','have3Star','haveShell','havePearlMix',
+  ...Object.keys(ALCHEMY_PRICES).map(k=>'haveAlch_'+k),
+];
+const KEY='ocean_calc_v2';
+function saveAll(){const d={};SAVE_IDS.forEach(id=>{const e=document.getElementById(id);if(e)d[id]=e.value;});localStorage.setItem(KEY,JSON.stringify(d));}
+function loadAll(){try{const d=JSON.parse(localStorage.getItem(KEY)||'{}');SAVE_IDS.forEach(id=>{const e=document.getElementById(id);if(e&&d[id]!==undefined)e.value=d[id];});}catch(e){}}
+
+window.toggleSkillPanel=()=>document.getElementById('skillPanel').classList.toggle('collapsed');
+window.toggleEngPanel=()=>document.getElementById('engPanel').classList.toggle('collapsed');
+window.resetAll=()=>{
+  if(!confirm('초기화할까요?'))return;
+  localStorage.removeItem(KEY);
+  SAVE_IDS.forEach(id=>{const e=document.getElementById(id);if(!e)return;if(e.tagName==='SELECT')e.selectedIndex=0;else e.value='';});
+  syncDropdownLabels();onSkillChange();
+};
+
+function initCustomDropdowns(){
+  document.querySelectorAll('.skrow select,.field select').forEach(sel=>{
+    if(sel.previousElementSibling?.classList.contains('cdd'))return;
+    const cdd=document.createElement('div');cdd.className='cdd';
+    const trigger=document.createElement('div');trigger.className='cdd-trigger';
+    const label=document.createElement('span');label.className='cdd-label';label.textContent=sel.options[sel.selectedIndex]?.text||'';
+    const arrow=document.createElement('span');arrow.className='cdd-arrow';arrow.textContent='▼';
+    trigger.appendChild(label);trigger.appendChild(arrow);
+    const menu=document.createElement('div');menu.className='cdd-menu';
+    Array.from(sel.options).forEach((opt,i)=>{
+      const item=document.createElement('div');
+      item.className='cdd-item'+(i===sel.selectedIndex?' selected':'');
+      item.textContent=opt.text;item.dataset.value=opt.value;
+      item.addEventListener('click',()=>{sel.value=opt.value;label.textContent=opt.text;menu.querySelectorAll('.cdd-item').forEach(el=>el.classList.remove('selected'));item.classList.add('selected');cdd.classList.remove('open');sel.dispatchEvent(new Event('change',{bubbles:true}));});
+      menu.appendChild(item);
+    });
+    trigger.addEventListener('click',e=>{e.stopPropagation();const isOpen=cdd.classList.contains('open');document.querySelectorAll('.cdd.open').forEach(el=>el.classList.remove('open'));if(!isOpen)cdd.classList.add('open');});
+    cdd.appendChild(trigger);cdd.appendChild(menu);sel.parentNode.insertBefore(cdd,sel);
+  });
+  document.addEventListener('click',()=>{document.querySelectorAll('.cdd.open').forEach(el=>el.classList.remove('open'));});
+}
+function syncDropdownLabels(){
+  document.querySelectorAll('.skrow select,.field select').forEach(sel=>{
+    const cdd=sel.previousElementSibling;if(!cdd?.classList.contains('cdd'))return;
+    const label=cdd.querySelector('.cdd-label');if(label)label.textContent=sel.options[sel.selectedIndex]?.text||'';
+    cdd.querySelectorAll('.cdd-item').forEach(item=>item.classList.toggle('selected',item.dataset.value===sel.value));
+  });
+}
+
+document.addEventListener('DOMContentLoaded',()=>{
+  buildHaveAlchGrid();
+  loadAll();
+  initCustomDropdowns();
+  syncDropdownLabels();
+  onSkillChange();
+  buildAlchPriceList();
+  const titleEl=document.getElementById('pageTabTitle');if(titleEl)titleEl.textContent=TAB_TITLES[0];
+  document.title=`해양 계산기 — ${TAB_TITLES[0]}`;
+  SAVE_IDS.forEach(id=>{const e=document.getElementById(id);if(!e)return;e.addEventListener(e.tagName==='SELECT'?'change':'input',saveAll);});
+});
+</script>
+</body>
+</html>

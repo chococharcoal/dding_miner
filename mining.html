@@ -1,0 +1,1096 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>⛏ 채광전문가 계산기</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Jua&family=Noto+Sans+KR:wght@500;700;900&display=swap" rel="stylesheet">
+
+<style>
+
+/* ════════════════════════════════════════
+   리셋 & 폰트
+════════════════════════════════════════ */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+*, input, select, button, textarea {
+  font-family: 'Noto Sans KR', 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif !important;
+  font-weight: 700;
+}
+
+/* ════════════════════════════════════════
+   CSS 변수
+════════════════════════════════════════ */
+:root {
+  --bg:      #f7f3ee;
+  --surf:    #ffffff;
+  --bdr:     #e8ddd0;
+  --bdr2:    #d4c4b0;
+  --txt:     #2d1f12;
+  --muted:   #8a7060;
+  --acc:     #e07b2a;
+  --acc2:    #f5a623;
+  --grn:     #3a9e68;  --grn-bg:  #edf8f2;
+  --red:     #d94f3d;  --red-bg:  #fef0ee;
+  --blu:     #3d6fd4;  --blu-bg:  #eef3fd;
+  --pur:     #7c52c8;  --pur-bg:  #f3effe;
+  --ylw:     #c89c00;  --ylw-bg:  #fffbe8;
+  --r:  12px;
+  --rs: 8px;
+  --sh: 0 2px 10px rgba(180,130,80,.10);
+}
+
+html, body {
+  min-height: 100vh;
+  background: var(--bg)
+    radial-gradient(circle at 10% 15%, rgba(240,160,60,.07) 0%, transparent 55%),
+    radial-gradient(circle at 90% 85%, rgba(224,123,42,.05) 0%, transparent 55%);
+  color: var(--txt);
+}
+
+.page { padding: 0 0 60px; }
+
+/* ════════════════════════════════════════
+   헤더
+════════════════════════════════════════ */
+.hdr { text-align: center; padding: 22px 16px 16px; }
+.hdr-title {
+  font-family: 'Jua', sans-serif !important;
+  font-size: 28px; color: var(--acc); letter-spacing: -.5px;
+}
+.hdr-title em { color: var(--txt); font-style: normal; }
+.hdr-sub { font-size: 12px; color: var(--muted); margin-top: 3px; font-weight: 500; }
+
+/* 현재 탭 이름 표시 — 헤더 아래 서브텍스트 */
+.hdr-tab-name {
+  font-family: 'Jua', sans-serif !important;
+  font-size: 13px; color: var(--muted);
+  margin-top: 4px; letter-spacing: .3px;
+}
+
+.bounce { display: inline-block; animation: bounce 2s ease-in-out infinite; }
+@keyframes bounce { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-5px)} }
+
+/* ════════════════════════════════════════
+   레이아웃
+════════════════════════════════════════ */
+.layout { display: block; padding: 0 16px; }
+
+@media (min-width: 860px) {
+  .layout { display: block; padding: 0; }
+  .sidebar {
+    position: fixed;
+    top: 0; left: 0;
+    width: 360px;
+    height: 100vh;
+    overflow-y: auto;
+    padding: 16px 12px;
+    background: var(--bg);
+    border-right: 1.5px solid var(--bdr);
+    box-sizing: border-box;
+    z-index: 100;
+  }
+  .hdr { padding: 22px 16px 16px 376px; }
+  .main {
+    padding: 0 16px 0 376px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+  .main > * {
+    width: 100%;
+    max-width: 700px;
+    box-sizing: border-box;
+  }
+}
+
+/* ════════════════════════════════════════
+   스킬 패널
+════════════════════════════════════════ */
+.skpanel {
+  background: var(--surf);
+  border: 1.5px solid var(--bdr);
+  border-radius: var(--r);
+  padding: 14px;
+  box-shadow: var(--sh);
+  margin-bottom: 14px;
+}
+@media (min-width: 860px) { .skpanel { margin-bottom: 0; } }
+.skpanel-title {
+  font-family: 'Jua', sans-serif !important;
+  font-size: 15px; color: var(--acc);
+  display: flex; align-items: center; gap: 6px;
+  cursor: pointer; user-select: none;
+  margin-bottom: 10px;
+}
+.skpanel-title:hover { color: var(--acc2); }
+.toggle-arrow { font-size: 11px; margin-left: auto; transition: transform .2s; }
+.skpanel.collapsed .toggle-arrow { transform: rotate(-90deg); }
+.skpanel.collapsed .skbody { display: none; }
+.sksec {
+  font-size: 11px; font-weight: 700; color: var(--muted);
+  letter-spacing: .5px; text-transform: uppercase;
+  margin: 12px 0 7px;
+  padding-bottom: 4px; border-bottom: 1px dashed var(--bdr2);
+}
+.skgrid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+.skrow {
+  background: var(--bg);
+  border: 1px solid var(--bdr);
+  border-radius: var(--rs);
+  padding: 9px 11px;
+  display: flex; flex-direction: column; gap: 4px;
+}
+.skname {
+  font-family: 'Jua', sans-serif !important;
+  font-size: 13px; color: var(--txt);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.skrow select { display: none; }
+.field select  { display: none; }
+.skinfo { font-size: 11px; color: var(--muted); font-weight: 500; min-height: 14px; }
+
+/* ════════════════════════════════════════
+   커스텀 드롭다운
+════════════════════════════════════════ */
+.cdd { position: relative; width: 100%; }
+.skrow .cdd-trigger {
+  display: flex; align-items: center; justify-content: space-between; gap: 4px;
+  padding: 6px 8px;
+  border: 1.5px solid var(--bdr2); border-radius: var(--rs);
+  background: var(--surf); color: var(--txt);
+  font-size: 11px !important; font-weight: 700 !important;
+  cursor: pointer; user-select: none; line-height: 1.3;
+  white-space: nowrap; overflow: hidden;
+}
+.skrow .cdd-trigger:hover { border-color: var(--acc); }
+.field .cdd-trigger {
+  display: flex; align-items: center; justify-content: space-between; gap: 4px;
+  padding: 7px 10px;
+  border: 1.5px solid var(--bdr); border-radius: var(--rs);
+  background: var(--bg); color: var(--txt);
+  font-size: 12px !important; font-weight: 700 !important;
+  cursor: pointer; user-select: none; line-height: 1.3;
+  transition: border-color .15s, box-shadow .15s;
+  white-space: nowrap; overflow: hidden;
+}
+.field .cdd-trigger:hover { border-color: var(--acc); }
+/* 트리거 라벨 — 넘치면 말줄임 */
+.cdd-label { overflow: hidden; text-overflow: ellipsis; min-width: 0; flex: 1; }
+.cdd-trigger .cdd-arrow { font-size: 9px; color: var(--muted); flex-shrink: 0; transition: transform .15s; }
+.cdd.open .cdd-trigger  { border-color: var(--acc); box-shadow: 0 0 0 2px rgba(224,123,42,.15); }
+.cdd.open .cdd-arrow    { transform: rotate(180deg); }
+.cdd-menu {
+  display: none;
+  position: absolute;
+  top: calc(100% + 3px); left: 0; right: 0;
+  background: var(--surf);
+  border: 1.5px solid var(--acc); border-radius: var(--rs);
+  box-shadow: 0 6px 20px rgba(0,0,0,.12);
+  z-index: 9999; max-height: 220px; overflow-y: auto;
+}
+.cdd.open .cdd-menu { display: block; }
+.cdd-item {
+  padding: 5px 10px;
+  font-size: 11px !important; font-weight: 700 !important;
+  color: var(--txt); cursor: pointer;
+  border-bottom: 1px solid var(--bdr); line-height: 1.3;
+  white-space: nowrap;    /* 줄바꿈 방지 */
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.skrow .cdd-item   { font-size: 11px !important; }
+.cdd-item:last-child { border-bottom: none; }
+.cdd-item:hover    { background: var(--ylw-bg); color: var(--acc); }
+.cdd-item.selected { background: var(--acc); color: #fff; }
+
+/* ════════════════════════════════════════
+   탭바
+════════════════════════════════════════ */
+.tabbar {
+  display: flex; align-items: center; flex-wrap: wrap;
+  gap: 7px; margin-bottom: 12px;
+}
+.tab {
+  font-family: 'Jua', sans-serif !important;
+  font-size: 14px; padding: 8px 16px;
+  border-radius: 20px; border: 2px solid var(--bdr2);
+  background: var(--surf); color: var(--muted);
+  cursor: pointer; transition: all .15s; white-space: nowrap;
+}
+.tab:hover { border-color: var(--acc); color: var(--acc); }
+.tab.on    { background: var(--acc); border-color: var(--acc); color: #fff; box-shadow: 0 3px 10px rgba(224,123,42,.3); }
+.reset-btn {
+  margin-left: auto;
+  font-family: 'Jua', sans-serif !important;
+  font-size: 12px; padding: 5px 11px;
+  border-radius: 20px; border: 1.5px solid var(--bdr2);
+  background: var(--surf); color: var(--muted);
+  cursor: pointer; transition: all .15s;
+  display: inline-flex; align-items: center; gap: 3px;
+}
+.reset-btn:hover { border-color: var(--red); color: var(--red); background: var(--red-bg); }
+
+/* 자동채우기 버튼 */
+.autofill-btn {
+  font-family: 'Jua', sans-serif !important;
+  font-size: 12px; padding: 5px 11px;
+  border-radius: 20px; border: 1.5px solid var(--grn);
+  background: var(--grn-bg); color: var(--grn);
+  cursor: pointer; transition: all .15s;
+  display: inline-flex; align-items: center; gap: 3px;
+}
+.autofill-btn:hover { background: var(--grn); color: #fff; }
+
+/* ════════════════════════════════════════
+   패널·카드
+════════════════════════════════════════ */
+.panel { display: flex; flex-direction: column; gap: 20px; }
+.card {
+  background: var(--surf);
+  border: 1.5px solid var(--bdr);
+  border-radius: var(--r);
+  padding: 15px 16px;
+  box-shadow: var(--sh);
+}
+.card-title {
+  font-family: 'Jua', sans-serif !important;
+  font-size: 14px; color: var(--txt);
+  margin-bottom: 12px;
+  display: flex; align-items: center; gap: 6px;
+}
+.card-title::before {
+  content: ''; display: inline-block;
+  width: 4px; height: 14px;
+  background: var(--acc); border-radius: 2px;
+}
+
+/* ════════════════════════════════════════
+   그리드
+════════════════════════════════════════ */
+.g2 { display: grid; grid-template-columns: 1fr 1fr; gap: 9px; }
+.g3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 9px; }
+@media (max-width: 500px) { .g3 { grid-template-columns: 1fr 1fr; } }
+@media (max-width: 340px) { .g2, .g3 { grid-template-columns: 1fr; } }
+
+/* ════════════════════════════════════════
+   필드
+════════════════════════════════════════ */
+.field { display: flex; flex-direction: column; gap: 3px; }
+.field label { font-size: 11px; font-weight: 700; color: var(--muted); }
+.field input, .field select {
+  font-size: 13px !important; font-weight: 700 !important;
+  border: 1.5px solid var(--bdr); border-radius: var(--rs);
+  padding: 7px 10px;
+  background: var(--bg); color: var(--txt);
+  outline: none; width: 100%;
+  transition: border-color .15s, box-shadow .15s;
+}
+.field input:focus, .field select:focus {
+  border-color: var(--acc);
+  box-shadow: 0 0 0 3px rgba(224,123,42,.12);
+  background: var(--surf);
+}
+.field input::placeholder { color: #c0aa90; font-weight: 500; }
+.opt {
+  font-size: 9px; font-weight: 700;
+  background: var(--ylw-bg); color: var(--ylw);
+  border: 1px solid currentColor; border-radius: 4px; padding: 0 4px;
+  vertical-align: middle;
+}
+.fnote { font-size: 10px; color: var(--muted); font-weight: 500; margin-top: 3px; }
+
+/* ════════════════════════════════════════
+   구분 라벨
+════════════════════════════════════════ */
+.slabel {
+  font-family: 'Jua', sans-serif !important;
+  font-size: 12px; color: var(--acc);
+  margin: 8px 0 5px;
+  display: flex; align-items: center; gap: 5px;
+}
+.slabel::after { content: ''; flex: 1; height: 1px; background: var(--bdr2); }
+
+/* ════════════════════════════════════════
+   결과 행
+════════════════════════════════════════ */
+.rrow {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 5px 0; border-bottom: 1px dashed var(--bdr);
+  gap: 8px; font-size: 12px;
+  font-family: 'Noto Sans KR', sans-serif !important;
+}
+.rrow:last-child  { border-bottom: none; }
+.rrow-strong      { border-top: 1px solid var(--bdr2); margin-top: 4px; padding-top: 6px; font-size: 13px;
+                    font-family: 'Noto Sans KR', sans-serif !important; font-weight: 900 !important; }
+.rl   { color: var(--muted); flex-shrink: 0; font-weight: 700;
+        font-family: 'Noto Sans KR', sans-serif !important; }
+.rv   { font-weight: 900; text-align: right;
+        font-family: 'Noto Sans KR', sans-serif !important; }
+.rv small { font-size: 10px; font-weight: 500; }
+.rsec { background: var(--bg); border-radius: var(--rs); padding: 8px 10px; margin: 6px 0; border: 1px solid var(--bdr); }
+.rsec-title { font-family: 'Jua', sans-serif !important; font-size: 12px; color: var(--muted); margin-bottom: 5px; }
+.g { color: var(--grn); }
+.r { color: var(--red); }
+.b { color: var(--blu); }
+.p { color: var(--acc); }
+.muted { color: var(--muted); }
+
+/* ════════════════════════════════════════
+   배지
+════════════════════════════════════════ */
+.bdg { display: inline-block; font-size: 10px; font-weight: 700; padding: 1px 6px; border-radius: 20px; vertical-align: middle; }
+.bg  { background: var(--grn-bg); color: var(--grn); border: 1px solid var(--grn); }
+.br  { background: var(--red-bg); color: var(--red); border: 1px solid var(--red); }
+.bb  { background: var(--blu-bg); color: var(--blu); border: 1px solid var(--blu); }
+.bpu { background: var(--pur-bg); color: var(--pur); border: 1px solid var(--pur); }
+
+/* ════════════════════════════════════════
+   결과 박스
+════════════════════════════════════════ */
+.result-box {
+  background: linear-gradient(135deg, #fff9f2, #fff4e0);
+  border: 2px solid var(--acc2); border-radius: var(--rs);
+  padding: 13px; margin: 8px 0 0;
+}
+.rb-label { font-size: 11px; color: var(--muted); font-weight: 700; margin-bottom: 3px; }
+.rb-value { font-family: 'Jua', sans-serif !important; font-size: 22px; color: var(--acc); }
+.rb-floor { color: var(--grn); }
+.rb-sub   { display: block; font-size: 10px; color: var(--muted); font-weight: 500; margin-top: 2px; }
+
+/* ════════════════════════════════════════
+   제작 아이템
+════════════════════════════════════════ */
+.craft-item { background: var(--surf); border: 1px solid var(--bdr); border-radius: var(--rs); padding: 8px 10px; margin-bottom: 6px; }
+.mat-row    { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 4px; }
+.mat-chip   { font-size: 10px; font-weight: 700; background: var(--grn-bg); color: var(--grn); border: 1px solid var(--grn); border-radius: 4px; padding: 1px 6px; }
+.craft-time { font-size: 10px; color: var(--blu); font-weight: 700; margin-top: 3px; }
+.appr-row   { display: flex; flex-wrap: wrap; gap: 6px; font-size: 10px; color: var(--muted); font-weight: 500; margin-top: 3px; }
+.appr-row span:last-child { font-weight: 700; color: var(--grn); }
+
+
+/* ── 최적 제작 계획 좌우 2단 레이아웃 ── */
+.plan-cols {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0;
+  /* 두 컬럼 높이를 맞춰 summary가 항상 같은 높이에서 시작 */
+  align-items: stretch;
+}
+@media (max-width: 600px) {
+  .plan-cols { grid-template-columns: 1fr; }
+}
+
+/* 각 컬럼 — flex column으로 세로 정렬 */
+.plan-col {
+  padding: 10px 12px;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+}
+/* 왼쪽 컬럼 오른쪽에 구분선 */
+.plan-col:first-child {
+  border-right: 1.5px solid var(--bdr2);
+}
+
+/* winner 강조 — 배경색 대신 헤더 하단 테두리 굵게 + 제목 색 */
+.plan-col.winner { /* 배경 없음 */ }
+
+/* 제작 아이템 목록 영역 — flex:1로 늘려서 summary를 하단으로 밀기 */
+.plan-items-wrap {
+  flex: 1;
+}
+
+/* 컬럼 헤더 */
+.plan-col-title {
+  font-family: 'Jua', sans-serif !important;
+  font-size: 15px;
+  color: var(--muted);
+  margin-bottom: 10px;
+  padding-bottom: 6px;
+  border-bottom: 2px solid var(--bdr2);
+  display: flex; align-items: center; gap: 6px;
+  letter-spacing: -.3px;
+  flex-wrap: wrap;
+}
+.plan-col-title.winner-title {
+  color: var(--acc);
+  border-bottom: 3px solid var(--acc);  /* 굵은 주황 밑줄로 강조 */
+}
+.plan-col-title.loser-title { color: var(--muted); opacity: .65; }
+
+/* 개별 제작 아이템 — 카드형 */
+.plan-craft-item {
+  background: var(--surf);
+  border: 1px solid var(--bdr);
+  border-radius: var(--rs);
+  padding: 9px 10px;
+  margin-bottom: 7px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-family: 'Noto Sans KR', sans-serif !important;
+}
+/* 제작 아이템 첫 번째 행 — 이름 + 수량·수익 */
+.plan-item-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 6px;
+}
+.plan-item-name {
+  font-family: 'Jua', sans-serif !important;
+  font-size: 13px; color: var(--txt);
+  flex: 1; min-width: 0;
+  line-height: 1.3;
+}
+.plan-item-name .npi {
+  font-family: 'Noto Sans KR', sans-serif !important;
+  font-size: 10px; font-weight: 500; color: var(--muted);
+  display: block; margin-top: 1px;
+}
+.plan-item-rev {
+  font-family: 'Noto Sans KR', sans-serif !important;
+  font-size: 13px; font-weight: 900; color: var(--grn);
+  white-space: nowrap; flex-shrink: 0;
+  text-align: right;
+}
+.plan-item-count {
+  font-family: 'Noto Sans KR', sans-serif !important;
+  font-size: 11px; font-weight: 700; color: var(--muted);
+  display: block; text-align: right; margin-top: 1px;
+}
+/* 감정 등급 행 */
+.plan-appr-row {
+  display: flex; flex-wrap: wrap; gap: 4px;
+  font-size: 10px; color: var(--muted); font-weight: 500;
+}
+.plan-appr-row .best { color: var(--grn); font-weight: 700; }
+/* 재료 chip 행 */
+.plan-mat-row {
+  display: flex; flex-wrap: wrap; gap: 3px;
+  margin-top: 1px;
+}
+/* 시간 행 — 항상 하단 고정 */
+.plan-item-time {
+  display: flex; align-items: center; gap: 4px;
+  font-size: 10px; font-weight: 700; color: var(--blu);
+  border-top: 1px dashed var(--bdr);
+  margin-top: 2px; padding-top: 4px;
+}
+
+/* 교환 정보 박스 — 라이프스톤 카드와 동일 스타일 */
+.swap-info-box {
+  background: var(--surf);
+  border: 1px solid var(--bdr);
+  border-radius: var(--rs);
+  padding: 9px 10px;
+  margin-bottom: 8px;
+}
+.swap-info-box-title {
+  font-family: 'Jua', sans-serif !important;
+  font-size: 13px; color: var(--txt);
+  margin-bottom: 6px;
+  padding-bottom: 4px;
+  border-bottom: 1px dashed var(--bdr);
+}
+.swap-info-row {
+  display: flex; justify-content: space-between; align-items: center;
+  font-size: 11px; font-weight: 700; padding: 2px 0;
+  gap: 6px;
+  font-family: 'Noto Sans KR', sans-serif !important;
+}
+.swap-info-row .si-label { color: var(--txt); }
+.swap-info-row .si-gain  { color: var(--grn); white-space: nowrap; font-size: 10px; }
+
+/* 요약 섹션 — 항상 컬럼 하단에 붙음 */
+.plan-summary {
+  margin-top: auto;        /* flex:1 남은 공간 이후 하단 붙이기 */
+  padding-top: 8px;
+  border-top: 2px solid var(--bdr2);
+}
+.plan-col.winner .plan-summary {
+  border-top-color: var(--acc);  /* winner는 주황 구분선 */
+}
+.plan-summary-row {
+  display: flex; justify-content: space-between; align-items: center;
+  font-size: 12px; font-weight: 700;
+  padding: 3px 0;
+  gap: 6px;
+}
+.plan-summary-row .sl { color: var(--muted); white-space: nowrap; }
+.plan-summary-row .sv { color: var(--txt); text-align: right; }
+.plan-summary-row.rev-row {
+  margin-top: 4px;
+  padding-top: 4px;
+  border-top: 1px dashed var(--bdr2);
+}
+.plan-summary-row.rev-row .sl {
+  font-family: 'Jua', sans-serif !important;
+  font-size: 13px; color: var(--muted);
+}
+.plan-summary-row.rev-row .sv {
+  font-family: 'Jua', sans-serif !important;
+  font-size: 20px; color: var(--acc);
+}
+.plan-col.winner .plan-summary-row.rev-row .sv { color: var(--acc); }
+
+/* 총 필요 재료 — 접기/펼치기 */
+.mat-toggle {
+  font-size: 10px; font-weight: 700; color: var(--blu);
+  cursor: pointer; user-select: none;
+  display: flex; align-items: center; gap: 3px;
+  padding: 3px 0;
+}
+.mat-toggle:hover { color: var(--acc); }
+.mat-detail { display: none; margin-top: 4px; }
+.mat-detail.open { display: block; }
+.mat-summary { }
+.mat-summary-row {
+  display: flex; justify-content: space-between;
+  font-size: 12px; font-weight: 700;
+  padding: 3px 0; border-bottom: 1px dashed var(--bdr);
+  gap: 6px;
+}
+.mat-summary-row:last-child { border-bottom: none; }
+.mat-summary-row .mn { color: var(--txt); white-space: nowrap; }
+.mat-summary-row .mv { color: var(--txt); text-align: right; }
+
+.empty-msg { color: var(--muted); font-size: 12px; text-align: center; padding: 14px 0; font-weight: 500; }
+::-webkit-scrollbar { width: 5px; }
+::-webkit-scrollbar-thumb { background: var(--bdr2); border-radius: 3px; }
+
+
+
+</style>
+</head>
+
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-TYFFZ1K6QG"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-TYFFZ1K6QG');
+</script>
+
+<body>
+<div class="page">
+
+<!-- ══════════════════════════════
+     헤더
+══════════════════════════════ -->
+<div class="hdr">
+  <div class="hdr-title"><span class="bounce">⛏</span> 채광전문가 계산기</div>
+  <!-- 현재 탭 이름 — app.js sw()가 갱신 -->
+  <div class="hdr-tab-name" id="pageTabTitle">⛏ 채광 계산기</div>
+</div>
+
+<!-- ══════════════════════════════
+     전체 레이아웃
+══════════════════════════════ -->
+<div class="layout">
+
+<!-- ── 사이드바: 스킬 & 각인석 패널 ── -->
+<div class="sidebar">
+<div class="skpanel" id="skillPanel">
+  <div class="skpanel-title" onclick="toggleSkillPanel()">
+    ⚡ 스킬 설정
+    <span class="toggle-arrow">▼</span>
+  </div>
+  <div class="skbody">
+
+    <div class="sksec">💰 판매 보너스</div>
+    <div class="skgrid">
+      <div class="skrow">
+        <span class="skname">✨ 반짝반짝 눈이 부셔</span>
+        <select id="skillGemSell" onchange="onSkillChange()">
+          <option value="0">0레벨 — 기본</option>
+          <option value="1">1레벨 — +5%</option><option value="2">2레벨 — +7%</option>
+          <option value="3">3레벨 — +10%</option><option value="4">4레벨 — +20%</option>
+          <option value="5">5레벨 — +30%</option><option value="6">6레벨 — +50%</option>
+        </select>
+      </div>
+      <div class="skrow">
+        <span class="skname">👑 귀하신 몸값</span>
+        <select id="skillPrecious" onchange="onSkillChange()">
+          <option value="0">0레벨 — 기본</option>
+          <option value="1">1레벨 — +5%</option><option value="2">2레벨 — +7%</option>
+          <option value="3">3레벨 — +10%</option><option value="4">4레벨 — +15%</option>
+          <option value="5">5레벨 — +20%</option><option value="6">6레벨 — +30%</option>
+        </select>
+      </div>
+      <div class="skrow">
+        <span class="skname">🔥 초고속 용광로</span>
+        <select id="skillFurnace" onchange="onSkillChange()">
+          <option value="0">0레벨 — 기본</option>
+          <option value="1">1레벨 — -10%</option><option value="2">2레벨 — -30%</option>
+          <option value="3">3레벨 — -40%</option><option value="4">4레벨 — -60%</option>
+          <option value="5">5레벨 — -80%</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="sksec">⛏ 채굴 드랍</div>
+    <div class="skgrid">
+      <div class="skrow">
+        <span class="skname">🐾 코비 타임</span>
+        <select id="skillCobby" onchange="onSkillChange()">
+          <option value="0">0레벨 — 기본</option>
+          <option value="1">1레벨 — +1%</option><option value="2">2레벨 — +1.5%</option>
+          <option value="3">3레벨 — +2%</option><option value="4">4레벨 — +2.5%</option>
+          <option value="5">5레벨 — +3%</option><option value="6">6레벨 — +4%</option>
+          <option value="7">7레벨 — +5%</option>
+        </select>
+      </div>
+      <div class="skrow">
+        <span class="skname">🍀 럭키 히트</span>
+        <select id="skillLucky" onchange="onSkillChange()">
+          <option value="0">0레벨 — 기본</option>
+          <option value="1">1레벨 — 1%/+1개</option><option value="2">2레벨 — 2%/+2개</option>
+          <option value="3">3레벨 — 3%/+3개</option><option value="4">4레벨 — 4%/+4개</option>
+          <option value="5">5레벨 — 5%/+6개</option><option value="6">6레벨 — 6%/+8개</option>
+          <option value="7">7레벨 — 7%/+10개</option><option value="8">8레벨 — 8%/+12개</option>
+          <option value="9">9레벨 — 10%/+16개</option><option value="10">10레벨 — 15%/+20개</option>
+        </select>
+      </div>
+      <div class="skrow">
+        <span class="skname">💫 반짝임의 시작</span>
+        <select id="skillSparkle" onchange="onSkillChange()">
+          <option value="0">0레벨 — 기본</option>
+          <option value="1">1레벨 — 3% / 1개</option>
+          <option value="2">2레벨 — 7% / 1개</option>
+          <option value="3">3레벨 — 10% / 2개</option>
+        </select>
+      </div>
+      <div class="skrow">
+        <span class="skname">🔥 불붙은 곡괭이</span>
+        <select id="skillFirePick" onchange="onSkillChange()">
+          <option value="0">0레벨 — 기본</option>
+          <option value="1">1레벨 — 1%</option><option value="2">2레벨 — 2%</option>
+          <option value="3">3레벨 — 3%</option><option value="4">4레벨 — 4%</option>
+          <option value="5">5레벨 — 5%</option><option value="6">6레벨 — 6%</option>
+          <option value="7">7레벨 — 7%</option><option value="8">8레벨 — 8%</option>
+          <option value="9">9레벨 — 9%</option><option value="10">10레벨 — 15%</option>
+        </select>
+      </div>
+    </div>
+
+  </div><!-- /skbody -->
+</div><!-- /skpanel -->
+
+<!-- 각인석 패널 -->
+<div class="skpanel" id="engPanel" style="margin-top:10px">
+  <div class="skpanel-title" onclick="toggleEngPanel()">
+    🪨 각인석 설정
+    <span class="toggle-arrow">▼</span>
+  </div>
+  <div class="skbody">
+    <div class="skgrid">
+      <div class="skrow">
+        <span class="skname">🪨 광물 행운</span>
+        <select id="engOreLuck" onchange="onEngravingChange()">
+          <option value="0">없음</option>
+          <option value="1">1강 — 25%/+1개</option><option value="2">2강 — 50%/+1개</option>
+          <option value="3">3강 — 75%/+1개</option><option value="4">4강 — 100%/+1개</option>
+        </select>
+      </div>
+      <div class="skrow">
+        <span class="skname">🗿 유물 탐색</span>
+        <select id="engRelic" onchange="onEngravingChange()">
+          <option value="0">없음</option>
+          <option value="1">1강 — +1%</option><option value="2">2강 — +3%</option>
+          <option value="3">3강 — +5%</option>
+        </select>
+      </div>
+      <div class="skrow">
+        <span class="skname">🐾 코비 소환</span>
+        <select id="engCobby" onchange="onEngravingChange()">
+          <option value="0">없음</option>
+          <option value="1">1강 — +1%</option><option value="2">2강 — +3%</option>
+          <option value="3">3강 — +5%</option>
+        </select>
+      </div>
+      <div class="skrow">
+        <span class="skname">💎 보석 코비</span>
+        <select id="engGemCobby" onchange="onEngravingChange()">
+          <option value="0">없음</option>
+          <option value="1">1강 — 5%</option><option value="2">2강 — 10%</option>
+          <option value="3">3강 — 20%</option><option value="4">4강 — 30%</option>
+          <option value="5">5강 — 50%</option>
+        </select>
+      </div>
+      <div class="skrow">
+        <span class="skname">🚂 광산 수레</span>
+        <select id="engCart" onchange="onEngravingChange()">
+          <option value="0">없음</option>
+          <option value="1">1강 — 0.5%</option><option value="2">2강 — 1%</option>
+          <option value="3">3강 — 1.5%</option><option value="4">4강 — 2%</option>
+          <option value="5">5강 — 3%</option>
+        </select>
+      </div>
+      <div class="skrow">
+        <span class="skname">🎲 광부 룰렛</span>
+        <select id="engRoulette" onchange="onEngravingChange()">
+          <option value="0">없음</option>
+          <option value="1">1강 — 1%</option><option value="2">2강 — 2%</option>
+          <option value="3">3강 — 3%</option><option value="4">4강 — 4%</option>
+          <option value="5">5강 — 5%</option>
+        </select>
+      </div>
+    </div>
+  </div><!-- /skbody -->
+</div><!-- /skpanel -->
+</div><!-- /sidebar -->
+
+<!-- ── 메인 ── -->
+<div class="main">
+
+  <!-- 탭 선택 버튼 + 자동채우기 + 초기화 -->
+  <div class="tabbar">
+    <div class="tab on" onclick="sw(0,this)">⛏ 채굴 수익</div>
+    <div class="tab"    onclick="sw(1,this)">🔥 강화 횃불</div>
+    <div class="tab"    onclick="sw(2,this)">⚖ 수익 최적화</div>
+    <div style="margin-left:auto;display:flex;gap:6px;align-items:center">
+      <!-- 자동채우기: config.js DEFAULT_PRICES 기준으로 빈 칸만 채움 (주괴 단가 제외) -->
+      <button class="autofill-btn" onclick="autoFillPrices()">✨ 시세 자동채우기</button>
+      <button class="reset-btn"    onclick="resetAll()">🗑 초기화</button>
+    </div>
+  </div>
+
+  <!-- ══ TAB 0: 채굴 수익 ══ -->
+  <div id="t0" class="panel">
+
+    <div class="card">
+      <div class="card-title">⛏ 곡괭이 &amp; 스테미나</div>
+      <div class="g2">
+        <div class="field">
+          <label>곡괭이 강화</label>
+          <select id="pickaxeLevel" onchange="cs()">
+            <option value="0">0강</option><option value="1">1강</option><option value="2">2강</option>
+            <option value="3">3강</option><option value="4">4강</option><option value="5">5강</option>
+            <option value="6">6강</option><option value="7">7강</option><option value="8">8강</option>
+            <option value="9">9강</option><option value="10">10강</option><option value="11">11강</option>
+            <option value="12">12강</option><option value="13">13강</option><option value="14">14강</option>
+            <option value="15">15강</option>
+          </select>
+        </div>
+        <div class="field"><label>총 스테미나</label><input id="totalStamina" type="number" inputmode="numeric" placeholder="0" oninput="cs()"></div>
+      </div>
+      <div class="field" style="margin-top:8px">
+        <label>캘 광석 종류</label>
+        <select id="oreType" onchange="cs()">
+          <option value="even">골고루 (3종 균등)</option>
+          <option value="corum">코룸만</option>
+          <option value="rifton">리프톤만</option>
+          <option value="serent">세렌트만</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">💰 판매가 (원/개)</div>
+      <div class="slabel">주괴
+        <span style="font-size:10px;color:var(--muted);font-weight:500;margin-left:4px">
+</span>
+      </div>
+      <div class="g3">
+        <div class="field"><label>코룸 주괴</label><input id="ingotPriceC" type="number" inputmode="numeric" placeholder="3500" oninput="cs()"></div>
+        <div class="field"><label>리프톤 주괴</label><input id="ingotPriceR" type="number" inputmode="numeric" placeholder="3750" oninput="cs()"></div>
+        <div class="field"><label>세렌트 주괴</label><input id="ingotPriceS" type="number" inputmode="numeric" placeholder="4000" oninput="cs()"></div>
+      </div>
+      <div class="slabel" style="margin-top:8px">보석</div>
+      <div class="g3">
+        <div class="field"><label>코룸 보석</label><input id="gemPriceC" type="number" inputmode="numeric" placeholder="7000" oninput="cs()"></div>
+        <div class="field"><label>리프톤 보석</label><input id="gemPriceR" type="number" inputmode="numeric" placeholder="7500" oninput="cs()"></div>
+        <div class="field"><label>세렌트 보석</label><input id="gemPriceS" type="number" inputmode="numeric" placeholder="8000" oninput="cs()"></div>
+      </div>
+      <div class="slabel" style="margin-top:8px">기타</div>
+      <div class="g2">
+        <div class="field"><label>스킬펄스</label><input id="skillPulsePrice" type="number" inputmode="numeric" placeholder="0" oninput="cs()"></div>
+        <div class="field"><label>유물 포인트 (원/100pt)</label><input id="artifactPtPrice" type="number" inputmode="numeric" placeholder="0" oninput="cs()"></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">📊 계산 결과</div>
+      <div id="sRes"><div class="empty-msg">값을 입력하면 계산됩니다</div></div>
+    </div>
+  </div>
+
+  <!-- ══ TAB 1: 강화 횃불 ══ -->
+  <div id="t1" class="panel" style="display:none">
+
+    <div class="card">
+      <div class="card-title">🪵 재료 가격 (원/세트)</div>
+      <div class="g2">
+        <div class="field"><label>숯 / 석탄</label><input id="tCharcoalPrice" type="number" inputmode="numeric" placeholder="0" oninput="ct()"></div>
+        <div class="field"><label>원목</label><input id="tWoodPrice" type="number" inputmode="numeric" placeholder="0" oninput="ct()"></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">📋 제작 계획</div>
+      <div class="g2">
+        <div class="field">
+          <label>만들 횃불 수</label>
+          <input id="tWantCount" type="text" placeholder="예) 2상자 3세트 5개" oninput="ct()" style="font-size:12px">
+          <span id="tWantCountParsed" style="font-size:10px;color:var(--muted);min-height:14px;display:block;margin-top:2px"></span>
+        </div>
+        <div class="field">
+          <label>횃불 판매가 (원/세트) <span class="opt">선택</span></label>
+          <input id="tSellPrice" type="number" inputmode="numeric" placeholder="미입력 시 재료비만" oninput="ct()">
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">📊 계산 결과</div>
+      <div id="tRes"><div class="empty-msg">값을 입력하면 계산됩니다</div></div>
+    </div>
+  </div>
+
+  <!-- ══ TAB 2: 수익 최적화 ══ -->
+  <div id="t2" class="panel" style="display:none">
+
+    <div class="card">
+      <div class="card-title">📦 보유 주괴</div>
+      <div class="g3">
+        <div class="field">
+          <label>코룸 주괴</label>
+          <input id="iCo" type="text" placeholder="예) 1세트 5개" oninput="co()" style="font-size:12px">
+          <span id="iCoParsed" style="font-size:10px;color:var(--muted);min-height:14px;display:block;margin-top:2px"></span>
+        </div>
+        <div class="field">
+          <label>리프톤 주괴</label>
+          <input id="iRi" type="text" placeholder="예) 1세트 5개" oninput="co()" style="font-size:12px">
+          <span id="iRiParsed" style="font-size:10px;color:var(--muted);min-height:14px;display:block;margin-top:2px"></span>
+        </div>
+        <div class="field">
+          <label>세렌트 주괴</label>
+          <input id="iSe" type="text" placeholder="예) 1세트 5개" oninput="co()" style="font-size:12px">
+          <span id="iSeParsed" style="font-size:10px;color:var(--muted);min-height:14px;display:block;margin-top:2px"></span>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">💰 주괴 단가 (원/개)
+      </div>
+      <div class="g3">
+        <div class="field"><label>코룸 주괴</label><input id="oCo" type="number" inputmode="numeric" placeholder="3500" oninput="co()"></div>
+        <div class="field"><label>리프톤 주괴</label><input id="oRi" type="number" inputmode="numeric" placeholder="3750" oninput="co()"></div>
+        <div class="field"><label>세렌트 주괴</label><input id="oSe" type="number" inputmode="numeric" placeholder="4000" oninput="co()"></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">🏪 라이프스톤 / 어빌리티 스톤 (원/개)</div>
+      <div class="g2">
+        <div class="field"><label>하급 라이프스톤</label><input id="oL1" type="number" inputmode="numeric" placeholder="0" oninput="co()"></div>
+        <div class="field"><label>중급 라이프스톤</label><input id="oL2" type="number" inputmode="numeric" placeholder="0" oninput="co()"></div>
+        <div class="field"><label>상급 라이프스톤</label><input id="oL3" type="number" inputmode="numeric" placeholder="0" oninput="co()"></div>
+        <div class="field"><label>어빌리티 스톤</label><input id="oAb" type="number" inputmode="numeric" placeholder="0" oninput="co()"></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">📦 바닐라 재료 가격</div>
+      <div class="slabel">조약돌 묶음 (골드 / 세트)</div>
+      <div class="g2">
+        <div class="field"><label>조약돌 묶음</label><input id="vCo" type="number" inputmode="numeric" placeholder="0" oninput="co()"></div>
+        <div class="field"><label>심층암 조약돌 묶음</label><input id="vDc" type="number" inputmode="numeric" placeholder="0" oninput="co()"></div>
+      </div>
+      <div class="slabel" style="margin-top:8px">바닐라 광물 블럭 (골드 / 세트)</div>
+      <div class="g3">
+        <div class="field"><label>구리 블럭</label><input id="vCu" type="number" inputmode="numeric" placeholder="0" oninput="co()"></div>
+        <div class="field"><label>철 블럭</label><input id="vIr" type="number" inputmode="numeric" placeholder="0" oninput="co()"></div>
+        <div class="field"><label>금 블럭</label><input id="vGo" type="number" inputmode="numeric" placeholder="0" oninput="co()"></div>
+        <div class="field"><label>다이아 블럭</label><input id="vDi" type="number" inputmode="numeric" placeholder="0" oninput="co()"></div>
+        <div class="field"><label>레드스톤 블럭</label><input id="vRe" type="number" inputmode="numeric" placeholder="0" oninput="co()"></div>
+        <div class="field"><label>청금석 블럭</label><input id="vLa" type="number" inputmode="numeric" placeholder="0" oninput="co()"></div>
+        <div class="field"><label>자수정 블럭</label><input id="vAm" type="number" inputmode="numeric" placeholder="0" oninput="co()"></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">👑 귀중품 재료 가격</div>
+      <div class="slabel">특수 광물 블럭 (골드 / 개)</div>
+      <div class="g3">
+        <div class="field"><label>토파즈 블럭</label><input id="vTopaz" type="number" inputmode="numeric" placeholder="0" oninput="co()"></div>
+        <div class="field"><label>사파이어 블럭</label><input id="vSapphire" type="number" inputmode="numeric" placeholder="0" oninput="co()"></div>
+        <div class="field"><label>플레티넘 블럭</label><input id="vPlatinum" type="number" inputmode="numeric" placeholder="0" oninput="co()"></div>
+      </div>
+      <div class="slabel" style="margin-top:8px">기타 재료 (골드 / 세트)</div>
+      <div class="g3">
+        <div class="field"><label>섬록암</label><input id="vDiorite" type="number" inputmode="numeric" placeholder="0" oninput="co()"></div>
+        <div class="field"><label>응회암</label><input id="vTuff" type="number" inputmode="numeric" placeholder="0" oninput="co()"></div>
+        <div class="field"><label>안산암</label><input id="vAndesite" type="number" inputmode="numeric" placeholder="0" oninput="co()"></div>
+      </div>
+      <div class="fnote" style="margin-top:6px">📌 증서는 개당 10,000원 고정 반영됩니다</div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">📊 최적화 결과 <span style="font-size:11px;color:var(--muted);font-weight:500">(직판 vs 라스/어빌/귀중품 통합 비교)</span></div>
+      <div id="oRes"><div class="empty-msg">값을 입력하면 계산됩니다</div></div>
+    </div>
+  </div>
+
+</div><!-- /main -->
+</div><!-- /layout -->
+</div><!-- /page -->
+
+<script type="module">
+  import {
+    sw, cs, ct, co,
+    onSkillChange, onEngravingChange,
+    autoFillPrices, init,
+  } from './app.js';
+
+  /* 전역 노출 (HTML onclick에서 호출) */
+  window.sw              = sw;
+  window.cs              = cs;
+  window.ct              = ct;
+  window.co              = co;
+  window.onSkillChange   = onSkillChange;
+  window.onEngravingChange = onEngravingChange;
+  window.autoFillPrices  = autoFillPrices;
+  window.init            = init;
+
+  /* ── localStorage 저장 대상 ── */
+  const SAVE_IDS = [
+    'skillGemSell','skillPrecious','skillFurnace',
+    'skillCobby','skillSparkle','skillLucky','skillFirePick',
+    'engOreLuck','engRelic','engCobby','engGemCobby','engCart','engRoulette',
+    'pickaxeLevel','totalStamina','oreType',
+    'ingotPriceC','ingotPriceR','ingotPriceS',
+    'gemPriceC','gemPriceR','gemPriceS',
+    'skillPulsePrice','artifactPtPrice',
+    'oL1','oL2','oL3','oAb',
+    'iCo','iRi','iSe','oCo','oRi','oSe',
+    'vCo','vDc','vCu','vIr','vGo','vDi','vRe','vLa','vAm',
+    'vTopaz','vSapphire','vPlatinum','vDiorite','vTuff','vAndesite',
+    'tCharcoalPrice','tWoodPrice','tSellPrice',
+  ];
+  const KEY = 'miner_calc_v5'; // v5: 주괴 좀 사 주괴 스킬 제거
+
+  function saveAll() {
+    const d = {};
+    SAVE_IDS.forEach(id => {
+      const e = document.getElementById(id);
+      if (!e) return;
+      d[id] = e.value;
+    });
+    localStorage.setItem(KEY, JSON.stringify(d));
+  }
+
+  function loadAll() {
+    try {
+      const d = JSON.parse(localStorage.getItem(KEY) || '{}');
+      SAVE_IDS.forEach(id => {
+        const e = document.getElementById(id);
+        if (!e || d[id] === undefined) return;
+        e.value = d[id];
+      });
+    } catch(e) {}
+  }
+
+  window.toggleSkillPanel = () => document.getElementById('skillPanel').classList.toggle('collapsed');
+  window.toggleEngPanel   = () => document.getElementById('engPanel').classList.toggle('collapsed');
+
+  window.resetAll = () => {
+    if (!confirm('입력된 값을 모두 초기화할까요?')) return;
+    localStorage.removeItem(KEY);
+    SAVE_IDS.forEach(id => {
+      const e = document.getElementById(id);
+      if (!e) return;
+      if (e.tagName === 'SELECT') e.selectedIndex = 0;
+      else e.value = '';
+    });
+    syncDropdownLabels();
+    init();
+  };
+
+  /* ── 커스텀 드롭다운 ── */
+  function initCustomDropdowns() {
+    document.querySelectorAll('.skrow select, .field select').forEach(sel => {
+      if (sel.previousElementSibling?.classList.contains('cdd')) return;
+
+      const cdd     = document.createElement('div');
+      cdd.className = 'cdd';
+
+      const trigger = document.createElement('div');
+      trigger.className = 'cdd-trigger';
+      const label = document.createElement('span');
+      label.className = 'cdd-label';
+      label.textContent = sel.options[sel.selectedIndex]?.text || '';
+      const arrow = document.createElement('span');
+      arrow.className = 'cdd-arrow';
+      arrow.textContent = '▼';
+      trigger.appendChild(label);
+      trigger.appendChild(arrow);
+
+      const menu = document.createElement('div');
+      menu.className = 'cdd-menu';
+      Array.from(sel.options).forEach((opt, i) => {
+        const item = document.createElement('div');
+        item.className = 'cdd-item' + (i === sel.selectedIndex ? ' selected' : '');
+        item.textContent = opt.text;
+        item.dataset.value = opt.value;
+        item.addEventListener('click', () => {
+          sel.value = opt.value;
+          label.textContent = opt.text;
+          menu.querySelectorAll('.cdd-item').forEach(el => el.classList.remove('selected'));
+          item.classList.add('selected');
+          cdd.classList.remove('open');
+          sel.dispatchEvent(new Event('change', { bubbles: true }));
+        });
+        menu.appendChild(item);
+      });
+
+      trigger.addEventListener('click', e => {
+        e.stopPropagation();
+        const isOpen = cdd.classList.contains('open');
+        document.querySelectorAll('.cdd.open').forEach(el => el.classList.remove('open'));
+        if (!isOpen) cdd.classList.add('open');
+      });
+
+      cdd.appendChild(trigger);
+      cdd.appendChild(menu);
+      sel.parentNode.insertBefore(cdd, sel);
+    });
+
+    document.addEventListener('click', () => {
+      document.querySelectorAll('.cdd.open').forEach(el => el.classList.remove('open'));
+    });
+  }
+
+  function syncDropdownLabels() {
+    document.querySelectorAll('.skrow select, .field select').forEach(sel => {
+      const cdd = sel.previousElementSibling;
+      if (!cdd?.classList.contains('cdd')) return;
+      const label = cdd.querySelector('.cdd-label');
+      if (label) label.textContent = sel.options[sel.selectedIndex]?.text || '';
+      cdd.querySelectorAll('.cdd-item').forEach(item => {
+        item.classList.toggle('selected', item.dataset.value === sel.value);
+      });
+    });
+  }
+
+  document.addEventListener('DOMContentLoaded', () => {
+    loadAll();
+    initCustomDropdowns();
+    syncDropdownLabels();
+    init();
+    SAVE_IDS.forEach(id => {
+      const e = document.getElementById(id);
+      if (!e) return;
+      const evt = e.tagName === 'SELECT' ? 'change' : 'input';
+      e.addEventListener(evt, saveAll);
+    });
+  });
+</script>
+</body>
+</html>
