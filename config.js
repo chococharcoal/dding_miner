@@ -263,62 +263,72 @@ export const ENGRAVING = {
 };
 
 
+/* ── 거래소 수수료 ── */
+export const MARKET_FEE = 0.05;  // 5% — 라스·어빌·주괴 판매 시 차감
+
 /* ── 기본 시장가 (미입력 시 fallback + 자동채우기 기준값) ──────
    ※ 자동채우기 버튼 누르면 이 값으로 빈 칸만 채워집니다.
       실제 시세 바뀌면 이 블록만 수정하세요.
 
    단위 안내:
-     ingot   : 원/개  (주괴)
-     gem     : 원/개  (보석)
-     vanilla : 원/세트(64개)  — 조약돌·광물 블럭류
-     precious: 원/개  (특수 광물 블럭 — 토파즈·사파이어·플레티넘)
-     stone   : 원/세트(64개)  — 섬록암·응회암·안산암
-     charcoal: 원/세트(64개)  — 숯/석탄
-     wood    : 원/세트(64개)  — 원목
+     ingot      : 원/개  (주괴)
+     gem        : 원/개  (보석)
+     ls1/2/3    : 원/개  (하·중·상급 라이프스톤 등록가 → 수수료 5% 자동 차감)
+     abil       : 원/개  (어빌리티 스톤 등록가 → 수수료 5% 자동 차감)
+     vanilla    : 원/개  ★ 개당 입력 → autoFill 시 ×64 해서 세트당 필드에 채움
+     precious   : 원/개  (토파즈·사파이어·플레티넘)
+     stone      : 원/개  ★ 개당 입력 → autoFill 시 ×64 변환
+     charcoal   : 원/개  ★ 개당 입력 → autoFill 시 ×64 변환
+     wood       : 원/개  ★ 개당 입력 → autoFill 시 ×64 변환
      skillPulse : 원/개  (스킬펄스)
      artifactPt : 원/100pt (유물 포인트)
 ──────────────────────────────────────── */
 export const DEFAULT_PRICES = {
   ingot: {
-    corum:  3500,
-    rifton: 3750,
-    serent: 4000,
+    corum:  3500,   // 원/개
+    rifton: 3750,   // 원/개
+    serent: 4000,   // 원/개
   },
   gem: {
-    corum:  7000,
-    rifton: 7500,
-    serent: 8000,
+    corum:  7000,   // 원/개
+    rifton: 7500,   // 원/개
+    serent: 8000,   // 원/개
   },
-  /* 바닐라 재료 — 세트(64개)당 가격 */
+  /* 라이프스톤·어빌리티 스톤 — 거래소 등록가(원/개), 수수료 5% 자동 차감 */
+  ls1:  0,    // 하급 라이프스톤
+  ls2:  0,    // 중급 라이프스톤
+  ls3:  0,    // 상급 라이프스톤
+  abil: 0,    // 어빌리티 스톤
+  /* 바닐라 재료 — ★ 개당 가격 (autoFill 시 ×64 하여 세트당 필드에 채움) */
   vanilla: {
-    cobblestone:           80000,  // 조약돌 묶음 
-    deepslate_cobblestone: 18000,  // 심층암 조약돌 묶음 
-    copper:                8000,  // 구리 블럭  
-    iron:                  71000,  // 철 블럭  
-    gold:                  130000,  // 금 블럭 
-    diamond:               188000,  // 다이아 블럭 
-    redstone:              24500,  // 레드스톤 블럭  
-    lapis:                 40000,  // 청금석 블럭 
-    amethyst:              6500,  // 자수정 블럭 
+    cobblestone:           1250,   // 원/개
+    deepslate_cobblestone:  281,   // 원/개
+    copper:                 125,   // 원/개
+    iron:                  1109,   // 원/개
+    gold:                  2031,   // 원/개
+    diamond:               2938,   // 원/개
+    redstone:               383,   // 원/개
+    lapis:                  625,   // 원/개
+    amethyst:               102,   // 원/개
   },
   /* 귀중품 전용 특수 광물 — 개당 가격 */
   precious: {
-    topaz:    75855,  // 토파즈 블럭
-    sapphire: 79087,  // 사파이어 블럭 
-    platinum: 78740,  // 플레티넘 블럭  
+    topaz:    75855,   // 원/개
+    sapphire: 79087,   // 원/개
+    platinum: 78740,   // 원/개
   },
-  /* 석재류 — 세트(64개)당 가격 */
+  /* 석재류 — ★ 개당 가격 (autoFill 시 ×64 변환) */
   stone: {
-    diorite:  4450,  // 섬록암 
-    tuff:     1300,  // 응회암 
-    andesite: 4750,  // 안산암  
+    diorite:   70,   // 원/개
+    tuff:      20,   // 원/개
+    andesite:  74,   // 원/개
   },
-  /* 강화횃불 재료 — 세트(64개)당 가격 */
-  charcoal: 1900,   // 숯/석탄  
-  wood:     1750,   // 원목     
+  /* 강화횃불 재료 — ★ 개당 가격 (autoFill 시 ×64 변환) */
+  charcoal:  30,    // 원/개 (숯/석탄)
+  wood:      27,    // 원/개 (원목)
   /* 기타 드랍 판매가 */
-  skillPulse: 500,  // 스킬펄스 (원/개)  — 서버마다 달라 기본 0
-  artifactPt: 5400,  // 유물 포인트 (원/100pt) — 서버마다 달라 기본 0
+  skillPulse:  500,    // 원/개
+  artifactPt: 5400,    // 원/100pt
 };
 
 

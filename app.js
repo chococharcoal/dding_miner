@@ -5,7 +5,7 @@
 
 import {
   SKILLS, MINING, PICKAXE, ARTIFACT, ENGRAVING,
-  INGOT_RECIPES, RECIPES, TORCH, UNITS, PRECIOUS, DEFAULT_PRICES,
+  INGOT_RECIPES, RECIPES, TORCH, UNITS, PRECIOUS, DEFAULT_PRICES, MARKET_FEE,
 } from './config.js';
 
 const { SET_SIZE, BOX_SIZE } = UNITS;
@@ -16,16 +16,13 @@ const COBBY_DROP_RATE = 0.5;
    ① 유틸리티 함수
 ════════════════════════════════════════ */
 
-/* 숫자를 한국식 천단위 콤마로 포맷 */
 export const f = n => Math.round(n).toLocaleString('ko-KR');
 
-/* 소수점 d자리까지 표시, 불필요한 0 제거 */
 export const fd = (n, d = 2) =>
   +n.toFixed(d) === Math.round(+n.toFixed(d))
     ? Math.round(n).toString()
     : n.toFixed(d).replace(/\.?0+$/, '');
-
-/* 수량을 "X상자 Y세트 Z개" 형식으로 포맷 (내림) */
+``
 export function fmtQty(n) {
   n = Math.floor(n);
   if (n <= 0) return '0개';
@@ -39,7 +36,6 @@ export function fmtQty(n) {
     .join(' ') || '0개';
 }
 
-/* "n상자 n세트 n개" 또는 순수 숫자 문자열을 개수(정수)로 변환 */
 function parseQty(str) {
   if (!str || !str.trim()) return 0;
   if (/^\d+$/.test(str.trim())) return Math.max(0, parseInt(str.trim(), 10));
@@ -53,7 +49,6 @@ function parseQty(str) {
   return total;
 }
 
-/* 시간을 "X시간 Y분 Z초" 형식으로 포맷 */
 export function fmtTime(sec) {
   if (sec <= 0) return '0초';
   const h = Math.floor(sec / 3600);
@@ -65,22 +60,18 @@ export function fmtTime(sec) {
     .join(' ');
 }
 
-/* DOM 요소의 숫자값을 읽어옴 */
 export function gi(id) {
   const e = document.getElementById(id);
   return e ? Math.max(0, +e.value || 0) : 0;
 }
 
-/* DOM 요소의 문자열값을 읽어옴 */
 export function gv(id) {
   const e = document.getElementById(id);
   return e ? e.value : '';
 }
 
-/* 배지(뱃지) HTML 생성 헬퍼 */
 const bdg = (cls, txt) => `<span class="bdg ${cls}">${txt}</span>`;
 
-/* 결과 행 HTML 생성 헬퍼 */
 const row = (l, v, vc = '') =>
   `<div class="rrow"><span class="rl">${l}</span><span class="rv ${vc}">${v}</span></div>`;
 
@@ -428,14 +419,16 @@ export function cs() {
   const sk  = m.sk;
   const eng = m.eng;
 
-  /* ── 판매가 읽기 ── */
+  /* ── 판매가 읽기 (수수료 5% 차감) ── */
   const userIC = gi('ingotPriceC');
   const userIR = gi('ingotPriceR');
   const userIS = gi('ingotPriceS');
 
-  const bC = userIC > 0 ? userIC : DEFAULT_PRICES.ingot.corum  * (1 + sk.ib);
-  const bR = userIR > 0 ? userIR : DEFAULT_PRICES.ingot.rifton * (1 + sk.ib);
-  const bS = userIS > 0 ? userIS : DEFAULT_PRICES.ingot.serent * (1 + sk.ib);
+  /* 수수료 5% 차감 — 거래소 판매 기준 */
+  const FEE_CS = 1 - MARKET_FEE;  // 0.95
+  const bC = (userIC > 0 ? userIC : DEFAULT_PRICES.ingot.corum  * (1 + sk.ib)) * FEE_CS;
+  const bR = (userIR > 0 ? userIR : DEFAULT_PRICES.ingot.rifton * (1 + sk.ib)) * FEE_CS;
+  const bS = (userIS > 0 ? userIS : DEFAULT_PRICES.ingot.serent * (1 + sk.ib)) * FEE_CS;
 
   const rawGC = gi('gemPriceC')   || DEFAULT_PRICES.gem.corum;
   const rawGR = gi('gemPriceR')   || DEFAULT_PRICES.gem.rifton;
@@ -483,7 +476,6 @@ export function cs() {
   };
 
   /* ── 80% 요약 span 목록 ── */
-  /* 주괴 따로, 나머지 따로 두 줄로 구성 */
   const ingot80Items = [
     p80.tC80 > 0.01 ? `<span style="color:${CC};white-space:nowrap">코룸 ${f(p80.tC80)}개</span>` : '',
     p80.tR80 > 0.01 ? `<span style="color:${CR};white-space:nowrap">리프톤 ${f(p80.tR80)}개</span>` : '',
@@ -640,10 +632,6 @@ export function ct() {
 
   const needWoodLogs = wantN / 8;
 
-  const fBdg = sk.fr > 0
-    ? bdg('bg', `용광로 Lv${sk.fl} -${Math.round(sk.fr * 100)}%`)
-    : '';
-
   const mRow = (l, v) =>
     `<div class="rrow"><span class="rl" style="color:var(--muted)">${l}</span><span class="rv" style="color:var(--muted)">${v}</span></div>`;
 
@@ -667,38 +655,54 @@ export function ct() {
    ⑩ TAB 2: 주괴 & 귀중품 통합 최적화
 ════════════════════════════════════════ */
 
+/* ── 자동채우기 (config 개당→세트당 변환 + 라스/어빌 수수료 적용) ── */
 export function autoFillPrices() {
   const fill = (id, val) => {
+    if (!val || val <= 0) return;
     const el = document.getElementById(id);
     if (el && (!el.value || +el.value === 0)) {
-      el.value = val;
+      el.value = Math.round(val);
       el.dispatchEvent(new Event('input'));
     }
   };
 
-  fill('vCo',          DEFAULT_PRICES.vanilla?.cobblestone          ?? 0);
-  fill('vDc',          DEFAULT_PRICES.vanilla?.deepslate_cobblestone ?? 0);
-  fill('vCu',          DEFAULT_PRICES.vanilla?.copper               ?? 0);
-  fill('vIr',          DEFAULT_PRICES.vanilla?.iron                 ?? 0);
-  fill('vGo',          DEFAULT_PRICES.vanilla?.gold                 ?? 0);
-  fill('vDi',          DEFAULT_PRICES.vanilla?.diamond              ?? 0);
-  fill('vRe',          DEFAULT_PRICES.vanilla?.redstone             ?? 0);
-  fill('vLa',          DEFAULT_PRICES.vanilla?.lapis                ?? 0);
-  fill('vAm',          DEFAULT_PRICES.vanilla?.amethyst             ?? 0);
+  const fee = 1 - MARKET_FEE;  // 0.95
+  const S   = SET_SIZE;         // 64
 
-  fill('vTopaz',       DEFAULT_PRICES.precious?.topaz    ?? 0);
-  fill('vSapphire',    DEFAULT_PRICES.precious?.sapphire ?? 0);
-  fill('vPlatinum',    DEFAULT_PRICES.precious?.platinum ?? 0);
+  /* 라이프스톤·어빌리티 스톤 — 등록가 × 0.95 */
+  fill('oL1', (DEFAULT_PRICES.ls1  ?? 0) * fee);
+  fill('oL2', (DEFAULT_PRICES.ls2  ?? 0) * fee);
+  fill('oL3', (DEFAULT_PRICES.ls3  ?? 0) * fee);
+  fill('oAb', (DEFAULT_PRICES.abil ?? 0) * fee);
 
-  fill('vDiorite',     DEFAULT_PRICES.stone?.diorite  ?? 0);
-  fill('vTuff',        DEFAULT_PRICES.stone?.tuff     ?? 0);
-  fill('vAndesite',    DEFAULT_PRICES.stone?.andesite ?? 0);
+  /* 바닐라 재료 — 개당 × 64 → 세트당 */
+  fill('vCo',  (DEFAULT_PRICES.vanilla?.cobblestone           ?? 0) * S);
+  fill('vDc',  (DEFAULT_PRICES.vanilla?.deepslate_cobblestone ?? 0) * S);
+  fill('vCu',  (DEFAULT_PRICES.vanilla?.copper                ?? 0) * S);
+  fill('vIr',  (DEFAULT_PRICES.vanilla?.iron                  ?? 0) * S);
+  fill('vGo',  (DEFAULT_PRICES.vanilla?.gold                  ?? 0) * S);
+  fill('vDi',  (DEFAULT_PRICES.vanilla?.diamond               ?? 0) * S);
+  fill('vRe',  (DEFAULT_PRICES.vanilla?.redstone              ?? 0) * S);
+  fill('vLa',  (DEFAULT_PRICES.vanilla?.lapis                 ?? 0) * S);
+  fill('vAm',  (DEFAULT_PRICES.vanilla?.amethyst              ?? 0) * S);
 
+  /* 귀중품 전용 재료 — 개당 */
+  fill('vTopaz',    DEFAULT_PRICES.precious?.topaz    ?? 0);
+  fill('vSapphire', DEFAULT_PRICES.precious?.sapphire ?? 0);
+  fill('vPlatinum', DEFAULT_PRICES.precious?.platinum ?? 0);
+
+  /* 석재류 — 개당 × 64 → 세트당 */
+  fill('vDiorite',  (DEFAULT_PRICES.stone?.diorite  ?? 0) * S);
+  fill('vTuff',     (DEFAULT_PRICES.stone?.tuff     ?? 0) * S);
+  fill('vAndesite', (DEFAULT_PRICES.stone?.andesite ?? 0) * S);
+
+  /* 강화횃불 재료 — 개당 × 64 → 세트당 */
+  fill('tCharcoalPrice', (DEFAULT_PRICES.charcoal ?? 0) * S);
+  fill('tWoodPrice',     (DEFAULT_PRICES.wood     ?? 0) * S);
+
+  /* 스킬펄스·유물 */
   fill('skillPulsePrice', DEFAULT_PRICES.skillPulse ?? 0);
   fill('artifactPtPrice', DEFAULT_PRICES.artifactPt ?? 0);
-
-  fill('tCharcoalPrice', DEFAULT_PRICES.charcoal ?? 0);
-  fill('tWoodPrice',     DEFAULT_PRICES.wood     ?? 0);
 
   cs(); ct(); co();
 }
@@ -797,9 +801,11 @@ export function co() {
   const rawR = userRi > 0 ? userRi : DEFAULT_PRICES.ingot.rifton;
   const rawS = userSe > 0 ? userSe : DEFAULT_PRICES.ingot.serent;
 
-  const cP = userCo > 0 ? userCo : rawC * (1 + ib);
-  const rP = userRi > 0 ? userRi : rawR * (1 + ib);
-  const sP = userSe > 0 ? userSe : rawS * (1 + ib);
+  /* 수수료 5% 차감 */
+  const FEE = 1 - MARKET_FEE;
+  const cP = (userCo > 0 ? userCo : rawC * (1 + ib)) * FEE;
+  const rP = (userRi > 0 ? userRi : rawR * (1 + ib)) * FEE;
+  const sP = (userSe > 0 ? userSe : rawS * (1 + ib)) * FEE;
 
   const oL1 = gi('oL1'), oL2 = gi('oL2'), oL3 = gi('oL3'), oAb = gi('oAb');
   const ctL1 = RECIPES.LS1.craft_time_sec  * (1 - fr);
@@ -980,7 +986,7 @@ export function co() {
     return { ingotTotals, mats };
   }
 
-  /* ── 제작 계획 HTML 생성 헬퍼 (새 카드 UI) ── */
+  /* ── 제작 계획 HTML 생성 헬퍼 ── */
   const ingotChip = (label, color, total) =>
     `<span class="mat-chip" style="background:${color}18;color:${color};border-color:${color}55">${label} 주괴 ${fmtQty(total)}</span>`;
 
@@ -991,7 +997,6 @@ export function co() {
       const t          = c.count * c.ct;
       const npi        = totalIngots(c);
       const npiTxt     = npi > 0 ? `주괴당 ${f(c.net / npi)}원 이익` : '';
-      /* ── 귀중품 뱃지: 이름 뒤에 배치 ── */
       const precBadge  = c.type === 'precious' ? ' ' + bdg('bpu','귀중품') : '';
       let ingotChips = '';
       if (c.iC > 0) ingotChips += ingotChip('코룸',   CC, c.iC * c.count);
@@ -1047,12 +1052,12 @@ export function co() {
 
   /* ── 총 필요 재료 HTML (접기/펼치기) ── */
   let _matToggleIdx = 0;
-  function matSummaryHtml(results, remC, remR, remS, remSellAmt) {
+  function matSummaryHtml(results, remC, remR, remS) {
     if (!results.length) return '';
     const uid = 'mt' + (++_matToggleIdx);
     const { ingotTotals, mats } = aggregateMats(results);
     const ingotRows = [
-      ingotTotals['코룸']   > 0 ? `<div class="mat-summary-row"><span class="mn" style="color:${CC}">${ingotTotals['코룸'] > 0 ? '● ' : ''}코룸 주괴</span><span class="mv">${fmtQty(ingotTotals['코룸'])}</span></div>` : '',
+      ingotTotals['코룸']   > 0 ? `<div class="mat-summary-row"><span class="mn" style="color:${CC}">● 코룸 주괴</span><span class="mv">${fmtQty(ingotTotals['코룸'])}</span></div>` : '',
       ingotTotals['리프톤'] > 0 ? `<div class="mat-summary-row"><span class="mn" style="color:${CR}">● 리프톤 주괴</span><span class="mv">${fmtQty(ingotTotals['리프톤'])}</span></div>` : '',
       ingotTotals['세렌트'] > 0 ? `<div class="mat-summary-row"><span class="mn" style="color:${CS}">● 세렌트 주괴</span><span class="mv">${fmtQty(ingotTotals['세렌트'])}</span></div>` : '',
     ].join('');
@@ -1106,7 +1111,7 @@ export function co() {
 
   const fBdg = fr > 0 ? bdg('bg',  `초고속 용광로 -${Math.round(fr * 100)}%`) : '';
 
-  const netSummaryRow = (label, net, iC, iR, iS, badge = '') => {
+  const netSummaryRow = (label, net, iC, iR, iS) => {
     if (!label || net === 0) return '';
     const color = net >= 0 ? 'g' : 'r';
     const n     = iC + iR + iS;
@@ -1120,15 +1125,15 @@ export function co() {
     return row(`${label}`, `${f(net)}원 ${perHtml}`, color);
   };
 
-  /* ── 좌(교환 없이) 컬럼 내용 ── */
+  /* ── 좌(교환 X) 컬럼 내용 ── */
   const noSwapInner = `
     <div class="plan-items-wrap">
       ${craftLines}
-      ${matSummaryHtml(craftResult, remCo, remRi, remSe, remSell)}
+      ${matSummaryHtml(craftResult, remCo, remRi, remSe)}
     </div>
     ${planSummaryHtml(craftRev, craftTime, remCo, remRi, remSe)}`;
 
-  /* ── 우(교환 있이) 컬럼 내용 ── */
+  /* ── 우(교환 O) 컬럼 내용 ── */
   const swapInner = (() => {
     if (!swapResult) return `
       <div class="plan-items-wrap">
@@ -1154,7 +1159,7 @@ export function co() {
           ${swapInfoRows}
         </div>
         ${swapCraftLines}
-        ${matSummaryHtml(swapCraftResult, swapRemCo, swapRemRi, swapRemSe, swapRemSell)}
+        ${matSummaryHtml(swapCraftResult, swapRemCo, swapRemRi, swapRemSe)}
       </div>
       ${planSummaryHtml(swapCraftRev, swapCraftTime, swapRemCo, swapRemRi, swapRemSe)}`;
   })();
@@ -1203,7 +1208,7 @@ export function co() {
 
   <div class="rsec" style="padding:0;overflow:hidden">
     <div style="padding:10px 12px 8px;border-bottom:1px solid var(--bdr2);display:flex;align-items:center;gap:8px;flex-wrap:wrap">
-      <span style="font-family:'Jua',sans-serif;font-size:15px;color:var(--txt)">🔨 최적 제작 계획</span>
+      <span style="font-size:15px;color:var(--txt)">🔨 최적 제작 계획</span>
       ${fBdg}
     </div>
     <div class="plan-cols">
