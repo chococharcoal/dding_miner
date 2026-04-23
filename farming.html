@@ -44,7 +44,7 @@ html,body{min-height:100vh;background:var(--bg) radial-gradient(circle at 10% 15
 /* mining.html 방식: skrow/field 안 select만 숨김 */
 .skrow select{font-size:11px!important;font-weight:700!important;border:1.5px solid var(--bdr2);border-radius:var(--rs);padding:5px 7px;background:var(--surf);color:var(--txt);outline:none;width:100%;cursor:pointer}
 .field select{font-size:12px!important;font-weight:700!important;border:1.5px solid var(--bdr);border-radius:var(--rs);padding:7px 10px;background:var(--bg);color:var(--txt);outline:none;width:100%;cursor:pointer}
-.skrow select.cdd-ready,.field select.cdd-ready,.dish-sel-wrap select{display:none}
+.skrow select.cdd-ready,.field select.cdd-ready,.dish-sel-wrap select.cdd-ready{display:none}
 .skinfo{font-size:11px;color:var(--muted);font-weight:500;min-height:14px}
 /* 커스텀 드롭다운 - mining.html과 동일 구조 */
 .cdd{position:relative;width:100%}
@@ -65,6 +65,8 @@ html,body{min-height:100vh;background:var(--bg) radial-gradient(circle at 10% 15
   transition:border-color .15s,box-shadow .15s;white-space:nowrap;overflow:hidden;
 }
 .field .cdd-trigger:hover{border-color:var(--acc)}
+.dish-sel-wrap .cdd-trigger{display:flex;align-items:center;justify-content:space-between;gap:4px;padding:7px 10px;border:1.5px solid var(--bdr);border-radius:var(--rs);background:var(--bg);color:var(--txt);font-size:12px!important;font-weight:700!important;cursor:pointer;user-select:none;line-height:1.3;white-space:nowrap;overflow:hidden;}
+.dish-sel-wrap .cdd-trigger:hover{border-color:var(--acc)}
 .cdd-label{overflow:hidden;text-overflow:ellipsis;min-width:0;flex:1}
 .cdd-trigger .cdd-arrow{font-size:9px;color:var(--muted);flex-shrink:0;transition:transform .15s}
 .cdd.open .cdd-trigger{border-color:var(--acc);box-shadow:0 0 0 2px rgba(58,158,104,.15)}
@@ -286,7 +288,7 @@ html,body{min-height:100vh;background:var(--bg) radial-gradient(circle at 10% 15
     <div class="tab"    onclick="sw(2,this)">🍳 요리 효율</div>
     <div class="tab"    onclick="sw(3,this)">🧮 재료 계산</div>
     <div style="margin-left:auto;display:flex;gap:6px;align-items:center">
-      <button class="autofill-btn" onclick="autoFill()">✨ 자동채우기</button>
+      <button class="autofill-btn" onclick="autoFill()">자동채우기</button>
       <button class="reset-btn"    onclick="resetAll()">🗑 초기화</button>
     </div>
   </div>
@@ -312,7 +314,6 @@ html,body{min-height:100vh;background:var(--bg) radial-gradient(circle at 10% 15
           <input id="totalStamina" type="number" inputmode="numeric" placeholder="0" oninput="calcDaily()">
         </div>
       </div>
-      <div class="fnote" style="margin-top:6px">채집 1회 스태미나 7 소모 · 씨앗 판매가는 탭2에서 입력</div>
     </div>
     <div class="card">
       <div class="card-title">📊 채집 결과</div>
@@ -342,8 +343,8 @@ html,body{min-height:100vh;background:var(--bg) radial-gradient(circle at 10% 15
       </div>
     </div>
     <div class="card">
-      <div class="card-title">🥩 기타 재료 가격 (원/개)</div>
-      <div class="fnote" style="margin-bottom:8px">📌 소금(2)·달걀(3)·우유(3)·오일(4)은 밀키 고정가 자동 적용</div>
+      <div class="card-title">🥩 기타 재료 가격 (원/세트)</div>
+      <div class="fnote" style="margin-bottom:8px">📌 소금, 달걀, 우유, 오일은 밀키 고정가로 자동 적용됩니다.</div>
       <div class="g3">
         <div class="field"><label>코코넛</label><input id="pCoconut" type="number" inputmode="numeric" placeholder="0" oninput="onPriceChange()"></div>
         <div class="field"><label>파인애플</label><input id="pPineapple" type="number" inputmode="numeric" placeholder="0" oninput="onPriceChange()"></div>
@@ -374,8 +375,8 @@ html,body{min-height:100vh;background:var(--bg) radial-gradient(circle at 10% 15
   <div id="t2" class="panel" style="display:none">
     <div class="card">
       <div class="card-title">🍳 현재 요리 효율</div>
-      <div style="font-size:11px;color:var(--muted);margin-bottom:10px;font-weight:500">개당 순이익 기준 내림차순 · 1~3위 강조</div>
-      <div id="dishEffRes"><div class="empty-msg">탭2에서 재료 시세를 입력해주세요</div></div>
+      <div style="font-size:11px;color:var(--muted);margin-bottom:10px;font-weight:500">개당 순이익 기준 내림차순</div>
+      <div id="dishEffRes"><div class="empty-msg">재료 시세를 입력해주세요</div></div>
     </div>
   </div>
 
@@ -506,21 +507,43 @@ function getPrices() {
       watermelon:gi('pCropWatermelon')/SET_SIZE,sweetfruit:gi('pCropSweetfruit')/SET_SIZE,
     },
     milky:{salt:MILKY_PRICES.salt,egg:MILKY_PRICES.egg,milk:MILKY_PRICES.milk,oil:MILKY_PRICES.oil},
+    // 기타 재료: 세트당 입력 → 개당으로 변환
     other:{
-      coconut:gi('pCoconut'),pineapple:gi('pPineapple'),flour:gi('pFlour'),
-      butter:gi('pButter'),cheese:gi('pCheese'),steak:gi('pSteak'),sugar:gi('pSugar'),
-      pork:gi('pPork'),pork_belly:gi('pPorkBelly'),pork_front:gi('pPorkFront'),
-      lamb:gi('pLamb'),lamb_rib:gi('pLambRib'),lamb_leg:gi('pLambLeg'),
-      chicken:gi('pChicken'),chicken_leg:gi('pChickenLeg'),chicken_breast:gi('pChickenBreast'),
-      beef_sirloin:gi('pBeefSirloin'),beef_rib:gi('pBeefRib'),
+      coconut:gi('pCoconut')/SET_SIZE,pineapple:gi('pPineapple')/SET_SIZE,flour:gi('pFlour')/SET_SIZE,
+      butter:gi('pButter')/SET_SIZE,cheese:gi('pCheese')/SET_SIZE,steak:gi('pSteak')/SET_SIZE,sugar:gi('pSugar')/SET_SIZE,
+      pork:gi('pPork')/SET_SIZE,pork_belly:gi('pPorkBelly')/SET_SIZE,pork_front:gi('pPorkFront')/SET_SIZE,
+      lamb:gi('pLamb')/SET_SIZE,lamb_rib:gi('pLambRib')/SET_SIZE,lamb_leg:gi('pLambLeg')/SET_SIZE,
+      chicken:gi('pChicken')/SET_SIZE,chicken_leg:gi('pChickenLeg')/SET_SIZE,chicken_breast:gi('pChickenBreast')/SET_SIZE,
+      beef_sirloin:gi('pBeefSirloin')/SET_SIZE,beef_rib:gi('pBeefRib')/SET_SIZE,
     },
   };
 }
-function calcRecipeCost(rec,prices) {
-  let cost=0;
-  for(const[k,q]of Object.entries(rec.materials.crops||{})) cost+=q*(prices.crops[k]||0)*SET_SIZE;
-  for(const[k,q]of Object.entries(rec.materials.milky||{})) cost+=q*(prices.milky[k]||0);
-  for(const[k,q]of Object.entries(rec.materials.other||{})) cost+=q*(prices.other[k]||0);
+
+// 씨앗 가격으로 베이스 단가 계산
+// 씨앗 1개 → 평균 작물 n개 → 작물 8개 = 베이스 1개
+// 베이스 1개 원가 = 씨앗 필요수 × 씨앗 개당가
+function calcBaseUnitCost(seedType, prices) {
+  const hr = FARMING.HARVEST_RANGE[seedType];
+  const kpct = FARMING.KING_CROP_BASE_PCT / 100;
+  const avgCrops = (hr.min + hr.max) / 2 * (1 - kpct) + (hr.min + hr.max) / 2 * FARMING.KING_CROP_MULT * kpct;
+  // 베이스 1개 = 작물 8개 = 씨앗 (8/avgCrops)개
+  const seedsPerBase = FARMING.CROPS_PER_BASE / avgCrops;
+  return seedsPerBase * (prices.seed[seedType] || 0);
+}
+
+function calcRecipeCost(rec, prices) {
+  let cost = 0;
+  // 베이스: 씨앗 가격 기반으로 원가 계산
+  for (const [k, q] of Object.entries(rec.materials.base || {})) {
+    const seedType = BASES[k]?.seedType || k;
+    cost += q * calcBaseUnitCost(seedType, prices);
+  }
+  // 작물 묶음: 세트당 가격 그대로
+  for (const [k, q] of Object.entries(rec.materials.crops || {})) cost += q * (prices.crops[k] || 0) * SET_SIZE;
+  // 밀키: 개당 고정가
+  for (const [k, q] of Object.entries(rec.materials.milky || {})) cost += q * (prices.milky[k] || 0);
+  // 기타: 이미 개당으로 변환됨
+  for (const [k, q] of Object.entries(rec.materials.other || {})) cost += q * (prices.other[k] || 0);
   return cost;
 }
 
@@ -573,40 +596,139 @@ window.calcDaily=()=>{
 window.calcDishEff=()=>{
   const sk=getSK(),prices=getPrices(),totalBonus=sk.mb+sk.fp,gc=GRADE_COLOR;
   const results=Object.entries(RECIPES).map(([key,rec])=>{
-    const basePrice=rec.currentPrice>0?rec.currentPrice:(rec.priceMin+rec.priceMax)/2;
-    const sellPrice=basePrice*(1+totalBonus),cost=calcRecipeCost(rec,prices),net=sellPrice-cost;
-    const priceLabel=rec.currentPrice>0?`현재가 ${f(rec.currentPrice)}원`:`추정가 ${f(Math.round(basePrice))}원`;
-    return{key,rec,sellPrice,cost,net,priceLabel};
-  }).sort((a,b)=>b.net-a.net);
-  const html=results.map((r,i)=>{
-    const rankClass=i===0?'top1':i===1?'top2':i===2?'top3':'';
-    const rankBadge=i===0?`<span class="dish-rank rank-gold">🥇 1위</span>`:i===1?`<span class="dish-rank rank-silver">🥈 2위</span>`:i===2?`<span class="dish-rank rank-bronze">🥉 3위</span>`:'';
-    const gd=gc[r.rec.grade];
-    const gradeBdg=`<span class="grade-bdg" style="background:${gd.bg};color:${gd.color};border:1px solid ${gd.color}">${gd.label}</span>`;
-    const bonusTxt=totalBonus>0?` (+${Math.round(totalBonus*100)}% 스킬)`:'';
-    let matChips='';
-    for(const[k,q]of Object.entries(r.rec.materials.base||{})){const bc=BASES[k]?.color||'#888';matChips+=`<span class="mat-chip" style="color:${bc};border-color:${bc}44">${BASES[k]?.name||k} ×${q} <span style="opacity:.6;font-size:9px">무료</span></span>`;}
-    for(const[k,q]of Object.entries(r.rec.materials.crops||{})){const cc=CROPS[k]?.color||'#888';matChips+=`<span class="mat-chip" style="color:${cc};border-color:${cc}44">${CROPS[k]?.name||k} ×${q}묶음</span>`;}
-    for(const[k,q]of Object.entries(r.rec.materials.other||{})) matChips+=`<span class="mat-chip">${OTHER_META[k]?.name||k} ×${q}</span>`;
-    return `<div class="dish-card ${rankClass}">${rankBadge}<div class="dish-head"><div style="min-width:0"><div class="dish-name">${r.rec.name} ${gradeBdg}</div><div class="dish-detail">판매 ${f(r.sellPrice)}원${bonusTxt} / 재료비 ${f(r.cost)}원<br>${r.priceLabel} · 범위 ${f(r.rec.priceMin)}~${f(r.rec.priceMax)}원</div></div><div style="text-align:right;flex-shrink:0"><div class="dish-net ${r.net>=0?'pos':'neg'}">${r.net>=0?'+':''}${f(r.net)}원</div><div style="font-size:10px;color:var(--muted)">개당 순이익</div></div></div><div class="dish-mats">${matChips}</div></div>`;
+    // 판매가: config 입력값(currentPrice). 0이면 미입력
+    const inputPrice = rec.currentPrice > 0 ? rec.currentPrice : 0;
+    // 스킬 적용 판매가
+    const skillSellPrice = inputPrice > 0 ? Math.round(inputPrice * (1 + totalBonus)) : 0;
+    // 재료비 (베이스 원가 포함)
+    const cost = calcRecipeCost(rec, prices);
+    // 순이익 = 스킬 적용 판매가 - 재료비
+    const net = skillSellPrice > 0 ? skillSellPrice - cost : null;
+    return { key, rec, inputPrice, skillSellPrice, cost, net };
+  }).sort((a, b) => {
+    // 판매가 미입력은 맨 뒤로
+    if (a.net === null && b.net === null) return 0;
+    if (a.net === null) return 1;
+    if (b.net === null) return -1;
+    return b.net - a.net;
+  });
+
+  const html = results.map((r, i) => {
+    const hasPrice = r.net !== null;
+    const rankClass = !hasPrice ? '' : i===0?'top1':i===1?'top2':i===2?'top3':'';
+    const rankBadge = !hasPrice ? '' :
+      i===0?`<span class="dish-rank rank-gold">🥇 1위</span>`:
+      i===1?`<span class="dish-rank rank-silver">🥈 2위</span>`:
+      i===2?`<span class="dish-rank rank-bronze">🥉 3위</span>`:'';
+
+    // 에픽 → 빨간색
+    const gradeColors = {
+      common: { label:'커먼', color:'#8a7060', bg:'#f7f3ee' },
+      normal: { label:'노멀', color:'#3a9e68', bg:'#edf8f2' },
+      rare:   { label:'레어', color:'#3d6fd4', bg:'#eef3fd' },
+      epic:   { label:'에픽', color:'#d94f3d', bg:'#fef0ee' }, // 빨간색
+    };
+    const gd = gradeColors[r.rec.grade] || gc[r.rec.grade];
+    const gradeBdg = `<span class="grade-bdg" style="background:${gd.bg};color:${gd.color};border:1px solid ${gd.color}">${gd.label}</span>`;
+
+    // 베이스 원가 계산 표시
+    let matChips = '';
+    for (const [k, q] of Object.entries(r.rec.materials.base || {})) {
+      const seedType = BASES[k]?.seedType || k;
+      const baseUnitCost = calcBaseUnitCost(seedType, prices);
+      const baseTotalCost = q * baseUnitCost;
+      const bc = BASES[k]?.color || '#888';
+      const costTxt = baseUnitCost > 0 ? ` <span style="opacity:.7;font-size:9px">(${f(Math.round(baseTotalCost))}원)</span>` : ` <span style="opacity:.5;font-size:9px">씨앗가 미입력</span>`;
+      matChips += `<span class="mat-chip" style="color:${bc};border-color:${bc}44">${BASES[k]?.name||k} ×${q}${costTxt}</span>`;
+    }
+    for (const [k, q] of Object.entries(r.rec.materials.crops || {})) {
+      const cc = CROPS[k]?.color || '#888';
+      matChips += `<span class="mat-chip" style="color:${cc};border-color:${cc}44">${CROPS[k]?.name||k} ×${q}묶음</span>`;
+    }
+    for (const [k, q] of Object.entries(r.rec.materials.other || {}))
+      matChips += `<span class="mat-chip">${OTHER_META[k]?.name||k} ×${q}</span>`;
+
+    const bonusTxt = totalBonus > 0 ? ` +${Math.round(totalBonus*100)}% 스킬 적용` : '';
+    const priceInfo = hasPrice
+      ? `판매가 ${f(r.inputPrice)}원 → 스킬 적용 ${f(r.skillSellPrice)}원${bonusTxt}<br>재료비 ${f(Math.round(r.cost))}원 · 범위 ${f(r.rec.priceMin)}~${f(r.rec.priceMax)}원`
+      : `판매가 미입력 · 범위 ${f(r.rec.priceMin)}~${f(r.rec.priceMax)}원<br>재료비 ${f(Math.round(r.cost))}원`;
+
+    return `<div class="dish-card ${rankClass}">
+      ${rankBadge}
+      <div class="dish-head">
+        <div style="min-width:0">
+          <div class="dish-name">${r.rec.name} ${gradeBdg}</div>
+          <div class="dish-detail">${priceInfo}</div>
+        </div>
+        <div style="text-align:right;flex-shrink:0">
+          ${hasPrice
+            ? `<div class="dish-net ${r.net>=0?'pos':'neg'}">${r.net>=0?'+':''}${f(Math.round(r.net))}원</div><div style="font-size:10px;color:var(--muted)">개당 순이익</div>`
+            : `<div style="font-size:11px;color:var(--muted);font-weight:700">판매가<br>미입력</div>`}
+        </div>
+      </div>
+      <div class="dish-mats">${matChips}</div>
+    </div>`;
   }).join('');
-  document.getElementById('dishEffRes').innerHTML=html||'<div class="empty-msg">데이터 없음</div>';
+  document.getElementById('dishEffRes').innerHTML = html || '<div class="empty-msg">데이터 없음</div>';
 };
 
-/* TAB 3: 재료 계산기 */
-function calcSeedsNeeded(targetBase,seedType,sk) {
-  if(targetBase<=0) return{avg:0,safe80:0};
-  const hr=FARMING.HARVEST_RANGE[seedType];
-  const kpct=FARMING.KING_CROP_BASE_PCT/100;
-  const avgCrops=(hr.min+hr.max)/2*(1-kpct)+(hr.min+hr.max)/2*FARMING.KING_CROP_MULT*kpct;
-  const harvestBonus=sk.hbPct/100*sk.hbCnt;
-  const avgCropsTotal=avgCrops+harvestBonus;
-  const needPlant=targetBase*FARMING.CROPS_PER_BASE/avgCropsTotal;
-  const returnSeeds=needPlant*sk.sdPct/100;
-  const avgSeeds=Math.max(0,needPlant-returnSeeds);
-  const stdPerSeed=Math.sqrt(Math.pow(hr.max-hr.min,2)/12+harvestBonus*(1-harvestBonus));
-  const cv=stdPerSeed/avgCropsTotal;
-  return{avg:Math.ceil(avgSeeds),safe80:Math.ceil(avgSeeds*(1+Z80*cv))};
+/* TAB 3: 재료 계산기
+   씨앗 재순환 계산:
+   - 씨앗은덤 확률 p → 씨앗 1개 심으면 p개 반환 → 그걸 또 심으면 p²개 반환...
+   - 총 심기 배율 = 1 + p + p² + ... = 1/(1-p)  (등비급수, p<1 이면 수렴)
+   - 풍년이다·대왕작물도 매 라운드 동일 적용
+   - 총 작물 = 심기1회당_평균작물 × 총심기횟수
+   - 총 심기횟수 = 최초씨앗수 × (1/(1-p))
+*/
+function calcSeedsNeeded(targetBase, seedType, sk) {
+  if (targetBase <= 0) return { avg: 0, safe80: 0, multiplier: 1 };
+
+  const hr   = FARMING.HARVEST_RANGE[seedType];
+  const kpct = FARMING.KING_CROP_BASE_PCT / 100;
+
+  // 씨앗 1개 심기당 평균 작물 (대왕작물 포함)
+  const baseAvgCrops   = (hr.min + hr.max) / 2;
+  const avgCropsPerSeed = baseAvgCrops * (1 - kpct) + baseAvgCrops * FARMING.KING_CROP_MULT * kpct;
+
+  // 풍년이다! 추가 작물 (기댓값)
+  const harvestBonus = sk.hbPct / 100 * sk.hbCnt;
+  const totalCropsPerPlant = avgCropsPerSeed + harvestBonus;
+
+  // 씨앗은덤 확률 p (0~1)
+  const p = sk.sdPct / 100;
+  // 재순환 배율: 씨앗 1개 심으면 총 몇 번 심기가 발생하나
+  // p >= 1 이면 무한 → 실용적으로 0.99로 cap
+  const pCapped    = Math.min(p, 0.99);
+  const multiplier = 1 / (1 - pCapped); // 등비급수 합
+
+  // 목표 작물 수 = targetBase × 8
+  const targetCrops = targetBase * FARMING.CROPS_PER_BASE;
+
+  // 최초 씨앗 n개 심으면 총 심기 = n × multiplier
+  // 총 작물 = n × multiplier × totalCropsPerPlant = targetCrops
+  // → n = targetCrops / (multiplier × totalCropsPerPlant)
+  const avgSeeds = targetCrops / (multiplier * totalCropsPerPlant);
+
+  // 80% 보정: 수확 분산 반영
+  // 1회 심기당 작물 분산 (균등분포 + 풍년이다 이항분포)
+  const varPerPlant = Math.pow(hr.max - hr.min, 2) / 12
+    + harvestBonus * (1 - harvestBonus / totalCropsPerPlant); // 근사
+  // 총 심기횟수 n×multiplier에 대한 총 분산
+  // std_total ≈ sqrt(n × multiplier) × sqrt(varPerPlant)
+  // 필요 씨앗 std: std_seeds ≈ avgSeeds × sqrt(varPerPlant) / (totalCropsPerPlant × sqrt(n×multiplier))
+  // 단순화: cv(변동계수) = sqrt(varPerPlant) / totalCropsPerPlant / sqrt(n×multiplier)
+  // 80% 보정값 = avgSeeds + Z80 × std_seeds
+  const totalPlants = avgSeeds * multiplier;
+  const stdCrops    = Math.sqrt(totalPlants * varPerPlant);
+  const stdSeeds    = stdCrops / (multiplier * totalCropsPerPlant);
+  const safe80      = avgSeeds + Z80 * stdSeeds;
+
+  return {
+    avg:        Math.ceil(avgSeeds),
+    safe80:     Math.ceil(safe80),
+    multiplier, // 재순환 배율 (표시용)
+    p,
+  };
 }
 
 let rowId=0;
@@ -675,26 +797,28 @@ window.calcMats=()=>{
   if(!anyLack){
     html+=`<div class="result-box"><div class="rb-label">✅ 베이스 충분</div><div class="rb-value" style="font-size:16px">추가 씨앗 불필요</div></div>`;
   } else {
-    html+=`<div class="rsec"><div class="rsec-title">🌱 평균 필요 씨앗</div>`;
+    html+=`<div class="rsec"><div class="rsec-title">🌱 필요 씨앗 (평균)</div>`;
     for(const[bt,bn]of[['tomato','토마토'],['onion','양파'],['garlic','마늘']]){
       if(lackBase[bt]<=0)continue;
       const cl=baseColors[bt],hr=FARMING.HARVEST_RANGE[bt];
-      const{avg}=calcSeedsNeeded(lackBase[bt],bt,sk);
-      const sdNote=sk.sdPct>0?` · 씨앗은덤 ${sk.sdPct}% 차감`:''
-      html+=`<div class="rrow"><span class="rl" style="color:${cl}">${bn} 씨앗</span><span class="rv"><b>${fmtQty(avg)}</b><small style="color:var(--muted);display:block">수확 ${hr.min}~${hr.max}개${sdNote}</small></span></div>`;
+      const res=calcSeedsNeeded(lackBase[bt],bt,sk);
+      const multNote=res.p>0?` · 씨앗덤 ${sk.sdPct}% → 재순환 ×${fd(res.multiplier,2)}`:'';
+      html+=`<div class="rrow"><span class="rl" style="color:${cl}">${bn} 씨앗</span><span class="rv"><b>${fmtQty(res.avg)}</b><small style="color:var(--muted);display:block">수확 ${hr.min}~${hr.max}개${multNote}</small></span></div>`;
     }
     html+=`</div><div class="rsec" style="border-color:var(--grn);background:var(--grn-bg)"><div class="rsec-title" style="color:var(--grn)">🛡️ 80% 확률로 충분한 씨앗</div>`;
     for(const[bt,bn]of[['tomato','토마토'],['onion','양파'],['garlic','마늘']]){
       if(lackBase[bt]<=0)continue;
       const cl=baseColors[bt];
-      const{avg,safe80}=calcSeedsNeeded(lackBase[bt],bt,sk);
-      html+=`<div class="rrow"><span class="rl" style="color:${cl}">${bn} 씨앗</span><span class="rv"><b style="color:var(--grn)">${fmtQty(safe80)}</b><small style="color:var(--muted);display:block">평균 대비 +${fmtQty(safe80-avg)} 여유</small></span></div>`;
+      const res=calcSeedsNeeded(lackBase[bt],bt,sk);
+      html+=`<div class="rrow"><span class="rl" style="color:${cl}">${bn} 씨앗</span><span class="rv"><b style="color:var(--grn)">${fmtQty(res.safe80)}</b><small style="color:var(--muted);display:block">평균 대비 +${fmtQty(res.safe80-res.avg)} 여유</small></span></div>`;
     }
     html+=`</div>`;
     const avgTotal =Object.entries(lackBase).reduce((s,[bt,lack])=>s+(lack>0?calcSeedsNeeded(lack,bt,sk).avg:0),0);
     const safeTotal=Object.entries(lackBase).reduce((s,[bt,lack])=>s+(lack>0?calcSeedsNeeded(lack,bt,sk).safe80:0),0);
+    const seedDropNote = sk.sdPct > 0
+      ? `<div class="rb-sub" style="margin-top:4px;font-size:10px;color:var(--muted)">씨앗은덤 ${sk.sdPct}% 재순환 반영됨</div>` : '';
     html+=`<div class="result-box"><div style="display:flex;gap:0;align-items:stretch">
-      <div style="flex:1;text-align:center;padding:4px 8px"><div class="rb-label">평균 필요 씨앗</div><div class="rb-value">${fmtQty(avgTotal)}</div><div class="rb-sub">기댓값 기준</div></div>
+      <div style="flex:1;text-align:center;padding:4px 8px"><div class="rb-label">평균 필요 씨앗</div><div class="rb-value">${fmtQty(avgTotal)}</div><div class="rb-sub">기댓값 기준</div>${seedDropNote}</div>
       <div style="width:1px;background:var(--bdr2);margin:4px 0;flex:none"></div>
       <div style="flex:1;text-align:center;padding:4px 8px"><div class="rb-label">80% 확률로 충분</div><div class="rb-value rb-floor">${fmtQty(safeTotal)}</div><div class="rb-sub">수확 변동 보정</div></div>
     </div></div>`;
@@ -713,13 +837,13 @@ window.autoFill=()=>{
   fill('pCropCarrot',    cp.carrot    *SET_SIZE);fill('pCropBeet',      cp.beet     *SET_SIZE);
   fill('pCropWatermelon',cp.watermelon*SET_SIZE);fill('pCropSweetfruit',cp.sweetfruit*SET_SIZE);
   const op=DEFAULT_PRICES.other;
-  fill('pCoconut',op.coconut);fill('pPineapple',op.pineapple);fill('pFlour',op.flour);
-  fill('pButter', op.butter); fill('pCheese',   op.cheese);   fill('pSteak',op.steak);
-  fill('pSugar',  op.sugar);  fill('pPork',     op.pork);
-  fill('pPorkBelly',op.pork_belly);fill('pPorkFront',op.pork_front);
-  fill('pLamb',op.lamb);fill('pLambRib',op.lamb_rib);fill('pLambLeg',op.lamb_leg);
-  fill('pChicken',op.chicken);fill('pChickenLeg',op.chicken_leg);fill('pChickenBreast',op.chicken_breast);
-  fill('pBeefSirloin',op.beef_sirloin);fill('pBeefRib',op.beef_rib);
+  fill('pCoconut',op.coconut*SET_SIZE);fill('pPineapple',op.pineapple*SET_SIZE);fill('pFlour',op.flour*SET_SIZE);
+  fill('pButter', op.butter*SET_SIZE); fill('pCheese',   op.cheese*SET_SIZE);   fill('pSteak',op.steak*SET_SIZE);
+  fill('pSugar',  op.sugar*SET_SIZE);  fill('pPork',     op.pork*SET_SIZE);
+  fill('pPorkBelly',op.pork_belly*SET_SIZE);fill('pPorkFront',op.pork_front*SET_SIZE);
+  fill('pLamb',op.lamb*SET_SIZE);fill('pLambRib',op.lamb_rib*SET_SIZE);fill('pLambLeg',op.lamb_leg*SET_SIZE);
+  fill('pChicken',op.chicken*SET_SIZE);fill('pChickenLeg',op.chicken_leg*SET_SIZE);fill('pChickenBreast',op.chicken_breast*SET_SIZE);
+  fill('pBeefSirloin',op.beef_sirloin*SET_SIZE);fill('pBeefRib',op.beef_rib*SET_SIZE);
   onPriceChange();
 };
 
@@ -818,10 +942,10 @@ function initOneCdd(sel) {
 }
 
 function initCustomDropdowns(){
-  document.querySelectorAll('.skrow select,.field select').forEach(sel=>initOneCdd(sel));
+  document.querySelectorAll('.skrow select,.field select,.dish-sel-wrap select').forEach(sel=>initOneCdd(sel));
 }
 function syncDropdownLabels(){
-  document.querySelectorAll('.skrow select,.field select').forEach(sel=>{
+  document.querySelectorAll('.skrow select,.field select,.dish-sel-wrap select').forEach(sel=>{
     const cdd=sel.previousElementSibling;if(!cdd?.classList.contains('cdd'))return;
     const lbl=cdd.querySelector('.cdd-label');if(lbl)lbl.textContent=sel.options[sel.selectedIndex]?.text||'';
     cdd.querySelectorAll('.cdd-item').forEach(item=>item.classList.toggle('selected',item.dataset.value===sel.value));
