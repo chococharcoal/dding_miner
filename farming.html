@@ -862,11 +862,11 @@ window.calcMats=()=>{
   let html='';
 
   // ── 베이스 필요량 ──
-  html+=`<div class="rsec"><div class="rsec-title">🫙 필요 베이스 (총 ${f(totalDishes)}개 요리)</div>`;
+  html+=`<div class="rsec"><div class="rsec-title" style="color:var(--acc)">🫙 필요 베이스 (총 ${f(totalDishes)}개 요리)</div>`;
   for(const[k,need]of Object.entries(needBase)){
     if(need<=0)continue;
     const have=haveBase[k],lack=lackBase[k],cl=baseColors[k];
-    html+=`<div class="rrow"><span class="rl" style="color:${cl}">${baseNames[k]} 베이스</span><span class="rv">필요 ${f(need)}개 / 보유 ${f(have)}개 ${lack>0?`<span class="bdg br" style="margin-left:4px">부족 ${f(lack)}개</span>`:`<span class="bdg bg" style="margin-left:4px">충분</span>`}</span></div>`;
+    html+=`<div class="rrow"><span class="rl" style="color:${cl}">${baseNames[k]} 베이스</span><span class="rv" style="color:var(--muted)">필요 ${f(need)}개 / 보유 ${f(have)}개 ${lack>0?`<span class="bdg br" style="margin-left:4px">부족 ${f(lack)}개</span>`:`<span class="bdg bg" style="margin-left:4px">충분</span>`}</span></div>`;
   }
   html+=`</div>`;
 
@@ -876,20 +876,20 @@ window.calcMats=()=>{
   const hasOther=Object.values(needOther).some(v=>v>0);
 
   if(hasCrops||hasMilky||hasOther){
-    html+=`<div class="rsec"><div class="rsec-title">🧺 기타 재료 합계</div>`;
-    // 작물 묶음: 묶음 수량 × 64개 = 아이템 개수로 표시
+    html+=`<div class="rsec"><div class="rsec-title" style="color:var(--acc)">🧺 기타 재료 합계</div>`;
+    // 작물 묶음: 묶음 수 × 64 → fmtQty로 상자/세트/개 표시
     for(const[k,q]of Object.entries(needCrops)){
       if(q<=0)continue;
       const cc=CROPS[k]?.color||'#888';
-      html+=`<div class="rrow"><span class="rl" style="color:${cc}">${CROPS[k]?.name||k}</span><span class="rv">${fmtQty(q*SET_SIZE)}</span></div>`;
+      html+=`<div class="rrow"><span class="rl" style="color:${cc}">${CROPS[k]?.name||k}</span><span class="rv" style="color:var(--muted)">${fmtQty(q*SET_SIZE)}</span></div>`;
     }
-    // 밀키 재료 (가격 표시 없음)
+    // 밀키 재료
     const milkyNames={salt:'소금',egg:'달걀',milk:'우유',oil:'오일'};
     for(const[k,q]of Object.entries(needMilky)){
       if(q<=0)continue;
-      html+=`<div class="rrow"><span class="rl" style="color:#6090a8">${milkyNames[k]||k}</span><span class="rv">${f(q)}개</span></div>`;
+      html+=`<div class="rrow"><span class="rl" style="color:#6090a8">${milkyNames[k]||k}</span><span class="rv" style="color:var(--muted)">${fmtQty(q)}</span></div>`;
     }
-    // 기타 재료 (중간재료는 원재료 분해 표시, 가격 없음)
+    // 기타 재료 (중간재료는 원재료 분해 표시)
     for(const[k,q]of Object.entries(needOther)){
       if(q<=0)continue;
       const meta=OTHER_META[k]||{name:k,color:'#888'};
@@ -901,14 +901,14 @@ window.calcMats=()=>{
           const totalQty=qty*q;
           if(mat==='wheat'){
             const hayNeeded=totalQty/9;
-            subParts.push(`밀 ${f(totalQty)}개 (건초더미 ${fd(hayNeeded,1)}개)`);
+            subParts.push(`밀 ${fmtQty(totalQty)} (건초더미 ${fd(hayNeeded,1)}개)`);
           } else {
-            subParts.push(`${milkyNames[mat]||mat} ${f(totalQty)}개`);
+            subParts.push(`${milkyNames[mat]||mat} ${fmtQty(totalQty)}`);
           }
         }
-        html+=`<div class="rrow" style="align-items:flex-start"><span class="rl" style="color:${cc}">${meta.name}</span><span class="rv">${f(q)}개<small style="color:var(--muted);display:block">${subParts.join(' / ')}</small></span></div>`;
+        html+=`<div class="rrow" style="align-items:flex-start"><span class="rl" style="color:${cc}">${meta.name}</span><span class="rv" style="color:var(--muted)">${fmtQty(q)}<small style="display:block">${subParts.join(' / ')}</small></span></div>`;
       } else {
-        html+=`<div class="rrow"><span class="rl" style="color:${cc}">${meta.name}</span><span class="rv">${f(q)}개</span></div>`;
+        html+=`<div class="rrow"><span class="rl" style="color:${cc}">${meta.name}</span><span class="rv" style="color:var(--muted)">${fmtQty(q)}</span></div>`;
       }
     }
     html+=`</div>`;
@@ -935,7 +935,7 @@ window.calcMats=()=>{
         <div style="display:flex;justify-content:space-between;align-items:baseline;padding:3px 0;border-bottom:1px dashed var(--bdr);font-size:12px">
           <span style="color:${cl};font-weight:700">${bn} 씨앗</span>
           <span style="display:flex;gap:12px">
-            <span><b>${fmtQty(seedResults[bt].avg)}</b></span>
+            <span style="color:var(--muted)"><b>${fmtQty(seedResults[bt].avg)}</b></span>
             <span style="color:var(--grn)"><b>${fmtQty(seedResults[bt].safe80)}</b></span>
           </span>
         </div>`).join('');

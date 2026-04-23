@@ -231,8 +231,8 @@ export const OTHER_META = {
   /* 기타 재료 */
   coconut:       { name: '코코넛',           color: '#8b6914' },
   pineapple:     { name: '파인애플',         color: '#c8a000' },
+  /* 고기류 (스테이크 포함) */
   steak:         { name: '스테이크',         color: '#8b4513' },
-  /* 고기류 */
   pork:          { name: '익힌 돼지고기',    color: '#c07050' },
   pork_belly:    { name: '익힌 삼겹살',      color: '#c06040' },
   pork_front:    { name: '익힌 앞다리살',    color: '#b86050' },
