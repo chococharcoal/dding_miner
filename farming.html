@@ -711,14 +711,14 @@ window.calcDishEff=()=>{
 
     const bonusTxt = totalBonus > 0 ? ` +${Math.round(totalBonus*100)}% 스킬 적용` : '';
     const priceInfo = hasPrice
-      ? `판매가 ${f(r.inputPrice)}원 → 스킬 적용 ${f(r.skillSellPrice)}원${bonusTxt}<br>재료비 ${f(Math.round(r.cost))}원 · 범위 ${f(r.rec.priceMin)}~${f(r.rec.priceMax)}원`
-      : `판매가 미입력 · 범위 ${f(r.rec.priceMin)}~${f(r.rec.priceMax)}원<br>재료비 ${f(Math.round(r.cost))}원`;
+      ? `판매가 ${f(r.inputPrice)}원 → 스킬 적용 ${f(r.skillSellPrice)}원${bonusTxt}<br>총 재료비 ${f(Math.round(r.cost))}원 · 범위 ${f(r.rec.priceMin)}~${f(r.rec.priceMax)}원`
+      : `판매가 미입력 · 범위 ${f(r.rec.priceMin)}~${f(r.rec.priceMax)}원<br>총 재료비 ${f(Math.round(r.cost))}원`;
 
     return `<div class="dish-card ${rankClass}">
       ${rankBadge}
       <div class="dish-head">
         <div style="min-width:0">
-          <div class="dish-name">${r.rec.name} ${gradeBdg}</div>
+          <div class="dish-name" style="display:flex;align-items:center;gap:5px;flex-wrap:wrap">${r.rec.name} ${gradeBdg}</div>
           <div class="dish-detail">${priceInfo}</div>
         </div>
         <div style="text-align:right;flex-shrink:0">
@@ -919,33 +919,45 @@ window.calcMats=()=>{
   if(!anyLack){
     html+=`<div class="result-box"><div class="rb-label">✅ 베이스 충분</div><div class="rb-value" style="font-size:16px">추가 씨앗 불필요</div></div>`;
   } else {
-    html+=`<div class="rsec"><div class="rsec-title">🌱 필요 씨앗 (평균)</div>`;
-    for(const[bt,bn]of[['tomato','토마토'],['onion','양파'],['garlic','마늘']]){
-      if(lackBase[bt]<=0)continue;
-      const cl=baseColors[bt],hr=FARMING.HARVEST_RANGE[bt];
-      const res=calcSeedsNeeded(lackBase[bt],bt,sk);
-      const multNote=res.p>0?` · 씨앗덤 ${sk.sdPct}% 재순환 ×${fd(res.multiplier,2)}`:'';
-      html+=`<div class="rrow"><span class="rl" style="color:${cl}">${bn} 씨앗</span><span class="rv"><b>${fmtQty(res.avg)}</b><small style="color:var(--muted);display:block">수확 ${hr.min}~${hr.max}개${multNote}</small></span></div>`;
+    // 종류별 평균/80% 미리 계산
+    const seedResults={};
+    for(const bt of['tomato','onion','garlic']){
+      if(lackBase[bt]>0) seedResults[bt]=calcSeedsNeeded(lackBase[bt],bt,sk);
     }
-    html+=`</div>`;
-    // result-box: 평균 + 80% 나란히, 80%는 "평균보다 +n개 여유"
-    const avgTotal=Object.entries(lackBase).reduce((s,[bt,lack])=>s+(lack>0?calcSeedsNeeded(lack,bt,sk).avg:0),0);
-    const safeTotal=Object.entries(lackBase).reduce((s,[bt,lack])=>s+(lack>0?calcSeedsNeeded(lack,bt,sk).safe80:0),0);
+    const avgTotal=Object.entries(lackBase).reduce((s,[bt,lack])=>s+(lack>0?seedResults[bt].avg:0),0);
+    const safeTotal=Object.entries(lackBase).reduce((s,[bt,lack])=>s+(lack>0?seedResults[bt].safe80:0),0);
     const seedDropNote=sk.sdPct>0?`<div class="rb-sub">씨앗은덤 ${sk.sdPct}% 재순환 반영됨</div>`:'';
-    html+=`<div class="result-box"><div style="display:flex;gap:0;align-items:stretch">
-      <div style="flex:1;text-align:center;padding:4px 8px">
+
+    // 종류별 행 생성
+    const seedRows=[['tomato','토마토','#d94f3d'],['onion','양파','#c89c00'],['garlic','마늘','#9ab0c8']]
+      .filter(([bt])=>lackBase[bt]>0)
+      .map(([bt,bn,cl])=>`
+        <div style="display:flex;justify-content:space-between;align-items:baseline;padding:3px 0;border-bottom:1px dashed var(--bdr);font-size:12px">
+          <span style="color:${cl};font-weight:700">${bn} 씨앗</span>
+          <span style="display:flex;gap:12px">
+            <span><b>${fmtQty(seedResults[bt].avg)}</b></span>
+            <span style="color:var(--grn)"><b>${fmtQty(seedResults[bt].safe80)}</b></span>
+          </span>
+        </div>`).join('');
+
+    html+=`<div class="result-box">
+      <div style="display:flex;justify-content:space-between;margin-bottom:6px">
         <div class="rb-label">평균 필요 씨앗</div>
-        <div class="rb-value">${fmtQty(avgTotal)}</div>
-        <div class="rb-sub">기댓값 기준</div>
-        ${seedDropNote}
+        <div class="rb-label" style="color:var(--grn)">80% 확률로 충분</div>
       </div>
-      <div style="width:1px;background:var(--bdr2);margin:4px 0;flex:none"></div>
-      <div style="flex:1;text-align:center;padding:4px 8px">
-        <div class="rb-label">80% 확률로 충분</div>
-        <div class="rb-value rb-floor">${fmtQty(safeTotal)}</div>
-        <div class="rb-sub">평균보다 +${fmtQty(safeTotal-avgTotal)} 여유</div>
+      ${seedRows}
+      <div style="display:flex;justify-content:space-between;align-items:baseline;margin-top:8px;padding-top:6px;border-top:1.5px solid var(--bdr2)">
+        <div>
+          <div class="rb-value" style="font-size:20px">${fmtQty(avgTotal)}</div>
+          <div class="rb-sub">합계 기댓값</div>
+          ${seedDropNote}
+        </div>
+        <div style="text-align:right">
+          <div class="rb-value rb-floor" style="font-size:20px">${fmtQty(safeTotal)}</div>
+          <div class="rb-sub">평균보다 +${fmtQty(safeTotal-avgTotal)} 여유</div>
+        </div>
       </div>
-    </div></div>`;
+    </div>`;
   }
   document.getElementById('matsRes').innerHTML=html;
 };
