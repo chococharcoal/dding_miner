@@ -36,13 +36,13 @@ html,body{min-height:100vh;background:var(--bg) radial-gradient(circle at 10% 15
 .skpanel{background:var(--surf);border:1.5px solid var(--bdr);border-radius:var(--r);padding:14px;box-shadow:var(--sh);margin-bottom:14px}
 .skpanel-title{font-family:'Jua',sans-serif!important;font-size:15px;color:var(--acc);display:flex;align-items:center;gap:6px;cursor:pointer;user-select:none;margin-bottom:10px}
 .skpanel-title:hover{color:var(--acc2)}
-.toggle-arrow{font-size:11px;margin-left:auto;transition:transform .2s}
-.skpanel.collapsed .toggle-arrow{transform:rotate(-90deg)}
-.skpanel.collapsed .skbody{display:none}
 .sksec{font-size:11px;font-weight:700;color:var(--muted);letter-spacing:.5px;margin:12px 0 7px;padding-bottom:4px;border-bottom:1px dashed var(--bdr2)}
 .skgrid{display:grid;grid-template-columns:1fr 1fr;gap:6px}
 .skrow{background:var(--bg);border:1px solid var(--bdr);border-radius:var(--rs);padding:9px 11px;display:flex;flex-direction:column;gap:4px}
 .skname{font-family:'Jua',sans-serif!important;font-size:13px;color:var(--txt);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.skrow select{font-size:11px!important;font-weight:700!important;border:1.5px solid var(--bdr2);border-radius:var(--rs);padding:5px 7px;background:var(--surf);color:var(--txt);outline:none;width:100%;cursor:pointer}
+.field select{font-size:12px!important;font-weight:700!important;border:1.5px solid var(--bdr);border-radius:var(--rs);padding:7px 10px;background:var(--bg);color:var(--txt);outline:none;width:100%;cursor:pointer}
+.skrow select.cdd-ready,.field select.cdd-ready{display:none}
 .skinfo{font-size:11px;color:var(--muted);font-weight:500;min-height:14px}
 .cdd{position:relative;width:100%}
 .skrow .cdd-trigger,.field .cdd-trigger{display:flex;align-items:center;justify-content:space-between;gap:4px;padding:6px 8px;border:1.5px solid var(--bdr2);border-radius:var(--rs);background:var(--surf);color:var(--txt);font-size:11px!important;font-weight:700!important;cursor:pointer;user-select:none;white-space:nowrap;overflow:hidden}
@@ -123,7 +123,7 @@ html,body{min-height:100vh;background:var(--bg) radial-gradient(circle at 10% 15
 <div class="sidebar">
 
   <div class="skpanel" id="skillPanel">
-    <div class="skpanel-title" onclick="toggleSkillPanel()">⚡ 스킬 설정<span class="toggle-arrow">▼</span></div>
+    <div class="skpanel-title">⚡ 스킬 설정</div>
     <div class="skbody">
       <div class="sksec">💧 제작 시간</div>
       <div class="skgrid">
@@ -191,7 +191,7 @@ html,body{min-height:100vh;background:var(--bg) radial-gradient(circle at 10% 15
   </div>
 
   <div class="skpanel" id="engPanel" style="margin-top:10px">
-    <div class="skpanel-title" onclick="toggleEngPanel()">🪨 각인석 설정<span class="toggle-arrow">▼</span></div>
+    <div class="skpanel-title">🪨 각인석 설정</div>
     <div class="skbody">
       <div class="skgrid">
         <div class="skrow">
@@ -346,7 +346,7 @@ html,body{min-height:100vh;background:var(--bg) radial-gradient(circle at 10% 15
 <script type="module">
 import {
   SKILLS, ENGRAVING, ROD, OCEAN, CLAM, CRAFTS, WHALE, ALCHEMY_PRICES, DEFAULT_PRICES, UNITS,
-} from './ocean-config.js';
+} from './ocean%20config.js';
 
 const {SET_SIZE,BOX_SIZE}=UNITS;
 const f=n=>Math.round(n).toLocaleString('ko-KR');
@@ -655,8 +655,6 @@ const KEY='ocean_calc_v2';
 function saveAll(){const d={};SAVE_IDS.forEach(id=>{const e=document.getElementById(id);if(e)d[id]=e.value;});localStorage.setItem(KEY,JSON.stringify(d));}
 function loadAll(){try{const d=JSON.parse(localStorage.getItem(KEY)||'{}');SAVE_IDS.forEach(id=>{const e=document.getElementById(id);if(e&&d[id]!==undefined)e.value=d[id];});}catch(e){}}
 
-window.toggleSkillPanel=()=>document.getElementById('skillPanel').classList.toggle('collapsed');
-window.toggleEngPanel=()=>document.getElementById('engPanel').classList.toggle('collapsed');
 window.resetAll=()=>{
   if(!confirm('초기화할까요?'))return;
   localStorage.removeItem(KEY);
@@ -682,6 +680,7 @@ function initCustomDropdowns(){
     });
     trigger.addEventListener('click',e=>{e.stopPropagation();const isOpen=cdd.classList.contains('open');document.querySelectorAll('.cdd.open').forEach(el=>el.classList.remove('open'));if(!isOpen)cdd.classList.add('open');});
     cdd.appendChild(trigger);cdd.appendChild(menu);sel.parentNode.insertBefore(cdd,sel);
+    sel.classList.add('cdd-ready');
   });
   document.addEventListener('click',()=>{document.querySelectorAll('.cdd.open').forEach(el=>el.classList.remove('open'));});
 }
