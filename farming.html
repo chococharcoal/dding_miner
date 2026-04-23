@@ -877,44 +877,36 @@ window.calcMats=()=>{
 
   if(hasCrops||hasMilky||hasOther){
     html+=`<div class="rsec"><div class="rsec-title">🧺 기타 재료 합계</div>`;
-    // 작물 묶음
+    // 작물 묶음: 묶음 수량 × 64개 = 아이템 개수로 표시
     for(const[k,q]of Object.entries(needCrops)){
       if(q<=0)continue;
       const cc=CROPS[k]?.color||'#888';
-      html+=`<div class="rrow"><span class="rl" style="color:${cc}">${CROPS[k]?.name||k}</span><span class="rv">${f(q)} 묶음</span></div>`;
+      html+=`<div class="rrow"><span class="rl" style="color:${cc}">${CROPS[k]?.name||k}</span><span class="rv">${fmtQty(q*SET_SIZE)}</span></div>`;
     }
-    // 밀키 고정가 재료
+    // 밀키 재료 (가격 표시 없음)
     const milkyNames={salt:'소금',egg:'달걀',milk:'우유',oil:'오일'};
     for(const[k,q]of Object.entries(needMilky)){
       if(q<=0)continue;
-      html+=`<div class="rrow"><span class="rl" style="color:#6090a8">${milkyNames[k]||k}</span><span class="rv">${f(q)}개 <small style="color:var(--muted)">(${f(q*MILKY_PRICES[k])}원)</small></span></div>`;
+      html+=`<div class="rrow"><span class="rl" style="color:#6090a8">${milkyNames[k]||k}</span><span class="rv">${f(q)}개</span></div>`;
     }
-    // 기타 재료 (중간재료 포함)
+    // 기타 재료 (중간재료는 원재료 분해 표시, 가격 없음)
     for(const[k,q]of Object.entries(needOther)){
       if(q<=0)continue;
       const meta=OTHER_META[k]||{name:k,color:'#888'};
       const cc=meta.color||'#888';
       if(PROCESSED_RECIPES[k]){
-        // 중간 재료: 원재료 분해해서 표시
         const rec=PROCESSED_RECIPES[k];
         const subParts=[];
-        let subCost=0;
         for(const[mat,qty]of Object.entries(rec.ingredients)){
           const totalQty=qty*q;
           if(mat==='wheat'){
-            const wheatCost=totalQty*prices.wheat;
-            subCost+=wheatCost;
-            // 밀을 건초더미로 환산: 밀 9개 = 건초더미 1개
             const hayNeeded=totalQty/9;
-            subParts.push(`밀 ${f(totalQty)}개(건초더미 ${fd(hayNeeded,1)}개) ${prices.wheat>0?`${f(Math.round(wheatCost))}원`:''}`);
+            subParts.push(`밀 ${f(totalQty)}개 (건초더미 ${fd(hayNeeded,1)}개)`);
           } else {
-            const unitCost=MILKY_PRICES[mat]||0;
-            const cost=totalQty*unitCost;
-            subCost+=cost;
-            subParts.push(`${milkyNames[mat]||mat} ${f(totalQty)}개 ${unitCost>0?`${f(cost)}원`:''}`);
+            subParts.push(`${milkyNames[mat]||mat} ${f(totalQty)}개`);
           }
         }
-        html+=`<div class="rrow" style="align-items:flex-start"><span class="rl" style="color:${cc}">${meta.name}</span><span class="rv">${f(q)}개<small style="color:var(--muted);display:block">${subParts.join(' / ')}<br>합계 ${f(Math.round(subCost))}원</small></span></div>`;
+        html+=`<div class="rrow" style="align-items:flex-start"><span class="rl" style="color:${cc}">${meta.name}</span><span class="rv">${f(q)}개<small style="color:var(--muted);display:block">${subParts.join(' / ')}</small></span></div>`;
       } else {
         html+=`<div class="rrow"><span class="rl" style="color:${cc}">${meta.name}</span><span class="rv">${f(q)}개</span></div>`;
       }
@@ -936,21 +928,23 @@ window.calcMats=()=>{
       html+=`<div class="rrow"><span class="rl" style="color:${cl}">${bn} 씨앗</span><span class="rv"><b>${fmtQty(res.avg)}</b><small style="color:var(--muted);display:block">수확 ${hr.min}~${hr.max}개${multNote}</small></span></div>`;
     }
     html+=`</div>`;
-    html+=`<div class="rsec" style="border-color:var(--grn);background:var(--grn-bg)"><div class="rsec-title" style="color:var(--grn)">🛡️ 80% 확률로 충분한 씨앗</div>`;
-    for(const[bt,bn]of[['tomato','토마토'],['onion','양파'],['garlic','마늘']]){
-      if(lackBase[bt]<=0)continue;
-      const cl=baseColors[bt];
-      const res=calcSeedsNeeded(lackBase[bt],bt,sk);
-      html+=`<div class="rrow"><span class="rl" style="color:${cl}">${bn} 씨앗</span><span class="rv"><b style="color:var(--grn)">${fmtQty(res.safe80)}</b><small style="color:var(--muted);display:block">평균 대비 +${fmtQty(res.safe80-res.avg)} 여유</small></span></div>`;
-    }
-    html+=`</div>`;
+    // result-box: 평균 + 80% 나란히, 80%는 "평균보다 +n개 여유"
     const avgTotal=Object.entries(lackBase).reduce((s,[bt,lack])=>s+(lack>0?calcSeedsNeeded(lack,bt,sk).avg:0),0);
     const safeTotal=Object.entries(lackBase).reduce((s,[bt,lack])=>s+(lack>0?calcSeedsNeeded(lack,bt,sk).safe80:0),0);
-    const seedDropNote=sk.sdPct>0?`<div class="rb-sub" style="margin-top:4px;font-size:10px;color:var(--muted)">씨앗은덤 ${sk.sdPct}% 재순환 반영됨</div>`:'';
+    const seedDropNote=sk.sdPct>0?`<div class="rb-sub">씨앗은덤 ${sk.sdPct}% 재순환 반영됨</div>`:'';
     html+=`<div class="result-box"><div style="display:flex;gap:0;align-items:stretch">
-      <div style="flex:1;text-align:center;padding:4px 8px"><div class="rb-label">평균 필요 씨앗</div><div class="rb-value">${fmtQty(avgTotal)}</div><div class="rb-sub">기댓값 기준</div>${seedDropNote}</div>
+      <div style="flex:1;text-align:center;padding:4px 8px">
+        <div class="rb-label">평균 필요 씨앗</div>
+        <div class="rb-value">${fmtQty(avgTotal)}</div>
+        <div class="rb-sub">기댓값 기준</div>
+        ${seedDropNote}
+      </div>
       <div style="width:1px;background:var(--bdr2);margin:4px 0;flex:none"></div>
-      <div style="flex:1;text-align:center;padding:4px 8px"><div class="rb-label">80% 확률로 충분</div><div class="rb-value rb-floor">${fmtQty(safeTotal)}</div><div class="rb-sub">수확 변동 보정</div></div>
+      <div style="flex:1;text-align:center;padding:4px 8px">
+        <div class="rb-label">80% 확률로 충분</div>
+        <div class="rb-value rb-floor">${fmtQty(safeTotal)}</div>
+        <div class="rb-sub">평균보다 +${fmtQty(safeTotal-avgTotal)} 여유</div>
+      </div>
     </div></div>`;
   }
   document.getElementById('matsRes').innerHTML=html;
