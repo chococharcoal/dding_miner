@@ -1,8 +1,3 @@
-/* ════════════════════════════════════════
-   app.js — 광부 계산기 메인 로직
-   모든 수치·레시피는 config.js에서 관리합니다.
-════════════════════════════════════════ */
-
 import {
   SKILLS, MINING, PICKAXE, ARTIFACT, ENGRAVING,
   INGOT_RECIPES, RECIPES, TORCH, UNITS, PRECIOUS, DEFAULT_PRICES,

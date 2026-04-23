@@ -9,9 +9,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Jua&family=Noto+Sans+KR:wght@500;700;900&display=swap" rel="stylesheet">
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-/* 모든 select는 커스텀 드롭다운으로 대체되므로 숨김 */
-select{display:none!important}
-*,input,button,textarea{font-family:'Noto Sans KR','Apple SD Gothic Neo',sans-serif!important;font-weight:700}
+*,input,select,button,textarea{font-family:'Noto Sans KR','Apple SD Gothic Neo',sans-serif!important;font-weight:700}
 :root{
   --bg:#f2f9f5;--surf:#ffffff;--bdr:#cde8d8;--bdr2:#a8d4ba;
   --txt:#1a2e22;--muted:#6a9478;--acc:#3a9e68;--acc2:#5bc88a;
@@ -20,7 +18,6 @@ select{display:none!important}
 }
 html,body{min-height:100vh;background:var(--bg) radial-gradient(circle at 10% 15%,rgba(58,158,104,.08) 0%,transparent 55%),radial-gradient(circle at 90% 85%,rgba(91,200,138,.05) 0%,transparent 55%);color:var(--txt)}
 .page{padding:0 0 60px}
-/* 헤더 */
 .hdr{text-align:center;padding:22px 16px 16px;position:relative}
 .hdr-back{position:absolute;left:16px;top:50%;transform:translateY(-50%);font-family:'Jua',sans-serif!important;font-size:13px;color:var(--muted);text-decoration:none;display:inline-flex;align-items:center;gap:4px;padding:6px 12px;border-radius:20px;border:1.5px solid var(--bdr2);background:var(--surf);transition:all .15s}
 .hdr-back:hover{border-color:var(--acc);color:var(--acc)}
@@ -28,7 +25,6 @@ html,body{min-height:100vh;background:var(--bg) radial-gradient(circle at 10% 15
 .hdr-tab-name{font-family:'Jua',sans-serif!important;font-size:13px;color:var(--muted);margin-top:4px}
 .bounce{display:inline-block;animation:bounce 2s ease-in-out infinite}
 @keyframes bounce{0%,100%{transform:translateY(0)}50%{transform:translateY(-5px)}}
-/* 레이아웃 */
 .layout{display:block;padding:0 16px}
 @media(min-width:860px){
   .layout{display:block;padding:0}
@@ -48,26 +44,36 @@ html,body{min-height:100vh;background:var(--bg) radial-gradient(circle at 10% 15
 .skgrid{display:grid;grid-template-columns:1fr 1fr;gap:6px}
 .skrow{background:var(--bg);border:1px solid var(--bdr);border-radius:var(--rs);padding:9px 11px;display:flex;flex-direction:column;gap:4px}
 .skname{font-family:'Jua',sans-serif!important;font-size:13px;color:var(--txt);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+/* mining.html 방식: skrow/field 안 select만 숨김 */
+.skrow select{display:none}
+.field select{display:none}
 .skinfo{font-size:11px;color:var(--muted);font-weight:500;min-height:14px}
-/* 커스텀 드롭다운 */
+/* 커스텀 드롭다운 - mining.html과 동일 구조 */
 .cdd{position:relative;width:100%}
-.cdd-trigger{display:flex;align-items:center;justify-content:space-between;gap:4px;border-radius:var(--rs);cursor:pointer;user-select:none;line-height:1.3;white-space:nowrap;overflow:hidden;font-weight:700!important;transition:border-color .15s,box-shadow .15s}
-/* skrow 안 cdd */
-.skrow .cdd-trigger{padding:6px 8px;border:1.5px solid var(--bdr2);background:var(--surf);color:var(--txt);font-size:11px!important}
+.skrow .cdd-trigger{
+  display:flex;align-items:center;justify-content:space-between;gap:4px;
+  padding:6px 8px;border:1.5px solid var(--bdr2);border-radius:var(--rs);
+  background:var(--surf);color:var(--txt);
+  font-size:11px!important;font-weight:700!important;
+  cursor:pointer;user-select:none;line-height:1.3;white-space:nowrap;overflow:hidden;
+}
 .skrow .cdd-trigger:hover{border-color:var(--acc)}
-/* field 안 cdd */
-.field .cdd-trigger{padding:7px 10px;border:1.5px solid var(--bdr);background:var(--bg);color:var(--txt);font-size:13px!important}
+.field .cdd-trigger{
+  display:flex;align-items:center;justify-content:space-between;gap:4px;
+  padding:7px 10px;border:1.5px solid var(--bdr);border-radius:var(--rs);
+  background:var(--bg);color:var(--txt);
+  font-size:12px!important;font-weight:700!important;
+  cursor:pointer;user-select:none;line-height:1.3;
+  transition:border-color .15s,box-shadow .15s;white-space:nowrap;overflow:hidden;
+}
 .field .cdd-trigger:hover{border-color:var(--acc)}
-/* dish-sel-wrap 안 cdd */
-.dish-sel-wrap .cdd-trigger{padding:7px 10px;border:1.5px solid var(--bdr);background:var(--bg);color:var(--txt);font-size:12px!important}
-.dish-sel-wrap .cdd-trigger:hover{border-color:var(--acc)}
-.cdd.open .cdd-trigger{border-color:var(--acc)!important;box-shadow:0 0 0 2px rgba(58,158,104,.15)}
 .cdd-label{overflow:hidden;text-overflow:ellipsis;min-width:0;flex:1}
-.cdd-arrow{font-size:9px;color:var(--muted);flex-shrink:0;transition:transform .15s}
+.cdd-trigger .cdd-arrow{font-size:9px;color:var(--muted);flex-shrink:0;transition:transform .15s}
+.cdd.open .cdd-trigger{border-color:var(--acc);box-shadow:0 0 0 2px rgba(58,158,104,.15)}
 .cdd.open .cdd-arrow{transform:rotate(180deg)}
-.cdd-menu{display:none;position:absolute;top:calc(100% + 3px);left:0;right:0;background:var(--surf);border:1.5px solid var(--acc);border-radius:var(--rs);box-shadow:0 6px 20px rgba(0,0,0,.14);z-index:9999;max-height:240px;overflow-y:auto}
+.cdd-menu{display:none;position:absolute;top:calc(100% + 3px);left:0;right:0;background:var(--surf);border:1.5px solid var(--acc);border-radius:var(--rs);box-shadow:0 6px 20px rgba(0,0,0,.12);z-index:9999;max-height:220px;overflow-y:auto}
 .cdd.open .cdd-menu{display:block}
-.cdd-item{padding:6px 10px;font-size:11px!important;font-weight:700!important;color:var(--txt);cursor:pointer;border-bottom:1px solid var(--bdr);line-height:1.4}
+.cdd-item{padding:5px 10px;font-size:11px!important;font-weight:700!important;color:var(--txt);cursor:pointer;border-bottom:1px solid var(--bdr);line-height:1.3;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .cdd-item:last-child{border-bottom:none}
 .cdd-item:hover{background:var(--ylw-bg);color:var(--acc)}
 .cdd-item.selected{background:var(--acc);color:#fff}
@@ -96,7 +102,6 @@ html,body{min-height:100vh;background:var(--bg) radial-gradient(circle at 10% 15
 .slabel{font-family:'Jua',sans-serif!important;font-size:12px;color:var(--acc);margin:8px 0 5px;display:flex;align-items:center;gap:5px}
 .slabel::after{content:'';flex:1;height:1px;background:var(--bdr2)}
 .fnote{font-size:10px;color:var(--muted);font-weight:500;margin-top:3px}
-/* 결과 */
 .rrow{display:flex;justify-content:space-between;align-items:center;padding:5px 0;border-bottom:1px dashed var(--bdr);gap:8px;font-size:12px}
 .rrow:last-child{border-bottom:none}
 .rrow-strong{border-top:1px solid var(--bdr2);margin-top:4px;padding-top:6px;font-size:13px;font-weight:900!important}
@@ -131,9 +136,10 @@ html,body{min-height:100vh;background:var(--bg) radial-gradient(circle at 10% 15
 .dish-mats{display:flex;flex-wrap:wrap;gap:4px;margin-top:6px}
 .mat-chip{font-size:10px;font-weight:700;border-radius:4px;padding:1px 6px;border:1px solid var(--bdr2);background:var(--bg);color:var(--txt)}
 .grade-bdg{font-size:10px;font-weight:700;padding:1px 7px;border-radius:20px;vertical-align:middle;display:inline-block}
-/* 탭4 요리 선택 */
+/* 탭3 요리 선택 */
 .dish-picker-row{display:flex;align-items:flex-start;gap:8px;margin-bottom:10px}
 .dish-sel-wrap{flex:0 0 210px}
+.dish-sel-wrap select{display:none}
 .dish-qty-wrap{flex:1;display:flex;flex-direction:column;gap:2px}
 .dish-qty-wrap input{font-size:12px!important;padding:7px 10px;border:1.5px solid var(--bdr);border-radius:var(--rs);background:var(--bg);color:var(--txt);outline:none;width:100%;transition:border-color .15s}
 .dish-qty-wrap input:focus{border-color:var(--acc);box-shadow:0 0 0 3px rgba(58,158,104,.12);background:var(--surf)}
@@ -287,7 +293,7 @@ html,body{min-height:100vh;background:var(--bg) radial-gradient(circle at 10% 15
     </div>
   </div>
 
-  <!-- ══ TAB 0: 하루 수익 (아일랜드 채집) ══ -->
+  <!-- TAB 0: 하루 수익 -->
   <div id="t0" class="panel">
     <div class="card">
       <div class="card-title">🏝️ 아일랜드 채집</div>
@@ -316,7 +322,7 @@ html,body{min-height:100vh;background:var(--bg) radial-gradient(circle at 10% 15
     </div>
   </div>
 
-  <!-- ══ TAB 1: 재료 시세 ══ -->
+  <!-- TAB 1: 재료 시세 -->
   <div id="t1" class="panel" style="display:none">
     <div class="card">
       <div class="card-title">🌱 씨앗 가격 (원/세트)</div>
@@ -366,7 +372,7 @@ html,body{min-height:100vh;background:var(--bg) radial-gradient(circle at 10% 15
     </div>
   </div>
 
-  <!-- ══ TAB 2: 요리 효율 ══ -->
+  <!-- TAB 2: 요리 효율 -->
   <div id="t2" class="panel" style="display:none">
     <div class="card">
       <div class="card-title">🍳 현재 요리 효율</div>
@@ -375,7 +381,7 @@ html,body{min-height:100vh;background:var(--bg) radial-gradient(circle at 10% 15
     </div>
   </div>
 
-  <!-- ══ TAB 3: 재료 계산기 ══ -->
+  <!-- TAB 3: 재료 계산기 -->
   <div id="t3" class="panel" style="display:none">
     <div class="card">
       <div class="card-title">🍳 만들 요리 선택</div>
@@ -408,172 +414,149 @@ import {
 } from './farming-config.js';
 
 const { SET_SIZE, BOX_SIZE } = UNITS;
-const Z80 = 0.842; // 80% 신뢰구간 z값
-
-const f  = n => Math.round(n).toLocaleString('ko-KR');
-const fd = (n, d=2) => +n.toFixed(d) === Math.round(+n.toFixed(d))
-  ? Math.round(n).toString() : n.toFixed(d).replace(/\.?0+$/, '');
-const gi = id => { const e = document.getElementById(id); return e ? Math.max(0, +e.value || 0) : 0; };
-const gv = id => { const e = document.getElementById(id); return e ? e.value : ''; };
+const Z80 = 0.842;
+const f   = n => Math.round(n).toLocaleString('ko-KR');
+const fd  = (n, d=2) => +n.toFixed(d) === Math.round(+n.toFixed(d)) ? Math.round(n).toString() : n.toFixed(d).replace(/\.?0+$/,'');
+const gi  = id => { const e=document.getElementById(id); return e ? Math.max(0,+e.value||0) : 0; };
+const gv  = id => { const e=document.getElementById(id); return e ? e.value : ''; };
 
 function fmtQty(n) {
-  n = Math.floor(n); if (n <= 0) return '0개';
-  const boxes = Math.floor(n / BOX_SIZE), rem = n % BOX_SIZE;
-  const sets  = Math.floor(rem / SET_SIZE), items = rem % SET_SIZE;
-  return [[boxes,'상자'],[sets,'세트'],[items,'개']]
-    .filter(([v]) => v > 0).map(([v,u]) => v+u).join(' ') || '0개';
+  n = Math.floor(n); if (n<=0) return '0개';
+  const boxes=Math.floor(n/BOX_SIZE), rem=n%BOX_SIZE, sets=Math.floor(rem/SET_SIZE), items=rem%SET_SIZE;
+  return [[boxes,'상자'],[sets,'세트'],[items,'개']].filter(([v])=>v>0).map(([v,u])=>v+u).join(' ')||'0개';
 }
 function parseQty(str) {
   if (!str?.trim()) return 0;
-  if (/^\d+$/.test(str.trim())) return Math.max(0, parseInt(str.trim(), 10));
-  let t = 0;
-  const bm = str.match(/(\d+)\s*상자/); if (bm) t += parseInt(bm[1],10) * BOX_SIZE;
-  const sm = str.match(/(\d+)\s*세트/); if (sm) t += parseInt(sm[1],10) * SET_SIZE;
-  const im = str.match(/(\d+)\s*개/);   if (im) t += parseInt(im[1],10);
+  if (/^\d+$/.test(str.trim())) return Math.max(0,parseInt(str.trim(),10));
+  let t=0;
+  const bm=str.match(/(\d+)\s*상자/); if(bm) t+=parseInt(bm[1],10)*BOX_SIZE;
+  const sm=str.match(/(\d+)\s*세트/); if(sm) t+=parseInt(sm[1],10)*SET_SIZE;
+  const im=str.match(/(\d+)\s*개/);   if(im) t+=parseInt(im[1],10);
   return t;
 }
 
-/* ── 탭 전환 ── */
-const TAB_TITLES = ['🌱 하루 수익 예상','📦 재료 시세 입력','🍳 요리 효율','🧮 재료 계산기'];
-window.sw = (i, el) => {
-  document.querySelectorAll('.tab').forEach(t => t.classList.remove('on'));
-  [0,1,2,3].forEach(k => { const p = document.getElementById('t'+k); if (p) p.style.display = 'none'; });
+const TAB_TITLES=['🌱 하루 수익 예상','📦 재료 시세 입력','🍳 요리 효율','🧮 재료 계산기'];
+window.sw=(i,el)=>{
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('on'));
+  [0,1,2,3].forEach(k=>{const p=document.getElementById('t'+k);if(p)p.style.display='none';});
   el.classList.add('on');
-  document.getElementById('t'+i).style.display = 'block';
-  const t = document.getElementById('pageTabTitle'); if (t) t.textContent = TAB_TITLES[i];
-  document.title = `재배 계산기 — ${TAB_TITLES[i]}`;
+  document.getElementById('t'+i).style.display='block';
+  const t=document.getElementById('pageTabTitle'); if(t) t.textContent=TAB_TITLES[i];
+  document.title=`재배 계산기 — ${TAB_TITLES[i]}`;
 };
 
-/* ── 스킬/각인석 읽기 ── */
 function getSK() {
-  const fl = gi('skillFurnace'), ml = gi('skillMoneyBonus'), pl = gi('skillFullPot');
-  const ng = gi('skillNatureGift'), hb = gi('skillHarvestBonus'), sd = gi('skillSeedDrop'), fh = gi('skillFireHoe');
-  const ngD = SKILLS.NATURE_GIFT.drops[ng] || {pct:0,count:0};
-  const hbD = SKILLS.HARVEST_BONUS.drops[hb] || {pct:0,count:0};
-  const fhD = SKILLS.FIRE_HOE.drops[fh] || {pct:0,count:0};
+  const fl=gi('skillFurnace'),ml=gi('skillMoneyBonus'),pl=gi('skillFullPot');
+  const ng=gi('skillNatureGift'),hb=gi('skillHarvestBonus'),sd=gi('skillSeedDrop'),fh=gi('skillFireHoe');
+  const ngD=SKILLS.NATURE_GIFT.drops[ng]||{pct:0,count:0};
+  const hbD=SKILLS.HARVEST_BONUS.drops[hb]||{pct:0,count:0};
+  const fhD=SKILLS.FIRE_HOE.drops[fh]||{pct:0,count:0};
   return {
-    fr: (SKILLS.FURNACE.reductionPct[fl]??0)/100,
-    mb: (SKILLS.MONEY_BONUS.bonusPct[ml]??0)/100,
-    fp: (SKILLS.FULL_POT.bonusPct[pl]??0)/100,
-    ngPct:ngD.pct, ngCnt:ngD.count,
-    hbPct:hbD.pct, hbCnt:hbD.count,
+    fr:(SKILLS.FURNACE.reductionPct[fl]??0)/100,
+    mb:(SKILLS.MONEY_BONUS.bonusPct[ml]??0)/100,
+    fp:(SKILLS.FULL_POT.bonusPct[pl]??0)/100,
+    ngPct:ngD.pct,ngCnt:ngD.count,
+    hbPct:hbD.pct,hbCnt:hbD.count,
     sdPct:SKILLS.SEED_DROP.pct[sd]??0,
-    fhPct:fhD.pct, fhCnt:fhD.count,
+    fhPct:fhD.pct,fhCnt:fhD.count,
     fl,ml,pl,ng,hb,sd,fh,
   };
 }
 function getENG() {
-  const sl = gi('engSeedLuck'), cb = gi('engCropBox'), fr = gi('engFarmerRoulette');
-  const slD = ENGRAVING.SEED_LUCK.drops[sl] || {pct:0,count:0};
+  const sl=gi('engSeedLuck'),cb=gi('engCropBox'),fr=gi('engFarmerRoulette');
+  const slD=ENGRAVING.SEED_LUCK.drops[sl]||{pct:0,count:0};
   return {
-    slPct:slD.pct, slCnt:slD.count,
-    cbPct:ENGRAVING.CROP_BOX.pct[cb]??0, cbAvg:ENGRAVING.CROP_BOX.avgSeeds,
+    slPct:slD.pct,slCnt:slD.count,
+    cbPct:ENGRAVING.CROP_BOX.pct[cb]??0,cbAvg:ENGRAVING.CROP_BOX.avgSeeds,
     frPct:ENGRAVING.FARMER_ROULETTE.dicePct[fr]??0,
-    sl, cb, fr,
+    sl,cb,fr,
   };
 }
 
-/* ── 스킬 info 업데이트 ── */
-window.onSkillChange = () => {
-  const st = (id, txt) => { const e = document.getElementById(id); if (e) e.textContent = txt; };
-  const {fl,ml,pl,ng,hb,sd,fh} = getSK();
-  st('infoFurnace',     fl===0?'기본':`Lv${fl} — -${SKILLS.FURNACE.reductionPct[fl]}%`);
-  st('infoMoneyBonus',  ml===0?'기본':`Lv${ml} — +${SKILLS.MONEY_BONUS.bonusPct[ml]}%`);
-  st('infoFullPot',     pl===0?'기본':`Lv${pl} — +${SKILLS.FULL_POT.bonusPct[pl]}%`);
-  const ngD = SKILLS.NATURE_GIFT.drops[ng];
-  st('infoNatureGift',  ng===0?'기본':ngD?`Lv${ng} — ${ngD.pct}%/${ngD.count}개`:'');
-  const hbD = SKILLS.HARVEST_BONUS.drops[hb];
+window.onSkillChange=()=>{
+  const st=(id,txt)=>{const e=document.getElementById(id);if(e)e.textContent=txt;};
+  const {fl,ml,pl,ng,hb,sd,fh}=getSK();
+  st('infoFurnace',    fl===0?'기본':`Lv${fl} — -${SKILLS.FURNACE.reductionPct[fl]}%`);
+  st('infoMoneyBonus', ml===0?'기본':`Lv${ml} — +${SKILLS.MONEY_BONUS.bonusPct[ml]}%`);
+  st('infoFullPot',    pl===0?'기본':`Lv${pl} — +${SKILLS.FULL_POT.bonusPct[pl]}%`);
+  const ngD=SKILLS.NATURE_GIFT.drops[ng];
+  st('infoNatureGift', ng===0?'기본':ngD?`Lv${ng} — ${ngD.pct}%/${ngD.count}개`:'');
+  const hbD=SKILLS.HARVEST_BONUS.drops[hb];
   st('infoHarvestBonus',hb===0?'기본':hbD?`Lv${hb} — ${hbD.pct}%/${hbD.count}개`:'');
-  st('infoSeedDrop',    sd===0?'기본':`Lv${sd} — ${SKILLS.SEED_DROP.pct[sd]}%`);
-  const fhD = SKILLS.FIRE_HOE.drops[fh];
-  st('infoFireHoe',     fh===0?'기본':fhD?`Lv${fh} — ${fhD.pct}%/${fhD.count}개`:'');
+  st('infoSeedDrop',   sd===0?'기본':`Lv${sd} — ${SKILLS.SEED_DROP.pct[sd]}%`);
+  const fhD=SKILLS.FIRE_HOE.drops[fh];
+  st('infoFireHoe',    fh===0?'기본':fhD?`Lv${fh} — ${fhD.pct}%/${fhD.count}개`:'');
   calcDaily(); calcDishEff(); calcMats();
 };
-window.onEngChange = () => {
-  const st = (id, txt) => { const e = document.getElementById(id); if (e) e.textContent = txt; };
-  const {sl,cb,fr} = getENG();
-  const slD = ENGRAVING.SEED_LUCK.drops[sl];
-  st('infoSeedLuck',       sl===0?'없음':slD?`${slD.pct}%/+${slD.count}개`:'');
-  st('infoCropBox',        cb===0?'없음':`${ENGRAVING.CROP_BOX.pct[cb]}% 작물상자`);
-  st('infoFarmerRoulette', fr===0?'없음':`${ENGRAVING.FARMER_ROULETTE.dicePct[fr]}% 룰렛`);
+window.onEngChange=()=>{
+  const st=(id,txt)=>{const e=document.getElementById(id);if(e)e.textContent=txt;};
+  const {sl,cb,fr}=getENG();
+  const slD=ENGRAVING.SEED_LUCK.drops[sl];
+  st('infoSeedLuck',      sl===0?'없음':slD?`${slD.pct}%/+${slD.count}개`:'');
+  st('infoCropBox',       cb===0?'없음':`${ENGRAVING.CROP_BOX.pct[cb]}% 작물상자`);
+  st('infoFarmerRoulette',fr===0?'없음':`${ENGRAVING.FARMER_ROULETTE.dicePct[fr]}% 룰렛`);
   calcDaily(); calcMats();
 };
-window.onPriceChange = () => { calcDaily(); calcDishEff(); calcMats(); };
+window.onPriceChange=()=>{calcDaily();calcDishEff();calcMats();};
 
-/* ── 가격 읽기 ── */
 function getPrices() {
   return {
-    seed: { tomato:gi('pSeedTomato')/SET_SIZE, onion:gi('pSeedOnion')/SET_SIZE, garlic:gi('pSeedGarlic')/SET_SIZE },
-    crops: {
-      pumpkin:gi('pCropPumpkin')/SET_SIZE, potato:gi('pCropPotato')/SET_SIZE,
-      carrot:gi('pCropCarrot')/SET_SIZE,   beet:gi('pCropBeet')/SET_SIZE,
-      watermelon:gi('pCropWatermelon')/SET_SIZE, sweetfruit:gi('pCropSweetfruit')/SET_SIZE,
+    seed:{tomato:gi('pSeedTomato')/SET_SIZE,onion:gi('pSeedOnion')/SET_SIZE,garlic:gi('pSeedGarlic')/SET_SIZE},
+    crops:{
+      pumpkin:gi('pCropPumpkin')/SET_SIZE,potato:gi('pCropPotato')/SET_SIZE,
+      carrot:gi('pCropCarrot')/SET_SIZE,beet:gi('pCropBeet')/SET_SIZE,
+      watermelon:gi('pCropWatermelon')/SET_SIZE,sweetfruit:gi('pCropSweetfruit')/SET_SIZE,
     },
-    milky: { salt:MILKY_PRICES.salt, egg:MILKY_PRICES.egg, milk:MILKY_PRICES.milk, oil:MILKY_PRICES.oil },
-    other: {
-      coconut:gi('pCoconut'), pineapple:gi('pPineapple'), flour:gi('pFlour'),
-      butter:gi('pButter'), cheese:gi('pCheese'), steak:gi('pSteak'), sugar:gi('pSugar'),
-      pork:gi('pPork'), pork_belly:gi('pPorkBelly'), pork_front:gi('pPorkFront'),
-      lamb:gi('pLamb'), lamb_rib:gi('pLambRib'), lamb_leg:gi('pLambLeg'),
-      chicken:gi('pChicken'), chicken_leg:gi('pChickenLeg'), chicken_breast:gi('pChickenBreast'),
-      beef_sirloin:gi('pBeefSirloin'), beef_rib:gi('pBeefRib'),
+    milky:{salt:MILKY_PRICES.salt,egg:MILKY_PRICES.egg,milk:MILKY_PRICES.milk,oil:MILKY_PRICES.oil},
+    other:{
+      coconut:gi('pCoconut'),pineapple:gi('pPineapple'),flour:gi('pFlour'),
+      butter:gi('pButter'),cheese:gi('pCheese'),steak:gi('pSteak'),sugar:gi('pSugar'),
+      pork:gi('pPork'),pork_belly:gi('pPorkBelly'),pork_front:gi('pPorkFront'),
+      lamb:gi('pLamb'),lamb_rib:gi('pLambRib'),lamb_leg:gi('pLambLeg'),
+      chicken:gi('pChicken'),chicken_leg:gi('pChickenLeg'),chicken_breast:gi('pChickenBreast'),
+      beef_sirloin:gi('pBeefSirloin'),beef_rib:gi('pBeefRib'),
     },
   };
 }
-
-/* 요리 1개 재료비 — 베이스 0원(거래 불가) */
-function calcRecipeCost(rec, prices) {
-  let cost = 0;
-  for (const [k,q] of Object.entries(rec.materials.crops||{})) cost += q * (prices.crops[k]||0) * SET_SIZE;
-  for (const [k,q] of Object.entries(rec.materials.milky||{})) cost += q * (prices.milky[k]||0);
-  for (const [k,q] of Object.entries(rec.materials.other||{})) cost += q * (prices.other[k]||0);
+function calcRecipeCost(rec,prices) {
+  let cost=0;
+  for(const[k,q]of Object.entries(rec.materials.crops||{})) cost+=q*(prices.crops[k]||0)*SET_SIZE;
+  for(const[k,q]of Object.entries(rec.materials.milky||{})) cost+=q*(prices.milky[k]||0);
+  for(const[k,q]of Object.entries(rec.materials.other||{})) cost+=q*(prices.other[k]||0);
   return cost;
 }
 
-/* ── TAB 0: 하루 수익 (채집만) ── */
-window.calcDaily = () => {
-  const sk  = getSK();
-  const eng = getENG();
-  const hoeLevel     = gi('hoeLevel');
-  const stamina      = gi('totalStamina');
-  const hoe          = HOE[hoeLevel] ?? HOE[0];
-  const harvestCount = stamina > 0 ? Math.floor(stamina / FARMING.STAMINA_PER_USE) : 0;
+/* TAB 0: 하루 수익 (채집) */
+window.calcDaily=()=>{
+  const sk=getSK(),eng=getENG();
+  const hoeLevel=gi('hoeLevel'),stamina=gi('totalStamina');
+  const hoe=HOE[hoeLevel]??HOE[0];
+  const harvestCount=stamina>0?Math.floor(stamina/FARMING.STAMINA_PER_USE):0;
+  if(harvestCount===0){document.getElementById('dailyRes').innerHTML='<div class="empty-msg">스태미나를 입력하면 계산됩니다</div>';return;}
 
-  if (harvestCount === 0) {
-    document.getElementById('dailyRes').innerHTML = '<div class="empty-msg">스태미나를 입력하면 계산됩니다</div>';
-    return;
-  }
+  const natureExtra  =sk.ngPct/100*sk.ngCnt;
+  const seedLuckExtra=eng.slPct/100*eng.slCnt;
+  const cropBoxExtra =eng.cbPct/100*eng.cbAvg;
+  const avgDice=3.5;
+  const rouletteExtra=eng.frPct/100*(0.9*avgDice*ENGRAVING.FARMER_ROULETTE.normalMult+0.1*avgDice*ENGRAVING.FARMER_ROULETTE.goldenMult);
+  const seedPerHarvest=hoe.seedDrop+natureExtra+seedLuckExtra+cropBoxExtra+rouletteExtra;
+  const totalSeeds=harvestCount*seedPerHarvest;
+  const basePerHarvest=sk.fhPct/100*sk.fhCnt;
+  const totalHarvestBase=harvestCount*basePerHarvest;
 
-  // 채집 1회당 씨앗 기댓값 (자연이 주는 선물, 씨앗행운, 작물상자, 농부룰렛)
-  const natureExtra   = sk.ngPct / 100 * sk.ngCnt;
-  const seedLuckExtra = eng.slPct / 100 * eng.slCnt;
-  const cropBoxExtra  = eng.cbPct / 100 * eng.cbAvg;
-  const avgDice       = 3.5;
-  const rouletteExtra = eng.frPct / 100 * (
-    0.9 * avgDice * ENGRAVING.FARMER_ROULETTE.normalMult +
-    0.1 * avgDice * ENGRAVING.FARMER_ROULETTE.goldenMult
-  );
-  const seedPerHarvest    = hoe.seedDrop + natureExtra + seedLuckExtra + cropBoxExtra + rouletteExtra;
-  const totalSeeds        = harvestCount * seedPerHarvest;
+  const ps=getPrices().seed;
+  const filled=Object.values(ps).filter(v=>v>0);
+  const avgSeedUnit=filled.length?filled.reduce((a,b)=>a+b,0)/filled.length:0;
+  const seedRev=totalSeeds*avgSeedUnit;
 
-  // 베이스 (불붙은 괭이)
-  const basePerHarvest    = sk.fhPct / 100 * sk.fhCnt;
-  const totalHarvestBase  = harvestCount * basePerHarvest;
+  const parts=[];
+  if(hoe.seedDrop>0)  parts.push(`괭이 ${hoe.seedDrop}`);
+  if(natureExtra>0)   parts.push(`자연선물 +${fd(natureExtra)}`);
+  if(seedLuckExtra>0) parts.push(`씨앗행운 +${fd(seedLuckExtra)}`);
+  if(cropBoxExtra>0)  parts.push(`작물상자 +${fd(cropBoxExtra)}`);
+  if(rouletteExtra>0) parts.push(`룰렛 +${fd(rouletteExtra)}`);
 
-  // 씨앗 판매가 (세트당→개당 평균)
-  const ps = getPrices().seed;
-  const filled = Object.values(ps).filter(v => v > 0);
-  const avgSeedUnit = filled.length ? filled.reduce((a,b)=>a+b,0)/filled.length : 0;
-  const seedRev = totalSeeds * avgSeedUnit;
-
-  const parts = [];
-  if (hoe.seedDrop > 0)   parts.push(`괭이 ${hoe.seedDrop}`);
-  if (natureExtra > 0)    parts.push(`자연선물 +${fd(natureExtra)}`);
-  if (seedLuckExtra > 0)  parts.push(`씨앗행운 +${fd(seedLuckExtra)}`);
-  if (cropBoxExtra > 0)   parts.push(`작물상자 +${fd(cropBoxExtra)}`);
-  if (rouletteExtra > 0)  parts.push(`룰렛 +${fd(rouletteExtra)}`);
-
-  document.getElementById('dailyRes').innerHTML = `
+  document.getElementById('dailyRes').innerHTML=`
   <div class="rsec">
     <div class="rsec-title">🌱 씨앗 획득</div>
     <div class="rrow"><span class="rl">채집 횟수</span><span class="rv">${f(harvestCount)}회 <small style="color:var(--muted)">(${f(stamina)}÷7)</small></span></div>
@@ -581,171 +564,69 @@ window.calcDaily = () => {
     <div class="rrow rrow-strong"><span class="rl" style="font-weight:900">총 씨앗</span><span class="rv g" style="font-size:15px">${fmtQty(totalSeeds)}</span></div>
     ${avgSeedUnit>0?`<div class="rrow"><span class="rl" style="font-size:11px;color:var(--muted)">씨앗 전량 판매 추정</span><span class="rv" style="font-size:11px;color:var(--muted)">${f(seedRev)}원</span></div>`:''}
   </div>
-  ${totalHarvestBase>0.01?`
-  <div class="rsec">
-    <div class="rsec-title">🫙 베이스 획득 (불붙은 괭이) — 거래 불가</div>
-    <div class="rrow rrow-strong"><span class="rl" style="font-weight:900">총 베이스</span><span class="rv" style="font-size:15px">${fd(totalHarvestBase)}개</span></div>
-  </div>`:''}
-  <div class="result-box">
-    <div style="display:flex;gap:0;align-items:stretch">
-      <div style="flex:1;text-align:center;padding:4px 8px">
-        <div class="rb-label">총 획득 씨앗</div>
-        <div class="rb-value">${fmtQty(totalSeeds)}</div>
-      </div>
-      ${seedRev>0?`
-      <div style="width:1px;background:var(--bdr2);margin:4px 0;flex:none"></div>
-      <div style="flex:1;text-align:center;padding:4px 8px">
-        <div class="rb-label">씨앗 전량 판매</div>
-        <div class="rb-value" style="font-size:18px">${f(seedRev)}원</div>
-      </div>`:''}
-    </div>
-  </div>`;
+  ${totalHarvestBase>0.01?`<div class="rsec"><div class="rsec-title">🫙 베이스 (불붙은 괭이) — 거래 불가</div><div class="rrow rrow-strong"><span class="rl" style="font-weight:900">총 베이스</span><span class="rv" style="font-size:15px">${fd(totalHarvestBase)}개</span></div></div>`:''}
+  <div class="result-box"><div style="display:flex;gap:0;align-items:stretch">
+    <div style="flex:1;text-align:center;padding:4px 8px"><div class="rb-label">총 획득 씨앗</div><div class="rb-value">${fmtQty(totalSeeds)}</div></div>
+    ${seedRev>0?`<div style="width:1px;background:var(--bdr2);margin:4px 0;flex:none"></div><div style="flex:1;text-align:center;padding:4px 8px"><div class="rb-label">씨앗 전량 판매</div><div class="rb-value" style="font-size:18px">${f(seedRev)}원</div></div>`:''}
+  </div></div>`;
 };
 
-/* ── TAB 2: 요리 효율 ── */
-window.calcDishEff = () => {
-  const sk = getSK(), prices = getPrices();
-  const totalBonus = sk.mb + sk.fp;
-  const gc = GRADE_COLOR;
-
-  const results = Object.entries(RECIPES).map(([key,rec]) => {
-    const basePrice = rec.currentPrice > 0 ? rec.currentPrice : (rec.priceMin + rec.priceMax) / 2;
-    const sellPrice = basePrice * (1 + totalBonus);
-    const cost      = calcRecipeCost(rec, prices);
-    const net       = sellPrice - cost;
-    const priceLabel = rec.currentPrice > 0
-      ? `현재가 ${f(rec.currentPrice)}원`
-      : `추정가 ${f(Math.round(basePrice))}원 (최저~최고 평균)`;
-    return { key, rec, sellPrice, cost, net, priceLabel };
-  }).sort((a,b) => b.net - a.net);
-
-  const html = results.map((r, i) => {
-    const rankClass = i===0?'top1':i===1?'top2':i===2?'top3':'';
-    const rankBadge = i===0?`<span class="dish-rank rank-gold">🥇 1위</span>`
-                    :i===1?`<span class="dish-rank rank-silver">🥈 2위</span>`
-                    :i===2?`<span class="dish-rank rank-bronze">🥉 3위</span>`:'';
-    const gd = gc[r.rec.grade];
-    const gradeBdg = `<span class="grade-bdg" style="background:${gd.bg};color:${gd.color};border:1px solid ${gd.color}">${gd.label}</span>`;
-    const bonusTxt = totalBonus > 0 ? ` (+${Math.round(totalBonus*100)}% 스킬)` : '';
-    let matChips = '';
-    for (const [k,q] of Object.entries(r.rec.materials.base||{})) {
-      const bc = BASES[k]?.color||'#888';
-      matChips += `<span class="mat-chip" style="color:${bc};border-color:${bc}44">${BASES[k]?.name||k} ×${q} <span style="opacity:.6;font-size:9px">무료</span></span>`;
-    }
-    for (const [k,q] of Object.entries(r.rec.materials.crops||{})) {
-      const cc = CROPS[k]?.color||'#888';
-      matChips += `<span class="mat-chip" style="color:${cc};border-color:${cc}44">${CROPS[k]?.name||k} ×${q}묶음</span>`;
-    }
-    for (const [k,q] of Object.entries(r.rec.materials.other||{}))
-      matChips += `<span class="mat-chip">${OTHER_META[k]?.name||k} ×${q}</span>`;
-    return `<div class="dish-card ${rankClass}">
-      ${rankBadge}
-      <div class="dish-head">
-        <div style="min-width:0">
-          <div class="dish-name">${r.rec.name} ${gradeBdg}</div>
-          <div class="dish-detail">판매 ${f(r.sellPrice)}원${bonusTxt} / 재료비 ${f(r.cost)}원<br>${r.priceLabel} · 범위 ${f(r.rec.priceMin)}~${f(r.rec.priceMax)}원</div>
-        </div>
-        <div style="text-align:right;flex-shrink:0">
-          <div class="dish-net ${r.net>=0?'pos':'neg'}">${r.net>=0?'+':''}${f(r.net)}원</div>
-          <div style="font-size:10px;color:var(--muted)">개당 순이익</div>
-        </div>
-      </div>
-      <div class="dish-mats">${matChips}</div>
-    </div>`;
+/* TAB 2: 요리 효율 */
+window.calcDishEff=()=>{
+  const sk=getSK(),prices=getPrices(),totalBonus=sk.mb+sk.fp,gc=GRADE_COLOR;
+  const results=Object.entries(RECIPES).map(([key,rec])=>{
+    const basePrice=rec.currentPrice>0?rec.currentPrice:(rec.priceMin+rec.priceMax)/2;
+    const sellPrice=basePrice*(1+totalBonus),cost=calcRecipeCost(rec,prices),net=sellPrice-cost;
+    const priceLabel=rec.currentPrice>0?`현재가 ${f(rec.currentPrice)}원`:`추정가 ${f(Math.round(basePrice))}원`;
+    return{key,rec,sellPrice,cost,net,priceLabel};
+  }).sort((a,b)=>b.net-a.net);
+  const html=results.map((r,i)=>{
+    const rankClass=i===0?'top1':i===1?'top2':i===2?'top3':'';
+    const rankBadge=i===0?`<span class="dish-rank rank-gold">🥇 1위</span>`:i===1?`<span class="dish-rank rank-silver">🥈 2위</span>`:i===2?`<span class="dish-rank rank-bronze">🥉 3위</span>`:'';
+    const gd=gc[r.rec.grade];
+    const gradeBdg=`<span class="grade-bdg" style="background:${gd.bg};color:${gd.color};border:1px solid ${gd.color}">${gd.label}</span>`;
+    const bonusTxt=totalBonus>0?` (+${Math.round(totalBonus*100)}% 스킬)`:'';
+    let matChips='';
+    for(const[k,q]of Object.entries(r.rec.materials.base||{})){const bc=BASES[k]?.color||'#888';matChips+=`<span class="mat-chip" style="color:${bc};border-color:${bc}44">${BASES[k]?.name||k} ×${q} <span style="opacity:.6;font-size:9px">무료</span></span>`;}
+    for(const[k,q]of Object.entries(r.rec.materials.crops||{})){const cc=CROPS[k]?.color||'#888';matChips+=`<span class="mat-chip" style="color:${cc};border-color:${cc}44">${CROPS[k]?.name||k} ×${q}묶음</span>`;}
+    for(const[k,q]of Object.entries(r.rec.materials.other||{})) matChips+=`<span class="mat-chip">${OTHER_META[k]?.name||k} ×${q}</span>`;
+    return `<div class="dish-card ${rankClass}">${rankBadge}<div class="dish-head"><div style="min-width:0"><div class="dish-name">${r.rec.name} ${gradeBdg}</div><div class="dish-detail">판매 ${f(r.sellPrice)}원${bonusTxt} / 재료비 ${f(r.cost)}원<br>${r.priceLabel} · 범위 ${f(r.rec.priceMin)}~${f(r.rec.priceMax)}원</div></div><div style="text-align:right;flex-shrink:0"><div class="dish-net ${r.net>=0?'pos':'neg'}">${r.net>=0?'+':''}${f(r.net)}원</div><div style="font-size:10px;color:var(--muted)">개당 순이익</div></div></div><div class="dish-mats">${matChips}</div></div>`;
   }).join('');
-
-  document.getElementById('dishEffRes').innerHTML = html || '<div class="empty-msg">데이터 없음</div>';
+  document.getElementById('dishEffRes').innerHTML=html||'<div class="empty-msg">데이터 없음</div>';
 };
 
-/* ── TAB 3: 재료 계산기 ──
-   씨앗 1개 심으면:
-     - 작물 수확: 평균 avgCrops개 + 풍년이다! 추가
-     - 씨앗은 덤이야: sdPct% 확률로 씨앗 1개 추가
-   씨앗 필요량 80% 보정: 이항분포 μ - Z80*σ로 최솟값 추정
-     → 더 많은 씨앗이 필요한 경우의 80% (적게 나올 때 보수적으로)
-     실제로는 "80% 확률로 이 정도면 충분" → 높게 잡는 방향
-     = μ + Z80*σ (수확이 적을 때를 보정)
-──────────────────────────────────── */
-
-// 씨앗 n개 심었을 때 만들 수 있는 베이스 기댓값과 표준편차
-function calcBaseStats(seedType, n, sk) {
-  const hr   = FARMING.HARVEST_RANGE[seedType];
-  const kpct = FARMING.KING_CROP_BASE_PCT / 100;
-  // 씨앗 1개당 평균 작물 (대왕작물 기댓값 포함)
-  const avgCrops = (hr.min + hr.max) / 2 * (1 - kpct) + (hr.min + hr.max) / 2 * FARMING.KING_CROP_MULT * kpct;
-  // 풍년이다! 추가 (기댓값)
-  const harvestBonus = sk.hbPct / 100 * sk.hbCnt;
-  const avgCropsTotal = avgCrops + harvestBonus;
-  // 씨앗은 덤이야: sdPct% 확률로 씨앗 1개 추가 → 씨앗 순 소모율
-  // 씨앗 1개 심으면 sdPct% 확률로 1개 돌아옴 → 실질 소모 = 1 - sdPct/100
-  const seedReturnRate = sk.sdPct / 100;
-  const netSeedCost   = 1 - seedReturnRate; // 씨앗 1개당 실질 소모
-
-  // n개 심으면 평균 베이스
-  const avgBase = n * avgCropsTotal / FARMING.CROPS_PER_BASE;
-  // 분산: 작물 수확이 균등분포이므로 var = (max-min)^2/12 per seed, ×n
-  const varPerSeed = Math.pow(hr.max - hr.min, 2) / 12;
-  const stdBase    = Math.sqrt(n * varPerSeed) / FARMING.CROPS_PER_BASE;
-
-  return { avgBase, stdBase, avgCropsTotal, netSeedCost, seedReturnRate, hr };
+/* TAB 3: 재료 계산기 */
+function calcSeedsNeeded(targetBase,seedType,sk) {
+  if(targetBase<=0) return{avg:0,safe80:0};
+  const hr=FARMING.HARVEST_RANGE[seedType];
+  const kpct=FARMING.KING_CROP_BASE_PCT/100;
+  const avgCrops=(hr.min+hr.max)/2*(1-kpct)+(hr.min+hr.max)/2*FARMING.KING_CROP_MULT*kpct;
+  const harvestBonus=sk.hbPct/100*sk.hbCnt;
+  const avgCropsTotal=avgCrops+harvestBonus;
+  const needPlant=targetBase*FARMING.CROPS_PER_BASE/avgCropsTotal;
+  const returnSeeds=needPlant*sk.sdPct/100;
+  const avgSeeds=Math.max(0,needPlant-returnSeeds);
+  const stdPerSeed=Math.sqrt(Math.pow(hr.max-hr.min,2)/12+harvestBonus*(1-harvestBonus));
+  const cv=stdPerSeed/avgCropsTotal;
+  return{avg:Math.ceil(avgSeeds),safe80:Math.ceil(avgSeeds*(1+Z80*cv))};
 }
 
-// 필요 씨앗 계산: 목표 베이스를 위해 필요한 씨앗 수 (평균 / 80% 안전 마진)
-function calcSeedsNeeded(targetBase, seedType, sk) {
-  if (targetBase <= 0) return { avg: 0, safe80: 0 };
-  const hr   = FARMING.HARVEST_RANGE[seedType];
-  const kpct = FARMING.KING_CROP_BASE_PCT / 100;
-  const avgCrops = (hr.min + hr.max) / 2 * (1 - kpct) + (hr.min + hr.max) / 2 * FARMING.KING_CROP_MULT * kpct;
-  const harvestBonus = sk.hbPct / 100 * sk.hbCnt;
-  const avgCropsTotal = avgCrops + harvestBonus;
-
-  // 씨앗은 덤이야: 씨앗 1개 심으면 sdPct% 확률로 씨앗 1개 추가
-  // 기댓값 기준: 씨앗 n개 심으면 n * sdPct% 개 돌아옴
-  // 필요 총 씨앗 = 목표베이스 × CROPS_PER_BASE / avgCropsTotal (순 소모 기준)
-  // 씨앗은 덤이야 보정: 씨앗 n개 심으면 실질 n*(1-sdPct%) 소모
-  // → 필요 씨앗 = 필요 심기 수 / (1 - sdPct%) 이지만
-  //   씨앗 덤이야는 "심을 때마다 추가 씨앗", 심은 씨앗으로 다시 심는 사이클 고려 안 함
-  //   단순히: 필요 심기 수 = 목표베이스 × 8 / avgCropsTotal
-  //   돌아오는 씨앗: 필요심기수 × sdPct% → 차감
-  const needPlant = targetBase * FARMING.CROPS_PER_BASE / avgCropsTotal;
-  const returnSeeds = needPlant * sk.sdPct / 100;
-  const avgSeeds = Math.max(0, needPlant - returnSeeds);
-
-  // 80% 안전 마진 계산
-  // 수확량 분산이 있으므로: 운이 나빠서 수확이 적을 경우를 보정
-  // 씨앗 n개 심을 때 총 작물 = n * avgCropsTotal, std = sqrt(n) * std_per_seed
-  // 목표 작물 = targetBase * 8
-  // 80% 확률로 충분하려면: n * avgCropsTotal - Z80 * sqrt(n) * stdPerSeed >= targetBase * 8
-  // 이걸 n에 대해 풀면 복잡하므로 이항근사: n ≈ needPlant * (1 + Z80 * stdFactor)
-  const stdPerSeed = Math.sqrt(Math.pow(hr.max - hr.min, 2) / 12 + harvestBonus * (1 - harvestBonus));
-  // 변동계수: 표준편차/평균
-  const cv = stdPerSeed / avgCropsTotal;
-  // 80% 보정: 평균보다 Z80*cv 만큼 더 필요
-  const safe80Seeds = Math.ceil(avgSeeds * (1 + Z80 * cv));
-
-  return { avg: Math.ceil(avgSeeds), safe80: safe80Seeds };
-}
-
-let rowId = 0;
-
-function makeDishSelectOptions() {
-  return Object.entries(RECIPES).map(([key, rec]) => {
-    const gd = GRADE_COLOR[rec.grade];
-    return `<option value="${key}">[${gd.label}] ${rec.name}</option>`;
+let rowId=0;
+function makeDishSelectOptions(){
+  return Object.entries(RECIPES).map(([key,rec])=>{
+    const gd=GRADE_COLOR[rec.grade];
+    return`<option value="${key}">[${gd.label}] ${rec.name}</option>`;
   }).join('');
 }
-
-window.addDishRow = () => {
-  const list = document.getElementById('dishPickerList'); if (!list) return;
-  const rid  = ++rowId;
-  const row  = document.createElement('div');
-  row.className = 'dish-picker-row';
-  row.id = `drow_${rid}`;
-  row.innerHTML = `
+window.addDishRow=()=>{
+  const list=document.getElementById('dishPickerList');if(!list)return;
+  const rid=++rowId;
+  const row=document.createElement('div');
+  row.className='dish-picker-row';row.id=`drow_${rid}`;
+  row.innerHTML=`
     <div class="dish-sel-wrap">
       <select id="dsel_${rid}" onchange="calcMats();saveAll()">
-        <option value="">요리 선택</option>
-        ${makeDishSelectOptions()}
+        <option value="">요리 선택</option>${makeDishSelectOptions()}
       </select>
     </div>
     <div class="dish-qty-wrap">
@@ -754,164 +635,98 @@ window.addDishRow = () => {
     </div>
     <button class="del-dish-btn" onclick="delDishRow(${rid})">✕</button>`;
   list.appendChild(row);
-  // 방금 추가된 select에만 커스텀 드롭다운 적용
   initOneCdd(document.getElementById(`dsel_${rid}`));
   saveAll();
 };
-
-window.delDishRow = (rid) => {
-  const row = document.getElementById('drow_'+rid);
-  if (row) { row.remove(); calcMats(); saveAll(); }
+window.delDishRow=(rid)=>{const row=document.getElementById('drow_'+rid);if(row){row.remove();calcMats();saveAll();}};
+window.onDishQtyInput=(rid)=>{
+  const inp=document.getElementById('dqty_'+rid),pars=document.getElementById('dqtyp_'+rid);
+  const n=parseQty(inp?.value||'');
+  if(pars)pars.textContent=n>0?`(총 ${f(n)}개)`:'';
+  calcMats();saveAll();
 };
 
-window.onDishQtyInput = (rid) => {
-  const inp  = document.getElementById('dqty_'+rid);
-  const pars = document.getElementById('dqtyp_'+rid);
-  const n    = parseQty(inp?.value || '');
-  if (pars) pars.textContent = n > 0 ? `(총 ${f(n)}개)` : '';
-  calcMats(); saveAll();
-};
-
-window.calcMats = () => {
-  const sk  = getSK();
-  const needBase = { tomato:0, onion:0, garlic:0 };
-  let totalDishes = 0;
-
-  document.querySelectorAll('.dish-picker-row').forEach(row => {
-    const rid = row.id.replace('drow_', '');
-    const key = document.getElementById('dsel_'+rid)?.value || '';
-    if (!key || !RECIPES[key]) return;
-    const cnt = parseQty(document.getElementById('dqty_'+rid)?.value || '');
-    if (cnt <= 0) return;
-    totalDishes += cnt;
-    for (const [bk,bq] of Object.entries(RECIPES[key].materials.base||{}))
-      needBase[bk] = (needBase[bk]||0) + bq * cnt;
+window.calcMats=()=>{
+  const sk=getSK();
+  const needBase={tomato:0,onion:0,garlic:0};let totalDishes=0;
+  document.querySelectorAll('.dish-picker-row').forEach(row=>{
+    const rid=row.id.replace('drow_','');
+    const key=document.getElementById('dsel_'+rid)?.value||'';
+    if(!key||!RECIPES[key])return;
+    const cnt=parseQty(document.getElementById('dqty_'+rid)?.value||'');
+    if(cnt<=0)return;
+    totalDishes+=cnt;
+    for(const[bk,bq]of Object.entries(RECIPES[key].materials.base||{})) needBase[bk]=(needBase[bk]||0)+bq*cnt;
   });
+  if(totalDishes===0){document.getElementById('matsRes').innerHTML='<div class="empty-msg">요리를 선택하고 수량을 입력하세요</div>';return;}
 
-  if (totalDishes === 0) {
-    document.getElementById('matsRes').innerHTML = '<div class="empty-msg">요리를 선택하고 수량을 입력하세요</div>';
-    return;
+  const haveBase={tomato:gi('haveBaseTomato'),onion:gi('haveBaseOnion'),garlic:gi('haveBaseGarlic')};
+  const lackBase={tomato:Math.max(0,needBase.tomato-haveBase.tomato),onion:Math.max(0,needBase.onion-haveBase.onion),garlic:Math.max(0,needBase.garlic-haveBase.garlic)};
+  const baseColors={tomato:'#d94f3d',onion:'#c89c00',garlic:'#9ab0c8'};
+  const baseNames={tomato:'토마토',onion:'양파',garlic:'마늘'};
+
+  let html=`<div class="rsec"><div class="rsec-title">🫙 필요 베이스 (총 ${f(totalDishes)}개 요리)</div>`;
+  for(const[k,need]of Object.entries(needBase)){
+    if(need<=0)continue;
+    const have=haveBase[k],lack=lackBase[k],cl=baseColors[k];
+    html+=`<div class="rrow"><span class="rl" style="color:${cl}">${baseNames[k]} 베이스</span><span class="rv">필요 ${f(need)}개 / 보유 ${f(have)}개 ${lack>0?`<span class="bdg br" style="margin-left:4px">부족 ${f(lack)}개</span>`:`<span class="bdg bg" style="margin-left:4px">충분</span>`}</span></div>`;
   }
+  html+=`</div>`;
 
-  const haveBase = { tomato:gi('haveBaseTomato'), onion:gi('haveBaseOnion'), garlic:gi('haveBaseGarlic') };
-  const lackBase = {
-    tomato: Math.max(0, needBase.tomato - haveBase.tomato),
-    onion:  Math.max(0, needBase.onion  - haveBase.onion),
-    garlic: Math.max(0, needBase.garlic - haveBase.garlic),
-  };
-
-  const baseColors = { tomato:'#d94f3d', onion:'#c89c00', garlic:'#9ab0c8' };
-  const baseNames  = { tomato:'토마토', onion:'양파', garlic:'마늘' };
-
-  let html = `<div class="rsec"><div class="rsec-title">🫙 필요 베이스 (총 ${f(totalDishes)}개 요리 기준)</div>`;
-  for (const [k, need] of Object.entries(needBase)) {
-    if (need <= 0) continue;
-    const have = haveBase[k], lack = lackBase[k], cl = baseColors[k];
-    html += `<div class="rrow">
-      <span class="rl" style="color:${cl}">${baseNames[k]} 베이스</span>
-      <span class="rv">필요 ${f(need)}개 / 보유 ${f(have)}개
-        ${lack>0?`<span class="bdg br" style="margin-left:4px">부족 ${f(lack)}개</span>`:`<span class="bdg bg" style="margin-left:4px">충분</span>`}
-      </span>
-    </div>`;
-  }
-  html += `</div>`;
-
-  const anyLack = Object.values(lackBase).some(v => v > 0);
-  if (!anyLack) {
-    html += `<div class="result-box"><div class="rb-label">✅ 베이스 충분</div><div class="rb-value" style="font-size:16px">추가 씨앗 불필요</div></div>`;
+  const anyLack=Object.values(lackBase).some(v=>v>0);
+  if(!anyLack){
+    html+=`<div class="result-box"><div class="rb-label">✅ 베이스 충분</div><div class="rb-value" style="font-size:16px">추가 씨앗 불필요</div></div>`;
   } else {
-    html += `<div class="rsec"><div class="rsec-title">🌱 필요 씨앗 예상</div>`;
-
-    for (const [bt, bn] of [['tomato','토마토'],['onion','양파'],['garlic','마늘']]) {
-      if (lackBase[bt] <= 0) continue;
-      const cl  = baseColors[bt];
-      const hr  = FARMING.HARVEST_RANGE[bt];
-      const { avg, safe80 } = calcSeedsNeeded(lackBase[bt], bt, sk);
-      const sdNote = sk.sdPct > 0 ? ` (씨앗은 덤이야 ${sk.sdPct}% 차감 반영)` : '';
-
-      html += `<div class="rrow">
-        <span class="rl" style="color:${cl}">${bn} 씨앗</span>
-        <span class="rv">
-          <b>${fmtQty(avg)}</b>
-          <small style="color:var(--muted);display:block">수확 ${hr.min}~${hr.max}개 / 평균 기준${sdNote}</small>
-        </span>
-      </div>`;
+    html+=`<div class="rsec"><div class="rsec-title">🌱 평균 필요 씨앗</div>`;
+    for(const[bt,bn]of[['tomato','토마토'],['onion','양파'],['garlic','마늘']]){
+      if(lackBase[bt]<=0)continue;
+      const cl=baseColors[bt],hr=FARMING.HARVEST_RANGE[bt];
+      const{avg}=calcSeedsNeeded(lackBase[bt],bt,sk);
+      const sdNote=sk.sdPct>0?` · 씨앗은덤 ${sk.sdPct}% 차감`:''
+      html+=`<div class="rrow"><span class="rl" style="color:${cl}">${bn} 씨앗</span><span class="rv"><b>${fmtQty(avg)}</b><small style="color:var(--muted);display:block">수확 ${hr.min}~${hr.max}개${sdNote}</small></span></div>`;
     }
-    html += `</div>`;
-
-    // 80% 안전 마진 섹션
-    html += `<div class="rsec" style="border-color:var(--grn);background:var(--grn-bg)">
-      <div class="rsec-title" style="color:var(--grn)">🛡️ 80% 확률로 충분한 씨앗 (수확 변동 보정)</div>`;
-    for (const [bt, bn] of [['tomato','토마토'],['onion','양파'],['garlic','마늘']]) {
-      if (lackBase[bt] <= 0) continue;
-      const cl = baseColors[bt];
-      const { avg, safe80 } = calcSeedsNeeded(lackBase[bt], bt, sk);
-      const extra = safe80 - avg;
-      html += `<div class="rrow">
-        <span class="rl" style="color:${cl}">${bn} 씨앗</span>
-        <span class="rv">
-          <b style="color:var(--grn)">${fmtQty(safe80)}</b>
-          <small style="color:var(--muted);display:block">평균 대비 +${fmtQty(extra)} 여유분</small>
-        </span>
-      </div>`;
+    html+=`</div><div class="rsec" style="border-color:var(--grn);background:var(--grn-bg)"><div class="rsec-title" style="color:var(--grn)">🛡️ 80% 확률로 충분한 씨앗</div>`;
+    for(const[bt,bn]of[['tomato','토마토'],['onion','양파'],['garlic','마늘']]){
+      if(lackBase[bt]<=0)continue;
+      const cl=baseColors[bt];
+      const{avg,safe80}=calcSeedsNeeded(lackBase[bt],bt,sk);
+      html+=`<div class="rrow"><span class="rl" style="color:${cl}">${bn} 씨앗</span><span class="rv"><b style="color:var(--grn)">${fmtQty(safe80)}</b><small style="color:var(--muted);display:block">평균 대비 +${fmtQty(safe80-avg)} 여유</small></span></div>`;
     }
-    html += `</div>`;
-
-    // 결과 박스 (평균 / 80% 나란히)
-    const avgTotal  = Object.entries(lackBase).reduce((s,[bt,lack]) => s + (lack>0?calcSeedsNeeded(lack,bt,sk).avg:0), 0);
-    const safeTotal = Object.entries(lackBase).reduce((s,[bt,lack]) => s + (lack>0?calcSeedsNeeded(lack,bt,sk).safe80:0), 0);
-    html += `<div class="result-box">
-      <div style="display:flex;gap:0;align-items:stretch">
-        <div style="flex:1;text-align:center;padding:4px 8px">
-          <div class="rb-label">평균 필요 씨앗</div>
-          <div class="rb-value">${fmtQty(avgTotal)}</div>
-          <div class="rb-sub">기댓값 기준</div>
-        </div>
-        <div style="width:1px;background:var(--bdr2);margin:4px 0;flex:none"></div>
-        <div style="flex:1;text-align:center;padding:4px 8px">
-          <div class="rb-label">80% 확률로 충분</div>
-          <div class="rb-value rb-floor">${fmtQty(safeTotal)}</div>
-          <div class="rb-sub">수확 변동 보정</div>
-        </div>
-      </div>
-    </div>`;
+    html+=`</div>`;
+    const avgTotal =Object.entries(lackBase).reduce((s,[bt,lack])=>s+(lack>0?calcSeedsNeeded(lack,bt,sk).avg:0),0);
+    const safeTotal=Object.entries(lackBase).reduce((s,[bt,lack])=>s+(lack>0?calcSeedsNeeded(lack,bt,sk).safe80:0),0);
+    html+=`<div class="result-box"><div style="display:flex;gap:0;align-items:stretch">
+      <div style="flex:1;text-align:center;padding:4px 8px"><div class="rb-label">평균 필요 씨앗</div><div class="rb-value">${fmtQty(avgTotal)}</div><div class="rb-sub">기댓값 기준</div></div>
+      <div style="width:1px;background:var(--bdr2);margin:4px 0;flex:none"></div>
+      <div style="flex:1;text-align:center;padding:4px 8px"><div class="rb-label">80% 확률로 충분</div><div class="rb-value rb-floor">${fmtQty(safeTotal)}</div><div class="rb-sub">수확 변동 보정</div></div>
+    </div></div>`;
   }
-
-  document.getElementById('matsRes').innerHTML = html;
+  document.getElementById('matsRes').innerHTML=html;
 };
 
-/* ── 자동채우기 ── */
-window.autoFill = () => {
-  const fill = (id, val) => {
-    if (!val || val <= 0) return;
-    const el = document.getElementById(id);
-    if (el && (!el.value || +el.value === 0)) { el.value = Math.round(val); el.dispatchEvent(new Event('input')); }
-  };
-  fill('pSeedTomato', DEFAULT_PRICES.seeds.tomato * SET_SIZE);
-  fill('pSeedOnion',  DEFAULT_PRICES.seeds.onion  * SET_SIZE);
-  fill('pSeedGarlic', DEFAULT_PRICES.seeds.garlic * SET_SIZE);
-  const cp = DEFAULT_PRICES.crops;
-  fill('pCropPumpkin',    cp.pumpkin    * SET_SIZE);
-  fill('pCropPotato',     cp.potato     * SET_SIZE);
-  fill('pCropCarrot',     cp.carrot     * SET_SIZE);
-  fill('pCropBeet',       cp.beet       * SET_SIZE);
-  fill('pCropWatermelon', cp.watermelon * SET_SIZE);
-  fill('pCropSweetfruit', cp.sweetfruit * SET_SIZE);
-  const op = DEFAULT_PRICES.other;
-  fill('pCoconut',    op.coconut);   fill('pPineapple',  op.pineapple);
-  fill('pFlour',      op.flour);     fill('pButter',     op.butter);
-  fill('pCheese',     op.cheese);    fill('pSteak',      op.steak);
-  fill('pSugar',      op.sugar);     fill('pPork',       op.pork);
-  fill('pPorkBelly',  op.pork_belly);fill('pPorkFront',  op.pork_front);
-  fill('pLamb',       op.lamb);      fill('pLambRib',    op.lamb_rib);
-  fill('pLambLeg',    op.lamb_leg);  fill('pChicken',    op.chicken);
-  fill('pChickenLeg', op.chicken_leg);fill('pChickenBreast',op.chicken_breast);
-  fill('pBeefSirloin',op.beef_sirloin);fill('pBeefRib',  op.beef_rib);
+/* 자동채우기 */
+window.autoFill=()=>{
+  const fill=(id,val)=>{if(!val||val<=0)return;const el=document.getElementById(id);if(el&&(!el.value||+el.value===0)){el.value=Math.round(val);el.dispatchEvent(new Event('input'));}};
+  fill('pSeedTomato',DEFAULT_PRICES.seeds.tomato*SET_SIZE);
+  fill('pSeedOnion', DEFAULT_PRICES.seeds.onion *SET_SIZE);
+  fill('pSeedGarlic',DEFAULT_PRICES.seeds.garlic*SET_SIZE);
+  const cp=DEFAULT_PRICES.crops;
+  fill('pCropPumpkin',   cp.pumpkin   *SET_SIZE);fill('pCropPotato',    cp.potato   *SET_SIZE);
+  fill('pCropCarrot',    cp.carrot    *SET_SIZE);fill('pCropBeet',      cp.beet     *SET_SIZE);
+  fill('pCropWatermelon',cp.watermelon*SET_SIZE);fill('pCropSweetfruit',cp.sweetfruit*SET_SIZE);
+  const op=DEFAULT_PRICES.other;
+  fill('pCoconut',op.coconut);fill('pPineapple',op.pineapple);fill('pFlour',op.flour);
+  fill('pButter', op.butter); fill('pCheese',   op.cheese);   fill('pSteak',op.steak);
+  fill('pSugar',  op.sugar);  fill('pPork',     op.pork);
+  fill('pPorkBelly',op.pork_belly);fill('pPorkFront',op.pork_front);
+  fill('pLamb',op.lamb);fill('pLambRib',op.lamb_rib);fill('pLambLeg',op.lamb_leg);
+  fill('pChicken',op.chicken);fill('pChickenLeg',op.chicken_leg);fill('pChickenBreast',op.chicken_breast);
+  fill('pBeefSirloin',op.beef_sirloin);fill('pBeefRib',op.beef_rib);
   onPriceChange();
 };
 
-/* ── localStorage ── */
-const STATIC_IDS = [
+/* localStorage */
+const STATIC_IDS=[
   'skillFurnace','skillMoneyBonus','skillFullPot',
   'skillNatureGift','skillFireHoe','skillHarvestBonus','skillSeedDrop',
   'engSeedLuck','engCropBox','engFarmerRoulette',
@@ -923,129 +738,113 @@ const STATIC_IDS = [
   'pChicken','pChickenLeg','pChickenBreast','pBeefSirloin','pBeefRib',
   'haveBaseTomato','haveBaseOnion','haveBaseGarlic',
 ];
-const KEY = 'farming_calc_v5';
-
-function saveDishRows() {
-  const rows = [];
-  document.querySelectorAll('.dish-picker-row').forEach(row => {
-    const rid = row.id.replace('drow_', '');
-    rows.push({ key: document.getElementById('dsel_'+rid)?.value||'', qty: document.getElementById('dqty_'+rid)?.value||'' });
+const KEY='farming_calc_v5';
+function saveDishRows(){
+  const rows=[];
+  document.querySelectorAll('.dish-picker-row').forEach(row=>{
+    const rid=row.id.replace('drow_','');
+    rows.push({key:document.getElementById('dsel_'+rid)?.value||'',qty:document.getElementById('dqty_'+rid)?.value||''});
   });
   return rows;
 }
-function saveAll() {
-  const d = {};
-  STATIC_IDS.forEach(id => { const e = document.getElementById(id); if (e) d[id] = e.value; });
-  d.__dishRows = saveDishRows();
-  localStorage.setItem(KEY, JSON.stringify(d));
+function saveAll(){
+  const d={};
+  STATIC_IDS.forEach(id=>{const e=document.getElementById(id);if(e)d[id]=e.value;});
+  d.__dishRows=saveDishRows();
+  localStorage.setItem(KEY,JSON.stringify(d));
 }
-function loadAll() {
-  try {
-    const d = JSON.parse(localStorage.getItem(KEY) || '{}');
-    STATIC_IDS.forEach(id => { const e = document.getElementById(id); if (e && d[id] !== undefined) e.value = d[id]; });
-    if (Array.isArray(d.__dishRows) && d.__dishRows.length > 0) {
-      d.__dishRows.forEach(({ key, qty }) => {
+function loadAll(){
+  try{
+    const d=JSON.parse(localStorage.getItem(KEY)||'{}');
+    STATIC_IDS.forEach(id=>{const e=document.getElementById(id);if(e&&d[id]!==undefined)e.value=d[id];});
+    if(Array.isArray(d.__dishRows)&&d.__dishRows.length>0){
+      d.__dishRows.forEach(({key,qty})=>{
         addDishRow();
-        const rid = rowId;
-        const sel = document.getElementById('dsel_'+rid);
-        if (sel && key) {
-          sel.value = key;
-          const cdd = sel.previousElementSibling;
-          if (cdd?.classList.contains('cdd')) {
-            const lbl = cdd.querySelector('.cdd-label');
-            if (lbl) lbl.textContent = sel.options[sel.selectedIndex]?.text || '';
-            cdd.querySelectorAll('.cdd-item').forEach(item =>
-              item.classList.toggle('selected', item.dataset.value === key));
+        const rid=rowId,sel=document.getElementById('dsel_'+rid);
+        if(sel&&key){
+          sel.value=key;
+          const cdd=sel.previousElementSibling;
+          if(cdd?.classList.contains('cdd')){
+            const lbl=cdd.querySelector('.cdd-label');
+            if(lbl)lbl.textContent=sel.options[sel.selectedIndex]?.text||'';
+            cdd.querySelectorAll('.cdd-item').forEach(item=>item.classList.toggle('selected',item.dataset.value===key));
           }
         }
-        if (qty) { const inp = document.getElementById('dqty_'+rid); if (inp) { inp.value = qty; onDishQtyInput(rid); } }
+        if(qty){const inp=document.getElementById('dqty_'+rid);if(inp){inp.value=qty;onDishQtyInput(rid);}}
       });
     }
-  } catch(e) {}
+  }catch(e){}
 }
 
-window.toggleSkillPanel = () => document.getElementById('skillPanel').classList.toggle('collapsed');
-window.toggleEngPanel   = () => document.getElementById('engPanel').classList.toggle('collapsed');
-window.resetAll = () => {
-  if (!confirm('초기화할까요?')) return;
+window.toggleSkillPanel=()=>document.getElementById('skillPanel').classList.toggle('collapsed');
+window.toggleEngPanel  =()=>document.getElementById('engPanel').classList.toggle('collapsed');
+window.resetAll=()=>{
+  if(!confirm('초기화할까요?'))return;
   localStorage.removeItem(KEY);
-  STATIC_IDS.forEach(id => { const e = document.getElementById(id); if (!e) return; if (e.tagName==='SELECT') e.selectedIndex=0; else e.value=''; });
-  document.getElementById('dishPickerList').innerHTML = '';
-  rowId = 0;
-  syncCddLabels(); onSkillChange();
+  STATIC_IDS.forEach(id=>{const e=document.getElementById(id);if(!e)return;if(e.tagName==='SELECT')e.selectedIndex=0;else e.value='';});
+  document.getElementById('dishPickerList').innerHTML='';
+  rowId=0;
+  syncDropdownLabels();onSkillChange();
 };
 
-/* ════════════════════════════════════════
-   커스텀 드롭다운 — select 하나를 받아 앞에 .cdd 삽입
-   CSS: select { display:none!important } 로 네이티브 숨김
-════════════════════════════════════════ */
+/* 커스텀 드롭다운 — mining.html과 동일한 방식 */
 function initOneCdd(sel) {
-  if (!sel || sel.previousElementSibling?.classList.contains('cdd')) return;
-
-  const cdd     = document.createElement('div'); cdd.className = 'cdd';
-  const trigger = document.createElement('div'); trigger.className = 'cdd-trigger';
-  const label   = document.createElement('span'); label.className = 'cdd-label';
-  label.textContent = sel.options[sel.selectedIndex]?.text || '';
-  const arrow   = document.createElement('span'); arrow.className = 'cdd-arrow'; arrow.textContent = '▼';
-  trigger.appendChild(label); trigger.appendChild(arrow);
-
-  const menu = document.createElement('div'); menu.className = 'cdd-menu';
-  Array.from(sel.options).forEach((opt, i) => {
-    if (opt.value === '' && opt.text.includes('선택')) return; // 빈 placeholder 제외
-    const item = document.createElement('div');
-    item.className = 'cdd-item' + (i === sel.selectedIndex && sel.value === opt.value ? ' selected' : '');
-    item.textContent = opt.text; item.dataset.value = opt.value;
-    item.addEventListener('click', () => {
-      sel.value = opt.value;
-      label.textContent = opt.text;
-      menu.querySelectorAll('.cdd-item').forEach(el => el.classList.remove('selected'));
-      item.classList.add('selected');
-      cdd.classList.remove('open');
-      sel.dispatchEvent(new Event('change', { bubbles: true }));
+  if(!sel||sel.previousElementSibling?.classList.contains('cdd'))return;
+  const cdd=document.createElement('div');cdd.className='cdd';
+  const trigger=document.createElement('div');trigger.className='cdd-trigger';
+  const label=document.createElement('span');label.className='cdd-label';
+  label.textContent=sel.options[sel.selectedIndex]?.text||'';
+  const arrow=document.createElement('span');arrow.className='cdd-arrow';arrow.textContent='▼';
+  trigger.appendChild(label);trigger.appendChild(arrow);
+  const menu=document.createElement('div');menu.className='cdd-menu';
+  Array.from(sel.options).forEach((opt,i)=>{
+    if(opt.value===''&&opt.text.includes('선택'))return;
+    const item=document.createElement('div');
+    item.className='cdd-item'+(i===sel.selectedIndex&&sel.value===opt.value?' selected':'');
+    item.textContent=opt.text;item.dataset.value=opt.value;
+    item.addEventListener('click',()=>{
+      sel.value=opt.value;label.textContent=opt.text;
+      menu.querySelectorAll('.cdd-item').forEach(el=>el.classList.remove('selected'));
+      item.classList.add('selected');cdd.classList.remove('open');
+      sel.dispatchEvent(new Event('change',{bubbles:true}));
     });
     menu.appendChild(item);
   });
-
-  trigger.addEventListener('click', e => {
+  trigger.addEventListener('click',e=>{
     e.stopPropagation();
-    const wasOpen = cdd.classList.contains('open');
-    document.querySelectorAll('.cdd.open').forEach(el => el.classList.remove('open'));
-    if (!wasOpen) cdd.classList.add('open');
+    const isOpen=cdd.classList.contains('open');
+    document.querySelectorAll('.cdd.open').forEach(el=>el.classList.remove('open'));
+    if(!isOpen)cdd.classList.add('open');
   });
-
-  cdd.appendChild(trigger); cdd.appendChild(menu);
-  sel.parentNode.insertBefore(cdd, sel);
+  cdd.appendChild(trigger);cdd.appendChild(menu);
+  sel.parentNode.insertBefore(cdd,sel);
 }
 
-function initAllCdds() {
-  document.querySelectorAll('.skrow select, .field select').forEach(sel => initOneCdd(sel));
+function initCustomDropdowns(){
+  document.querySelectorAll('.skrow select,.field select').forEach(sel=>initOneCdd(sel));
 }
-
-function syncCddLabels() {
-  document.querySelectorAll('.skrow select, .field select').forEach(sel => {
-    const cdd = sel.previousElementSibling; if (!cdd?.classList.contains('cdd')) return;
-    const lbl = cdd.querySelector('.cdd-label');
-    if (lbl) lbl.textContent = sel.options[sel.selectedIndex]?.text || '';
-    cdd.querySelectorAll('.cdd-item').forEach(item =>
-      item.classList.toggle('selected', item.dataset.value === sel.value));
+function syncDropdownLabels(){
+  document.querySelectorAll('.skrow select,.field select').forEach(sel=>{
+    const cdd=sel.previousElementSibling;if(!cdd?.classList.contains('cdd'))return;
+    const lbl=cdd.querySelector('.cdd-label');if(lbl)lbl.textContent=sel.options[sel.selectedIndex]?.text||'';
+    cdd.querySelectorAll('.cdd-item').forEach(item=>item.classList.toggle('selected',item.dataset.value===sel.value));
   });
 }
 
-document.addEventListener('click', e => {
-  if (!e.target.closest('.cdd'))
-    document.querySelectorAll('.cdd.open').forEach(el => el.classList.remove('open'));
+document.addEventListener('click',e=>{
+  if(!e.target.closest('.cdd')) document.querySelectorAll('.cdd.open').forEach(el=>el.classList.remove('open'));
 });
 
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded',()=>{
   loadAll();
-  initAllCdds();   // 모든 skrow·field select → 커스텀 드롭다운
-  syncCddLabels(); // localStorage 복원 후 라벨 동기화
+  initCustomDropdowns();
+  syncDropdownLabels();
   onSkillChange();
-  const titleEl = document.getElementById('pageTabTitle'); if (titleEl) titleEl.textContent = TAB_TITLES[0];
-  document.title = `재배 계산기 — ${TAB_TITLES[0]}`;
-  STATIC_IDS.forEach(id => {
-    const e = document.getElementById(id); if (!e) return;
-    e.addEventListener(e.tagName==='SELECT'?'change':'input', saveAll);
+  const titleEl=document.getElementById('pageTabTitle');if(titleEl)titleEl.textContent=TAB_TITLES[0];
+  document.title=`재배 계산기 — ${TAB_TITLES[0]}`;
+  STATIC_IDS.forEach(id=>{
+    const e=document.getElementById(id);if(!e)return;
+    e.addEventListener(e.tagName==='SELECT'?'change':'input',saveAll);
   });
 });
 </script>
