@@ -361,10 +361,10 @@ html,body{min-height:100vh;background:var(--bg) radial-gradient(circle at 10% 15
       <div class="g3">
         <div class="field"><label>코코넛</label><input id="pCoconut" type="number" inputmode="numeric" placeholder="0" oninput="onPriceChange()"></div>
         <div class="field"><label>파인애플</label><input id="pPineapple" type="number" inputmode="numeric" placeholder="0" oninput="onPriceChange()"></div>
-        <div class="field"><label>스테이크</label><input id="pSteak" type="number" inputmode="numeric" placeholder="0" oninput="onPriceChange()"></div>
       </div>
       <div class="slabel" style="margin-top:8px">고기류</div>
       <div class="g3">
+        <div class="field"><label>스테이크</label><input id="pSteak" type="number" inputmode="numeric" placeholder="0" oninput="onPriceChange()"></div>
         <div class="field"><label>익힌 돼지고기</label><input id="pPork" type="number" inputmode="numeric" placeholder="0" oninput="onPriceChange()"></div>
         <div class="field"><label>익힌 삼겹살</label><input id="pPorkBelly" type="number" inputmode="numeric" placeholder="0" oninput="onPriceChange()"></div>
         <div class="field"><label>익힌 앞다리살</label><input id="pPorkFront" type="number" inputmode="numeric" placeholder="0" oninput="onPriceChange()"></div>
@@ -877,11 +877,11 @@ window.calcMats=()=>{
 
   if(hasCrops||hasMilky||hasOther){
     html+=`<div class="rsec"><div class="rsec-title" style="color:var(--acc)">🧺 기타 재료 합계</div>`;
-    // 작물 묶음: 묶음 수 × 64 → fmtQty로 상자/세트/개 표시
+    // 작물 묶음: 묶음 자체가 아이템 1개 단위 → fmtQty(q) 로 표시
     for(const[k,q]of Object.entries(needCrops)){
       if(q<=0)continue;
       const cc=CROPS[k]?.color||'#888';
-      html+=`<div class="rrow"><span class="rl" style="color:${cc}">${CROPS[k]?.name||k}</span><span class="rv" style="color:var(--muted)">${fmtQty(q*SET_SIZE)}</span></div>`;
+      html+=`<div class="rrow"><span class="rl" style="color:${cc}">${CROPS[k]?.name||k}</span><span class="rv" style="color:var(--muted)">${fmtQty(q)}</span></div>`;
     }
     // 밀키 재료
     const milkyNames={salt:'소금',egg:'달걀',milk:'우유',oil:'오일'};
