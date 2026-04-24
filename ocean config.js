@@ -191,77 +191,75 @@ export const ALCHEMY = {
    일반 연금의 중간재료를 조합해서 최종 판매품 생성
 ════════════════════════════════════════ */
 export const PRECISION_ALCHEMY = {
-
   /* 0성 — 스킬 보너스 미적용 */
-  DILUTED_EXTRACT: { name:'추출된 희석액',       tier:0, price:18444,
+  DILUTED_EXTRACT: { name:'추출된 희석액',         tier:0, price:18444, craftTimeSec:600,
     materials:{ core_corrosion:3, crystal_defense:2, potion_corrupt:1 } },
-
   /* 1성 */
-  AQUTIS:    { name:'영생의 아쿠티스 ★',    tier:1, price:5159,
+  AQUTIS:    { name:'영생의 아쿠티스 ★',    tier:1, price:5159,  craftTimeSec:300,
     materials:{ core_guard:1, core_chaos:1, core_life:1 } },
-  KRAKEN:    { name:'크라켄의 광란체 ★',    tier:1, price:5234,
+  KRAKEN:    { name:'크라켄의 광란체 ★',    tier:1, price:5234,  craftTimeSec:300,
     materials:{ core_chaos:1, core_life:1, core_wave:1 } },
-  LEVIATHAN: { name:'리바이던의 깃털 ★',    tier:1, price:5393,
+  LEVIATHAN: { name:'리바이던의 깃털 ★',    tier:1, price:5393,  craftTimeSec:300,
     materials:{ core_corrosion:1, core_wave:1, core_guard:1 } },
-
   /* 2성 */
-  WAVE_CORE: { name:'해구 파동의 코어 ★★',  tier:2, price:11131,
+  WAVE_CORE: { name:'해구 파동의 코어 ★★',  tier:2, price:11131, craftTimeSec:600,
     materials:{ crystal_vitality:1, crystal_erosion:1, crystal_torrent:1 } },
-  DEEP_VIAL: { name:'침묵의 심해 비약 ★★',  tier:2, price:11242,
+  DEEP_VIAL: { name:'침묵의 심해 비약 ★★',  tier:2, price:11242, craftTimeSec:600,
     materials:{ crystal_erosion:1, crystal_torrent:1, crystal_poison:1 } },
-  SEA_WING:  { name:'청해룡의 날개 ★★',     tier:2, price:11399,
+  SEA_WING:  { name:'청해룡의 날개 ★★',     tier:2, price:11399, craftTimeSec:600,
     materials:{ crystal_defense:1, crystal_poison:1, crystal_vitality:1 } },
-
   /* 3성 */
-  AQUA_PULSE:  { name:'아쿠아 펄스 파편 ★★★', tier:3, price:21833,
+  AQUA_PULSE:  { name:'아쿠아 펄스 파편 ★★★', tier:3, price:21833, craftTimeSec:1200,
     materials:{ potion_immortal:1, potion_barrier:1, potion_venom:1 } },
-  NAUTILUS:    { name:'나우틸러스의 손 ★★★',  tier:3, price:22088,
+  NAUTILUS:    { name:'나우틸러스의 손 ★★★',  tier:3, price:22088, craftTimeSec:1200,
     materials:{ potion_barrier:1, potion_frenzy:1, potion_immortal:1 } },
-  ABYSS_SPINE: { name:'무저의 척추 ★★★',      tier:3, price:22227,
+  ABYSS_SPINE: { name:'무저의 척추 ★★★',      tier:3, price:22227, craftTimeSec:1200,
     materials:{ potion_corrupt:1, potion_venom:1, potion_frenzy:1 } },
 };
 
-/* ── 바닐라 재료 메타 (UI 표시, 시세 입력용) ── */
+/* ── 바닐라 재료 메타 (UI 표시, 시세 입력용) ──
+   priceUnit: 'per_item'=개당, 'per_set'=세트당(기본)
+════════════════════════════════════════ */
 export const VANILLA_META = {
-  /* 어획 부재료 (낚시로 획득) */
-  shrimp:    { name:'깐 새우',     group:'fish' },
-  sea_bream: { name:'도미 회',     group:'fish' },
-  herring:   { name:'청어 회',     group:'fish' },
-  goldfish:  { name:'금붕어 회',   group:'fish' },
-  bass:      { name:'농어 회',     group:'fish' },
-  firn:      { name:'불우렁쉥이',  group:'fish' },
-  /* 해양 채집 */
-  kelp:         { name:'해초(켈프)',     group:'ocean' },
-  /* 나뭇잎 */
-  oak_leaf:     { name:'참나무 잎',      group:'leaf' },
-  spruce_leaf:  { name:'가문비나무 잎',  group:'leaf' },
-  birch_leaf:   { name:'자작나무 잎',    group:'leaf' },
-  cherry_leaf:  { name:'벚나무 잎',      group:'leaf' },
-  dark_oak_leaf:{ name:'짙은참나무 잎',  group:'leaf' },
-  /* 광물/블록 */
-  clay:         { name:'점토',           group:'mineral' },
-  sand:         { name:'모래',           group:'mineral' },
-  dirt:         { name:'흙',             group:'mineral' },
-  gravel:       { name:'자갈',           group:'mineral' },
-  granite:      { name:'화강암',         group:'mineral' },
-  lapis_block:  { name:'청금석 블록',    group:'mineral' },
-  redstone_block:{ name:'레드스톤 블록', group:'mineral' },
-  iron_ingot:   { name:'철 주괴',        group:'mineral' },
-  gold_ingot:   { name:'금 주괴',        group:'mineral' },
-  diamond:      { name:'다이아몬드',     group:'mineral' },
-  /* 네더/기타 */
-  netherrack:   { name:'네더랙',         group:'nether' },
-  magma:        { name:'마그마 블록',    group:'nether' },
-  soul_soil:    { name:'영혼 흙',        group:'nether' },
-  crimson_stem: { name:'진홍빛 자루',    group:'nether' },
-  warped_stem:  { name:'뒤틀린 자루',    group:'nether' },
-  glowberry:    { name:'발광 열매',      group:'nether' },
-  /* 죽은 산호 */
-  coral_dead_tube:  { name:'죽은 관 산호 블록',   group:'coral' },
-  coral_dead_brain: { name:'죽은 사방산호 블록',   group:'coral' },
-  coral_dead_bubble:{ name:'죽은 거품 산호 블록',  group:'coral' },
-  coral_dead_fire:  { name:'죽은 불 산호 블록',    group:'coral' },
-  coral_dead_horn:  { name:'죽은 뇌 산호 블록',    group:'coral' },
-  /* 기타 */
-  glass_bottle: { name:'유리병',         group:'misc' },
+  /* 🐟 커스텀 물고기 (낚시 부재료, 개당 입력) */
+  shrimp:    { name:'깐 새우',     group:'fish', priceUnit:'per_item' },
+  sea_bream: { name:'도미 회',     group:'fish', priceUnit:'per_item' },
+  herring:   { name:'청어 회',     group:'fish', priceUnit:'per_item' },
+  goldfish:  { name:'금붕어 회',   group:'fish', priceUnit:'per_item' },
+  bass:      { name:'농어 회',     group:'fish', priceUnit:'per_item' },
+  firn:      { name:'불우렁쉥이',  group:'fish', priceUnit:'per_item' },
+  /* 🌊 해양 채집 (세트당 입력) */
+  seaweed_item: { name:'해초',       group:'ocean', priceUnit:'per_set' }, // 해초 (해양 채집)
+  kelp:         { name:'켈프',       group:'ocean', priceUnit:'per_set' }, // 켈프 (연금 재료)
+  glass_bottle: { name:'유리병',     group:'ocean', priceUnit:'per_set' },
+  glowberry:    { name:'발광 열매',  group:'ocean', priceUnit:'per_set' },
+  /* 🍃 나뭇잎 (세트당) */
+  oak_leaf:      { name:'참나무 잎',     group:'leaf', priceUnit:'per_set' },
+  spruce_leaf:   { name:'가문비나무 잎', group:'leaf', priceUnit:'per_set' },
+  birch_leaf:    { name:'자작나무 잎',   group:'leaf', priceUnit:'per_set' },
+  cherry_leaf:   { name:'벚나무 잎',     group:'leaf', priceUnit:'per_set' },
+  dark_oak_leaf: { name:'짙은참나무 잎', group:'leaf', priceUnit:'per_set' },
+  /* ⛏️ 광물·블록 (세트당) */
+  clay:          { name:'점토',          group:'mineral', priceUnit:'per_set' },
+  sand:          { name:'모래',          group:'mineral', priceUnit:'per_set' },
+  dirt:          { name:'흙',            group:'mineral', priceUnit:'per_set' },
+  gravel:        { name:'자갈',          group:'mineral', priceUnit:'per_set' },
+  granite:       { name:'화강암',        group:'mineral', priceUnit:'per_set' },
+  lapis_block:   { name:'청금석 블록',   group:'mineral', priceUnit:'per_set' },
+  redstone_block:{ name:'레드스톤 블록', group:'mineral', priceUnit:'per_set' },
+  iron_ingot:    { name:'철 주괴',       group:'mineral', priceUnit:'per_set' },
+  gold_ingot:    { name:'금 주괴',       group:'mineral', priceUnit:'per_set' },
+  diamond:       { name:'다이아몬드',    group:'mineral', priceUnit:'per_set' },
+  /* 🔥 네더 (세트당) */
+  netherrack:    { name:'네더랙',        group:'nether', priceUnit:'per_set' },
+  magma:         { name:'마그마 블록',   group:'nether', priceUnit:'per_set' },
+  soul_soil:     { name:'영혼 흙',       group:'nether', priceUnit:'per_set' },
+  crimson_stem:  { name:'진홍빛 자루',   group:'nether', priceUnit:'per_set' },
+  warped_stem:   { name:'뒤틀린 자루',   group:'nether', priceUnit:'per_set' },
+  /* 🪸 죽은 산호 (세트당) */
+  coral_dead_tube:  { name:'죽은 관 산호 블록',   group:'coral', priceUnit:'per_set' },
+  coral_dead_brain: { name:'죽은 사방산호 블록',   group:'coral', priceUnit:'per_set' },
+  coral_dead_bubble:{ name:'죽은 거품 산호 블록',  group:'coral', priceUnit:'per_set' },
+  coral_dead_fire:  { name:'죽은 불 산호 블록',    group:'coral', priceUnit:'per_set' },
+  coral_dead_horn:  { name:'죽은 뇌 산호 블록',    group:'coral', priceUnit:'per_set' },
 };
