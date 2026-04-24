@@ -99,7 +99,11 @@ html,body{min-height:100vh;background:var(--bg) radial-gradient(circle at 10% 15
 .empty-msg{color:var(--muted);font-size:12px;text-align:center;padding:14px 0;font-weight:500}
 /* 동적 추가 행 (보유 중간재료) */
 .interm-row{display:flex;align-items:center;gap:8px;margin-bottom:6px;background:var(--bg);border:1px solid var(--bdr);border-radius:var(--rs);padding:8px 10px}
-.interm-sel-wrap{flex:0 0 200px}
+.interm-sel-wrap{flex:0 0 210px}
+.interm-sel-wrap select{font-size:11px!important;font-weight:700!important;border:1.5px solid var(--bdr2);border-radius:var(--rs);padding:5px 7px;background:var(--surf);color:var(--txt);outline:none;width:100%;cursor:pointer}
+.interm-sel-wrap select.cdd-ready{display:none}
+.interm-sel-wrap .cdd-trigger{display:flex;align-items:center;justify-content:space-between;gap:4px;padding:6px 8px;border:1.5px solid var(--bdr2);border-radius:var(--rs);background:var(--surf);color:var(--txt);font-size:11px!important;font-weight:700!important;font-family:'Jua',sans-serif!important;cursor:pointer;user-select:none;line-height:1.3;white-space:nowrap;overflow:hidden}
+.interm-sel-wrap .cdd-trigger:hover{border-color:var(--acc)}
 .interm-qty-wrap{flex:1}
 .interm-qty-wrap input{font-size:12px!important;padding:6px 9px;border:1.5px solid var(--bdr);border-radius:var(--rs);background:var(--surf);color:var(--txt);outline:none;width:100%}
 .interm-qty-wrap input:focus{border-color:var(--acc)}
@@ -490,229 +494,251 @@ window.calcDaily=()=>{
 
 // ════════════════════════════════
 // TAB 2: 연금 최적화
-// 재귀적 재료 전개로 원재료까지 역산
 // ════════════════════════════════
 
-// 원재료 키 판별 (어패류 또는 바닐라)
+// 원재료 여부: 어패류(sfKey+tier) 또는 바닐라
 function isRawMat(key){
-  return /^(oyster|conch|octopus|seaweed|urchin)\d$/.test(key)||!!VANILLA_META[key];
+  return /^(oyster|conch|octopus|seaweed|urchin)\d$/.test(key) || !!VANILLA_META[key];
 }
 
-// key를 n개 만들 때 필요한 원재료를 {key:qty} 맵으로 반환 (재귀)
-function expandToRaw(key, qty, depth=0){
-  if(depth>15)return{};
-  if(isRawMat(key))return{[key]:qty};
-  const rec=ALCHEMY[key];
-  if(!rec)return{[key]:qty};
-  // qty개 만들려면 ceil(qty/output)배치 필요
-  const batches=Math.ceil(qty/rec.output);
-  const result={};
-  for(const[mk,mq]of Object.entries(rec.materials)){
-    const sub=expandToRaw(mk,mq*batches,depth+1);
-    for(const[rk,rv]of Object.entries(sub)) result[rk]=(result[rk]||0)+rv;
+// ALCHEMY 레시피 또는 PRECISION_ALCHEMY 레시피 조회
+function getRec(key){ return ALCHEMY[key] || PRECISION_ALCHEMY[key] || null; }
+
+// inv에서 key를 need개 소모. 부족하면 재귀 제작으로 보충.
+// 성공시 inv 수정 + true, 실패시 false (inv 수정 안 함)
+function consumeFrom(key, need, inv, craftLog, depth=0){
+  if(depth>20) return false;
+  if(need<=0) return true;
+
+  const have = inv[key]||0;
+  if(have >= need){ inv[key] = have - need; return true; }
+
+  // 원재료는 추가 제작 불가 → 재고 부족이면 실패
+  if(isRawMat(key)) return false;
+
+  const rec = ALCHEMY[key]; // PRECISION_ALCHEMY는 직접 호출하므로 여기선 ALCHEMY만
+  if(!rec) return false;
+
+  const shortfall = need - have;
+  const batches = Math.ceil(shortfall / rec.output);
+
+  // 필요 재료 먼저 소모 시도 (임시 복사본)
+  const tmpInv = {...inv};
+  for(const [mk, mq] of Object.entries(rec.materials)){
+    if(!consumeFrom(mk, mq*batches, tmpInv, craftLog, depth+1)) return false;
   }
-  return result;
+
+  // 성공 → inv 반영 + 제작 로그 기록
+  Object.assign(inv, tmpInv);
+  inv[key] = ((inv[key]||0) + batches * rec.output) - need;
+  if(craftLog) craftLog[key] = (craftLog[key]||0) + batches * rec.output;
+  return true;
 }
 
-// 보유 재고에서 key를 n개 만들 수 있는지 확인 (재귀, 재고 소모)
-// inventory를 복사본으로 넘겨 실제 소모 없이 체크
-function canMake(key, qty, inv){
-  if(isRawMat(key)){
-    return (inv[key]||0)>=qty;
-  }
-  const rec=ALCHEMY[key]||PRECISION_ALCHEMY[key];
-  if(!rec)return false;
-  const batches=Math.ceil(qty/(rec.output||1));
-  const tempInv={...inv};
-  for(const[mk,mq]of Object.entries(rec.materials)){
-    const need=mq*batches;
-    if(!consumeFrom(mk,need,tempInv))return false;
+// 최종 산물 n개 만들 수 있는지 체크 (inv 복사본 사용)
+function canProduceFinal(finalKey, qty, inv){
+  const rec = PRECISION_ALCHEMY[finalKey];
+  if(!rec) return false;
+  const tmpInv = {...inv};
+  const craftLog = {};
+  for(const [mk, mq] of Object.entries(rec.materials)){
+    if(!consumeFrom(mk, mq*qty, tmpInv, craftLog)) return false;
   }
   return true;
 }
 
-// inv에서 key를 need개 소모 (재귀 제작 포함), 성공하면 inv 수정 후 true
-function consumeFrom(key, need, inv, depth=0){
-  if(depth>15)return false;
-  const have=inv[key]||0;
-  if(have>=need){inv[key]=have-need;return true;}
-  // 부족하면 제작으로 보충
-  const rec=ALCHEMY[key];
-  if(!rec)return false;
-  const shortfall=need-have;
-  const batches=Math.ceil(shortfall/rec.output);
-  const tempInv={...inv};
-  for(const[mk,mq]of Object.entries(rec.materials)){
-    if(!consumeFrom(mk,mq*batches,tempInv,depth+1))return false;
-  }
-  // 성공 → inv 갱신
-  for(const k of Object.keys(tempInv))inv[k]=tempInv[k];
-  inv[key]=((inv[key]||0)+batches*rec.output)-need;
-  return true;
-}
-
-// 보유 재고 기반으로 최종 산물 최대 생산 수 계산
+// 이진탐색으로 최대 생산 가능 수량
 function maxProducible(finalKey, inv){
-  let lo=0,hi=100000;
+  if(!canProduceFinal(finalKey, 1, inv)) return 0;
+  let lo=1, hi=10000;
   while(lo<hi){
-    const mid=Math.ceil((lo+hi)/2);
-    if(canMake(finalKey,mid,{...inv}))lo=mid;else hi=mid-1;
+    const mid = Math.ceil((lo+hi)/2);
+    if(canProduceFinal(finalKey, mid, inv)) lo=mid; else hi=mid-1;
   }
   return lo;
 }
 
-// 선형 계획법 근사: 그리디로 최고 순이익 조합 찾기
-// 각 최종 산물을 단위 이익 순으로 정렬, 최대 생산 가능 수만큼 소모
+// 실제 소모 실행 + 중간 제작 로그 반환
+function executeProduceFinal(finalKey, qty, inv){
+  const rec = PRECISION_ALCHEMY[finalKey];
+  if(!rec) return {};
+  const craftLog = {};
+  for(const [mk, mq] of Object.entries(rec.materials)){
+    consumeFrom(mk, mq*qty, inv, craftLog);
+  }
+  return craftLog;
+}
+
+// 원재료까지 재귀 전개
+function expandToRaw(key, qty, visited=new Set()){
+  if(visited.has(key)) return {};
+  const vis2 = new Set(visited); vis2.add(key);
+  if(isRawMat(key)) return {[key]: qty};
+  const rec = ALCHEMY[key];
+  if(!rec) return {[key]: qty};
+  const batches = Math.ceil(qty / rec.output);
+  const result = {};
+  for(const [mk, mq] of Object.entries(rec.materials)){
+    const sub = expandToRaw(mk, mq*batches, vis2);
+    for(const [rk,rv] of Object.entries(sub)) result[rk] = (result[rk]||0) + rv;
+  }
+  return result;
+}
+
 function calcOpt(){
-  const inv={};
-  // 어패류 수집
+  const inv = {};
+  // 보유 어패류 수집
   for(const sf of SF_TYPES) for(const t of SF_TIERS){
-    const v=parseQty(document.getElementById(`have_${sf}_${t}`)?.value||'');
-    if(v>0)inv[`${sf}${t}`]=(inv[`${sf}${t}`]||0)+v;
+    const v = parseQty(document.getElementById(`have_${sf}_${t}`)?.value||'');
+    if(v>0) inv[`${sf}${t}`] = (inv[`${sf}${t}`]||0) + v;
   }
   // 보유 중간재료 수집
+  document.querySelectorAll('.interm-row').forEach(row=>{
+    const sel = row.querySelector('select.interm-sel');
+    const inp = row.querySelector('input.interm-qty');
+    if(!sel||!inp) return;
+    const key=sel.value, qty=parseInt(inp.value)||0;
+    if(key&&qty>0) inv[key] = (inv[key]||0) + qty;
+  });
+
+  const hasAny = Object.values(inv).some(v=>v>0);
+  if(!hasAny){ document.getElementById('optRes').innerHTML='<div class="empty-msg">보유 어패류를 입력하면 계산됩니다</div>'; return; }
+
+  // 판매가 높은 순 정렬
+  const finalItems = Object.entries(PRECISION_ALCHEMY)
+    .map(([key,item])=>({key, item, price: getAlchSellPrice(key)}))
+    .sort((a,b)=>b.price-a.price);
+
+  // 그리디: 판매가 높은 것부터 최대 생산 후 재고 소모
+  const plan = {};       // {finalKey: count}
+  const craftLogs = {};  // {finalKey: {intermediateKey: count}}
+  const workInv = {...inv};
+  let totalRev=0, totalTime=0;
+
+  for(const {key, item, price} of finalItems){
+    const maxCnt = maxProducible(key, workInv);
+    if(maxCnt<=0) continue;
+    plan[key] = maxCnt;
+    craftLogs[key] = executeProduceFinal(key, maxCnt, workInv);
+    totalRev += maxCnt * price;
+    totalTime += maxCnt * item.craftTimeSec;
+  }
+
+  if(!Object.keys(plan).length){
+    document.getElementById('optRes').innerHTML='<div class="empty-msg">재료가 부족하여 만들 수 있는 연금품이 없습니다<br><small style="font-weight:500">어패류 보유량을 확인해주세요</small></div>';
+    return;
+  }
+
+  // ── 필요 원재료 역산 (최종 산물 전체 기준) ──
+  const rawNeeded = {};
+  const intermByTier = {1:{}, 2:{}, 3:{}}; // 단계별 중간재료
+  for(const [fKey, cnt] of Object.entries(plan)){
+    // 원재료 전개
+    const raw = expandToRaw(fKey, cnt);
+    for(const [rk,rv] of Object.entries(raw)) rawNeeded[rk]=(rawNeeded[rk]||0)+rv;
+    // 중간재료 로그 분류
+    const log = craftLogs[fKey]||{};
+    for(const [mk, mq] of Object.entries(log)){
+      const rec = ALCHEMY[mk];if(!rec)continue;
+      const tier = rec.tier||1;
+      intermByTier[tier][mk] = (intermByTier[tier][mk]||0) + mq;
+    }
+    // PRECISION_ALCHEMY 재료(중간재료) 자체도 추가
+    const prec = PRECISION_ALCHEMY[fKey];
+    if(prec) for(const [mk,mq] of Object.entries(prec.materials)){
+      const rec = ALCHEMY[mk];if(!rec)continue;
+      const tier=rec.tier||1;
+      intermByTier[tier][mk]=(intermByTier[tier][mk]||0)+mq*cnt;
+    }
+  }
+  // 보유 중간재료 차감
   document.querySelectorAll('.interm-row').forEach(row=>{
     const sel=row.querySelector('select.interm-sel');
     const inp=row.querySelector('input.interm-qty');
     if(!sel||!inp)return;
     const key=sel.value, qty=parseInt(inp.value)||0;
-    if(key&&qty>0)inv[key]=(inv[key]||0)+qty;
+    if(!key||!qty)return;
+    const rec=ALCHEMY[key];if(!rec)return;
+    const tier=rec.tier||1;
+    if(intermByTier[tier][key]) intermByTier[tier][key]=Math.max(0,intermByTier[tier][key]-qty);
   });
 
-  const hasAny=Object.values(inv).some(v=>v>0);
-  if(!hasAny){document.getElementById('optRes').innerHTML='<div class="empty-msg">보유 어패류를 입력하면 계산됩니다</div>';return;}
-
-  // 각 최종산물의 개당 판매가 계산
-  const finalItems=Object.entries(PRECISION_ALCHEMY).map(([key,item])=>({
-    key, item, price:getAlchSellPrice(key),
-  })).sort((a,b)=>b.price-a.price);
-
-  // 그리디: 판매가 높은 것부터 최대 생산 후 재고 소모
-  const plan={};   // {key: count}
-  const workInv={...inv};
-  let totalRev=0, totalTime=0;
-
-  // 여러 조합 시도 (최적에 가까운 그리디)
-  // 단순 그리디로 최고가 산물부터 최대 생산
-  for(const {key,item,price} of finalItems){
-    const maxCnt=maxProducible(key,workInv);
-    if(maxCnt<=0)continue;
-    plan[key]=maxCnt;
-    totalRev+=maxCnt*price;
-    totalTime+=maxCnt*item.craftTimeSec;
-    // 재고에서 소모
-    consumeFrom(key,maxCnt,workInv);
-  }
-
-  // 결과 없음
-  if(!Object.keys(plan).length){
-    document.getElementById('optRes').innerHTML='<div class="empty-msg">재료가 부족하여 만들 수 있는 연금품이 없습니다</div>';
-    return;
-  }
-
-  // 필요 원재료 역산
-  const rawNeeded={};
-  const intermNeeded={};
-  for(const[key,cnt]of Object.entries(plan)){
-    const rec=PRECISION_ALCHEMY[key];
-    // 정밀 연금 재료 (중간재료)
-    for(const[mk,mq]of Object.entries(rec.materials)){
-      intermNeeded[mk]=(intermNeeded[mk]||0)+mq*cnt;
-    }
-    // 최종 원재료
-    const raw=expandToRaw(key,cnt);
-    for(const[rk,rv]of Object.entries(raw)) rawNeeded[rk]=(rawNeeded[rk]||0)+rv;
-  }
-
-  // 보유 중간재료 차감
-  for(const[k,v]of Object.entries(inv)){
-    if(ALCHEMY[k]&&intermNeeded[k]){
-      intermNeeded[k]=Math.max(0,intermNeeded[k]-v);
-    }
-  }
-
-  // 원재료 이름 조회
-  function getRawName(key){
-    const sfM=key.match(/^(oyster|conch|octopus|seaweed|urchin)(\d)$/);
-    if(sfM){
-      const sfName=SEAFOOD_TYPES[sfM[1]]?.name||sfM[1];
-      return `${sfName} ${'★'.repeat(parseInt(sfM[2]))}`;
-    }
-    return VANILLA_META[key]?.name||key;
-  }
-  function getRawUnit(key){
-    if(/^(oyster|conch|octopus|seaweed|urchin)\d$/.test(key))return 'item';
-    const meta=VANILLA_META[key];
-    return meta?.priceUnit==='per_item'?'item':'set';
-  }
-
   const sfColors={oyster:'#3d6fd4',conch:'#c89c00',octopus:'#7c52c8',seaweed:'#d94f3d',urchin:'#3a9e68'};
-  function getSFColor(key){
-    const m=key.match(/^(oyster|conch|octopus|seaweed|urchin)/);
-    return m?sfColors[m[1]]:'#607090';
-  }
   const tierColors={0:'#607090',1:'#3d6fd4',2:'#7c52c8',3:'#d94f3d'};
 
-  // ── 렌더링 ──
+  function getRawDisplayName(key){
+    const sfM=key.match(/^(oyster|conch|octopus|seaweed|urchin)(\d)$/);
+    if(sfM) return `${SEAFOOD_TYPES[sfM[1]]?.name||sfM[1]} ${'★'.repeat(parseInt(sfM[2]))}`;
+    return VANILLA_META[key]?.name||key;
+  }
+  function getRawColor(key){
+    const m=key.match(/^(oyster|conch|octopus|seaweed|urchin)/);
+    return m?sfColors[m[1]]:'var(--muted)';
+  }
+  function getRawQtyStr(key, qty){
+    const meta=VANILLA_META[key];
+    if(!meta) return fmtQty(qty); // 어패류: 상자/세트/개
+    if(meta.priceUnit==='per_set'||meta.blockToCraft) return fmtQty(qty);
+    return `${f(qty)}개`;
+  }
+
   let html='';
 
-  // 필요 원재료
-  html+=`<div class="rsec"><div class="rsec-title" style="color:var(--acc)">📦 필요 원재료 합계</div>`;
-  for(const[key,qty]of Object.entries(rawNeeded)){
-    if(qty<=0)continue;
-    const name=getRawName(key);
-    const unit=getRawUnit(key);
-    const color=getSFColor(key);
-    const qtyStr=unit==='item'?`${f(qty)}개`:fmtQty(qty);
-    const unitLabel=unit==='item'?'(개당)':'(세트 기준)';
-    html+=`<div class="rrow"><span class="rl" style="color:${color}">${name}</span><span class="rv" style="color:var(--muted)">${qtyStr} <small>${unitLabel}</small></span></div>`;
+  // ① 필요 원재료
+  html+=`<div class="rsec"><div class="rsec-title" style="color:var(--acc)">📦 1단계 — 필요 원재료 합계</div>`;
+  const sfRaw={}, vanillaRaw={};
+  for(const [k,v] of Object.entries(rawNeeded)){
+    if(v<=0) continue;
+    if(/^(oyster|conch|octopus|seaweed|urchin)\d$/.test(k)) sfRaw[k]=v;
+    else vanillaRaw[k]=v;
+  }
+  // 어패류 먼저
+  for(const [k,v] of Object.entries(sfRaw)){
+    html+=`<div class="rrow"><span class="rl" style="color:${getRawColor(k)}">${getRawDisplayName(k)}</span><span class="rv" style="color:var(--muted)">${fmtQty(v)}</span></div>`;
+  }
+  // 바닐라 재료
+  for(const [k,v] of Object.entries(vanillaRaw)){
+    if(v<=0) continue;
+    html+=`<div class="rrow"><span class="rl">${getRawDisplayName(k)}</span><span class="rv" style="color:var(--muted)">${getRawQtyStr(k,v)}</span></div>`;
   }
   html+=`</div>`;
 
-  // 중간재료 제작량
-  const hasInterm=Object.values(intermNeeded).some(v=>v>0);
-  if(hasInterm){
-    html+=`<div class="rsec"><div class="rsec-title" style="color:var(--acc)">⚗️ 중간재료 제작량</div>`;
-    for(const[key,qty]of Object.entries(intermNeeded)){
-      if(qty<=0)continue;
-      const rec=ALCHEMY[key];if(!rec)continue;
-      html+=`<div class="rrow"><span class="rl" style="color:${rec.color||'#607090'}">${rec.name}</span><span class="rv" style="color:var(--muted)">${f(qty)}개</span></div>`;
+  // ② 중간재료 제작 (1차 정수/에센스, 2차 핵/결정, 3차 엘릭서/영약)
+  const tierLabel={1:'⚗️ 2단계 — 1차 중간재료 제작 (정수)',2:'⚗️ 3단계 — 2차 중간재료 제작 (핵·결정)',3:'⚗️ 4단계 — 3차 중간재료 제작 (엘릭서·영약)'};
+  for(const tier of [1,2,3]){
+    const items=Object.entries(intermByTier[tier]).filter(([,v])=>v>0);
+    if(!items.length) continue;
+    html+=`<div class="rsec"><div class="rsec-title" style="color:var(--acc)">${tierLabel[tier]}</div>`;
+    for(const [mk,mq] of items){
+      const rec=ALCHEMY[mk];if(!rec)continue;
+      html+=`<div class="rrow"><span class="rl" style="color:${rec.color||'#607090'}">${rec.name}</span><span class="rv" style="color:var(--muted)">${f(mq)}개 제작</span></div>`;
     }
     html+=`</div>`;
   }
 
-  // 최종 산출물
-  html+=`<div class="rsec"><div class="rsec-title" style="color:var(--acc)">🏆 최종 산출물</div>`;
-  for(const[key,cnt]of Object.entries(plan)){
-    const item=PRECISION_ALCHEMY[key];
-    const price=getAlchSellPrice(key);
+  // ③ 최종 산출물
+  html+=`<div class="rsec"><div class="rsec-title" style="color:var(--acc)">🏆 최종 — 정밀 연금 제작 결과</div>`;
+  for(const [fKey, cnt] of Object.entries(plan)){
+    const item=PRECISION_ALCHEMY[fKey];
+    const price=getAlchSellPrice(fKey);
     const color=tierColors[item.tier]||'#607090';
-    html+=`<div class="rrow"><span class="rl" style="color:${color}">${item.name}</span><span class="rv"><b>${cnt}개</b> <small style="color:var(--muted)">(${f(price)}원 × ${cnt} = ${f(price*cnt)}원)</small></span></div>`;
+    html+=`<div class="rrow"><span class="rl" style="color:${color}">${item.name}</span><span class="rv"><b>${cnt}개</b> <small style="color:var(--muted)">${f(price)}원 × ${cnt} = ${f(price*cnt)}원</small></span></div>`;
   }
   html+=`</div>`;
 
-  // 총 제작 시간 (스킬 보정)
+  // result-box
   const sk=getSK();
   const effTime=totalTime*(1-sk.fr);
-
   html+=`<div class="result-box">
     <div style="display:flex;gap:0;align-items:stretch">
-      <div style="flex:1;text-align:center;padding:4px 8px">
-        <div class="rb-label">총 예상 수익</div>
-        <div class="rb-value" style="color:var(--grn)">${f(totalRev)}원</div>
-      </div>
+      <div style="flex:1;text-align:center;padding:4px 8px"><div class="rb-label">총 예상 수익</div><div class="rb-value" style="color:var(--grn)">${f(totalRev)}원</div></div>
       <div style="width:1px;background:var(--bdr2);margin:4px 0"></div>
-      <div style="flex:1;text-align:center;padding:4px 8px">
-        <div class="rb-label">총 제작 시간</div>
-        <div class="rb-value" style="font-size:16px">${fmtTime(effTime)}</div>
-        ${sk.fr>0?`<div class="rb-sub">스킬 -${Math.round(sk.fr*100)}% 반영</div>`:''}
-      </div>
+      <div style="flex:1;text-align:center;padding:4px 8px"><div class="rb-label">총 제작 시간</div><div class="rb-value" style="font-size:16px">${fmtTime(effTime)}</div>${sk.fr>0?`<div class="rb-sub">스킬 -${Math.round(sk.fr*100)}% 반영</div>`:''}</div>
     </div>
   </div>`;
 
-  document.getElementById('optRes').innerHTML=html;
+  document.getElementById('optRes').innerHTML = html;
 }
-window.calcOpt=calcOpt;
 
 // ── 동적 UI 빌드 ──
 function buildVanillaPriceGrid(){
@@ -811,7 +837,7 @@ const KEY='ocean_calc_v4';
 function getStaticIds(){
   return['skillFurnace','skillCraftBonus','skillAlchBonus','skillDeepHarvest','skillStarBonus','skillClamBonus',
     'engClamSearch','engSeafoodLuck','engFisherRoulette','rodLevel','totalStamina',
-    'price_sf_1','price_sf_2','price_sf_3',
+    'price_sf_1','price_sf_2','price_sf_3',  // ← 어패류 단가
     ...Object.keys(VANILLA_META).map(k=>`vprice_${k}`),
     ...SF_TYPES.flatMap(sf=>SF_TIERS.map(t=>`have_${sf}_${t}`))];
 }
@@ -872,12 +898,28 @@ function initOneCdd(sel){
   const arrow=document.createElement('span');arrow.className='cdd-arrow';arrow.textContent='▼';
   trigger.appendChild(label);trigger.appendChild(arrow);
   const menu=document.createElement('div');menu.className='cdd-menu';
-  Array.from(sel.options).forEach((opt,i)=>{
-    if(opt.tagName==='OPTGROUP')return;
-    const item=document.createElement('div');item.className='cdd-item'+(i===sel.selectedIndex?' selected':'');
-    item.textContent=opt.text;item.dataset.value=opt.value;
-    item.addEventListener('click',()=>{sel.value=opt.value;label.textContent=opt.text;menu.querySelectorAll('.cdd-item').forEach(el=>el.classList.remove('selected'));item.classList.add('selected');cdd.classList.remove('open');sel.dispatchEvent(new Event('change',{bubbles:true}));});
-    menu.appendChild(item);
+  // optgroup 포함한 select 처리
+  Array.from(sel.children).forEach(child=>{
+    if(child.tagName==='OPTGROUP'){
+      const grpLabel=document.createElement('div');
+      grpLabel.style.cssText='padding:4px 8px;font-size:10px;color:var(--muted);font-weight:700;background:var(--bg);border-bottom:1px solid var(--bdr)';
+      grpLabel.textContent=child.label;
+      menu.appendChild(grpLabel);
+      Array.from(child.children).forEach(opt=>{
+        const item=document.createElement('div');
+        item.className='cdd-item'+(sel.value===opt.value?' selected':'');
+        item.style.paddingLeft='14px';
+        item.textContent=opt.text;item.dataset.value=opt.value;
+        item.addEventListener('click',()=>{sel.value=opt.value;label.textContent=opt.text;menu.querySelectorAll('.cdd-item').forEach(el=>el.classList.remove('selected'));item.classList.add('selected');cdd.classList.remove('open');sel.dispatchEvent(new Event('change',{bubbles:true}));});
+        menu.appendChild(item);
+      });
+    } else if(child.tagName==='OPTION'){
+      const item=document.createElement('div');
+      item.className='cdd-item'+(sel.value===child.value?' selected':'');
+      item.textContent=child.text;item.dataset.value=child.value;
+      item.addEventListener('click',()=>{sel.value=child.value;label.textContent=child.text;menu.querySelectorAll('.cdd-item').forEach(el=>el.classList.remove('selected'));item.classList.add('selected');cdd.classList.remove('open');sel.dispatchEvent(new Event('change',{bubbles:true}));});
+      menu.appendChild(item);
+    }
   });
   trigger.addEventListener('click',e=>{e.stopPropagation();const isOpen=cdd.classList.contains('open');document.querySelectorAll('.cdd.open').forEach(el=>el.classList.remove('open'));if(!isOpen)cdd.classList.add('open');});
   cdd.appendChild(trigger);cdd.appendChild(menu);sel.parentNode.insertBefore(cdd,sel);sel.classList.add('cdd-ready');
@@ -895,7 +937,7 @@ document.addEventListener('DOMContentLoaded',()=>{
   buildVanillaPriceGrid();
   buildHaveSeafoodGrid();
   loadAll();
-  document.querySelectorAll('.skrow select,.field select').forEach(sel=>initOneCdd(sel));
+  document.querySelectorAll('.skrow select,.field select,.interm-sel-wrap select').forEach(sel=>initOneCdd(sel));
   syncDropdownLabels();
   onSkillChange();
   buildAlchPriceList();
