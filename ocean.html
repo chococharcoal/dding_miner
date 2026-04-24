@@ -505,7 +505,9 @@ function isRawMat(key){
 function getRec(key){ return ALCHEMY[key] || PRECISION_ALCHEMY[key] || null; }
 
 // inv에서 key를 need개 소모. 부족하면 재귀 제작으로 보충.
-// 성공시 inv 수정 + true, 실패시 false (inv 수정 안 함)
+// 어패류: 재고 없으면 실패 (획득 불가)
+// 바닐라 재료: 재고 없어도 성공 (구매 가능, 비용만 발생)
+// ALCHEMY 중간재료: 재귀 제작
 function consumeFrom(key, need, inv, craftLog, depth=0){
   if(depth>20) return false;
   if(need<=0) return true;
@@ -513,29 +515,33 @@ function consumeFrom(key, need, inv, craftLog, depth=0){
   const have = inv[key]||0;
   if(have >= need){ inv[key] = have - need; return true; }
 
-  // 원재료는 추가 제작 불가 → 재고 부족이면 실패
-  if(isRawMat(key)) return false;
+  // 어패류 → 재고 부족이면 실패
+  if(/^(oyster|conch|octopus|seaweed|urchin)\d$/.test(key)) return false;
 
-  const rec = ALCHEMY[key]; // PRECISION_ALCHEMY는 직접 호출하므로 여기선 ALCHEMY만
+  // 바닐라 재료 → 항상 구매 가능 (재고 차감 후 음수 허용)
+  if(VANILLA_META[key]){
+    inv[key] = (inv[key]||0) - need; // 음수 허용 (부족분은 구매)
+    return true;
+  }
+
+  const rec = ALCHEMY[key];
   if(!rec) return false;
 
   const shortfall = need - have;
   const batches = Math.ceil(shortfall / rec.output);
 
-  // 필요 재료 먼저 소모 시도 (임시 복사본)
   const tmpInv = {...inv};
   for(const [mk, mq] of Object.entries(rec.materials)){
     if(!consumeFrom(mk, mq*batches, tmpInv, craftLog, depth+1)) return false;
   }
 
-  // 성공 → inv 반영 + 제작 로그 기록
   Object.assign(inv, tmpInv);
   inv[key] = ((inv[key]||0) + batches * rec.output) - need;
   if(craftLog) craftLog[key] = (craftLog[key]||0) + batches * rec.output;
   return true;
 }
 
-// 최종 산물 n개 만들 수 있는지 체크 (inv 복사본 사용)
+// 최종 산물 n개 만들 수 있는지 체크 (어패류 재고 기준)
 function canProduceFinal(finalKey, qty, inv){
   const rec = PRECISION_ALCHEMY[finalKey];
   if(!rec) return false;
@@ -547,13 +553,18 @@ function canProduceFinal(finalKey, qty, inv){
   return true;
 }
 
-// 이진탐색으로 최대 생산 가능 수량
+// 이진탐색으로 최대 생산 가능 수량 (어패류 보유량이 상한)
 function maxProducible(finalKey, inv){
-  if(!canProduceFinal(finalKey, 1, inv)) return 0;
-  let lo=1, hi=10000;
+  // hi 상한: 전체 어패류 보유량 합산 (어패류만 생산 제약)
+  const sfTotal = Object.entries(inv)
+    .filter(([k]) => /^(oyster|conch|octopus|seaweed|urchin)\d$/.test(k))
+    .reduce((s,[,v])=>s+v, 0);
+  if(sfTotal <= 0) return 0;
+  if(!canProduceFinal(finalKey, 1, {...inv})) return 0;
+  let lo=1, hi=sfTotal;
   while(lo<hi){
     const mid = Math.ceil((lo+hi)/2);
-    if(canProduceFinal(finalKey, mid, inv)) lo=mid; else hi=mid-1;
+    if(canProduceFinal(finalKey, mid, {...inv})) lo=mid; else hi=mid-1;
   }
   return lo;
 }
@@ -703,7 +714,7 @@ function calcOpt(){
     }
     for(const [k,v] of Object.entries(vanRaw)){
       if(v<=0) continue;
-      html+=`<div class="rrow"><span class="rl">${getRawName(k)}</span><span class="rv" style="color:var(--muted)">${fmtQty(v)}</span></div>`;
+      html+=`<div class="rrow"><span class="rl">${getRawName(k)}</span><span class="rv" style="color:var(--muted)">${fmtQty(Math.abs(v))}</span></div>`;
     }
     html+=`</div>`;
   }
