@@ -1,7 +1,7 @@
 import {
   SKILLS, MINING, PICKAXE, ARTIFACT, ENGRAVING,
   INGOT_RECIPES, RECIPES, TORCH, UNITS, PRECIOUS, DEFAULT_PRICES,
-} from './config.js';
+} from './mining%20config.js';
 
 const { SET_SIZE, BOX_SIZE } = UNITS;
 const COBBY_DROP_RATE = 0.5;
