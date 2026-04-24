@@ -601,77 +601,38 @@ function calcOpt(){
   const hasAny = Object.values(inv).some(v=>v>0);
   if(!hasAny){ document.getElementById('optRes').innerHTML='<div class="empty-msg">보유 어패류를 입력하면 계산됩니다</div>'; return; }
 
-  // ── 핵심: 최종산물 1개 만들 때 필요한 원재료/중간재료를 단계별로 정확히 계산 ──
-  // PRECISION_ALCHEMY[fKey] → 재료들 (ALCHEMY 중간재료)
-  // ALCHEMY 중간재료 → 다시 ALCHEMY 중간재료 또는 원재료
-
-  // 최종산물 fKey를 n개 만들 때 필요한 모든 재료를 단계별로 수집
+  // 단계별 재료 전개 (표시용)
   function planForFinal(fKey, n){
     const prec = PRECISION_ALCHEMY[fKey]; if(!prec) return null;
-    const raw = {};       // 원재료: {key: qty}
-    const step2 = {};     // 2단계: 1차 연금 (정수, 에센스, 엘릭서) {key: qty}
-    const step3 = {};     // 3단계: 2차 가공 (핵, 결정, 영약) {key: qty}
-
-    // PRECISION_ALCHEMY 재료 = 3단계 직접 재료 (핵/결정/영약) 또는 그냥 중간재료
+    const raw={}, step2={}, step3={};
     for(const [mk, mq] of Object.entries(prec.materials)){
       const needed = mq * n;
       const rec = ALCHEMY[mk]; if(!rec) continue;
-
-      // 타입으로 단계 구분
       if(rec.type === 'compound'){
-        // 핵/결정/영약 → 3단계
         step3[mk] = (step3[mk]||0) + needed;
-        // 핵/결정/영약의 재료 = 2단계 (정수/에센스/엘릭서)
+        const batches3 = Math.ceil(needed / (rec.output||1));
         for(const [mk2, mq2] of Object.entries(rec.materials)){
-          const needed2 = mq2 * Math.ceil(needed / rec.output);
+          const needed2 = mq2 * batches3;
           const rec2 = ALCHEMY[mk2];
-          if(rec2){
-            // 정수/에센스/엘릭서 → 2단계
+          if(rec2 && rec2.type === 'essence'){
             step2[mk2] = (step2[mk2]||0) + needed2;
-            // 정수/에센스/엘릭서의 재료 = 원재료
-            const batches2 = Math.ceil(needed2 / rec2.output);
+            const batches2 = Math.ceil(needed2 / (rec2.output||1));
             for(const [mk3, mq3] of Object.entries(rec2.materials)){
               raw[mk3] = (raw[mk3]||0) + mq3 * batches2;
             }
-          } else if(isRawMat(mk2)){
+          } else {
             raw[mk2] = (raw[mk2]||0) + needed2;
           }
         }
       } else if(rec.type === 'essence'){
-        // 정수/에센스/엘릭서 → 2단계
         step2[mk] = (step2[mk]||0) + needed;
-        const batches = Math.ceil(needed / rec.output);
+        const batches2 = Math.ceil(needed / (rec.output||1));
         for(const [mk2, mq2] of Object.entries(rec.materials)){
-          raw[mk2] = (raw[mk2]||0) + mq2 * batches;
+          raw[mk2] = (raw[mk2]||0) + mq2 * batches2;
         }
       }
     }
     return { raw, step2, step3 };
-  }
-
-  // 보유량으로 최대 생산 가능 수 계산
-  // 간단하게: 각 원재료별 최대 배수 → min
-  function maxForFinal(fKey, inv){
-    const prec = PRECISION_ALCHEMY[fKey]; if(!prec) return 0;
-    // 1개 만들 때 필요한 양 계산
-    const plan1 = planForFinal(fKey, 1); if(!plan1) return 0;
-    const {raw, step2, step3} = plan1;
-    let maxN = Infinity;
-    // 원재료 체크
-    for(const [k,v] of Object.entries(raw)){
-      const have = inv[k]||0;
-      if(v>0) maxN = Math.min(maxN, Math.floor(have/v));
-    }
-    // 보유 중간재료 추가 고려 (step2, step3 에서 보유분 차감)
-    for(const [k,v] of Object.entries(step3)){
-      const have = inv[k]||0;
-      if(have>0 && v>0){
-        // 보유분으로 일부 충당 가능 → 원재료 절감
-        // 단순화: 보유 step3 재료는 별도 처리 (재고에 이미 반영됨)
-      }
-    }
-    if(maxN===Infinity) return 0;
-    return maxN;
   }
 
   // 판매가 높은 순 정렬
@@ -679,29 +640,17 @@ function calcOpt(){
     .map(([key,item])=>({key, item, price: getAlchSellPrice(key)}))
     .sort((a,b)=>b.price-a.price);
 
+  // 그리디: canProduceFinal/maxProducible 기반
   const plan = {};
   const workInv = {...inv};
-  let totalRev=0, totalTime=0;
+  let totalRev=0;
 
-  for(const {key,item,price} of finalItems){
-    const n = maxForFinal(key, workInv);
+  for(const {key, item, price} of finalItems){
+    const n = maxProducible(key, workInv);
     if(n<=0) continue;
     plan[key] = n;
     totalRev += n * price;
-    totalTime += n * item.craftTimeSec;
-    // 재고에서 원재료 차감
-    const p = planForFinal(key, n);
-    if(!p) continue;
-    for(const [k,v] of Object.entries(p.raw)){
-      workInv[k] = Math.max(0, (workInv[k]||0) - v);
-    }
-    // 보유 중간재료 차감 (step2/step3)
-    for(const [k,v] of Object.entries(p.step3)){
-      if(workInv[k]>0){ const used=Math.min(workInv[k],v); workInv[k]-=used; }
-    }
-    for(const [k,v] of Object.entries(p.step2)){
-      if(workInv[k]>0){ const used=Math.min(workInv[k],v); workInv[k]-=used; }
-    }
+    executeProduceFinal(key, n, workInv);
   }
 
   if(!Object.keys(plan).length){
@@ -709,35 +658,35 @@ function calcOpt(){
     return;
   }
 
-  // ── 전체 계획 집계 ──
+  // 전체 재료 집계 (표시용)
   const totalRaw={}, totalStep2={}, totalStep3={};
   for(const [fKey, cnt] of Object.entries(plan)){
     const p = planForFinal(fKey, cnt); if(!p) continue;
-    for(const [k,v] of Object.entries(p.raw))   totalRaw[k]=(totalRaw[k]||0)+v;
-    for(const [k,v] of Object.entries(p.step2)) totalStep2[k]=(totalStep2[k]||0)+v;
-    for(const [k,v] of Object.entries(p.step3)) totalStep3[k]=(totalStep3[k]||0)+v;
+    for(const [k,v] of Object.entries(p.raw))   totalRaw[k]   =(totalRaw[k]  ||0)+v;
+    for(const [k,v] of Object.entries(p.step2)) totalStep2[k] =(totalStep2[k]||0)+v;
+    for(const [k,v] of Object.entries(p.step3)) totalStep3[k] =(totalStep3[k]||0)+v;
   }
   // 보유 중간재료 차감
-  for(const [k,v] of Object.entries(inv)){
-    if(ALCHEMY[k]){
-      const rec=ALCHEMY[k];
-      if(rec.type==='compound'){ if(totalStep3[k]) totalStep3[k]=Math.max(0,totalStep3[k]-v); }
-      else if(rec.type==='essence'){ if(totalStep2[k]) totalStep2[k]=Math.max(0,totalStep2[k]-v); }
-    }
-  }
+  document.querySelectorAll('.interm-row').forEach(row=>{
+    const sel=row.querySelector('select.interm-sel'), inp=row.querySelector('input.interm-qty');
+    if(!sel||!inp) return;
+    const key=sel.value, qty=parseInt(inp.value)||0; if(!key||!qty) return;
+    const rec=ALCHEMY[key]; if(!rec) return;
+    if(rec.type==='compound' && totalStep3[key]) totalStep3[key]=Math.max(0,totalStep3[key]-qty);
+    else if(rec.type==='essence' && totalStep2[key]) totalStep2[key]=Math.max(0,totalStep2[key]-qty);
+  });
 
   const sfColors={oyster:'#3d6fd4',conch:'#c89c00',octopus:'#7c52c8',seaweed:'#d94f3d',urchin:'#3a9e68'};
   const tierColors={0:'#607090',1:'#3d6fd4',2:'#7c52c8',3:'#d94f3d'};
 
-  function getSFName(key){
-    const m=key.match(/^(oyster|conch|octopus|seaweed|urchin)(\d)$/); if(!m) return null;
-    return `${SEAFOOD_TYPES[m[1]]?.name||m[1]} ${'★'.repeat(parseInt(m[2]))}`;
+  function getSFMatch(key){ return key.match(/^(oyster|conch|octopus|seaweed|urchin)(\d)$/); }
+  function getRawName(key){
+    const m=getSFMatch(key); if(m) return `${SEAFOOD_TYPES[m[1]]?.name||m[1]} ${'★'.repeat(+m[2])}`;
+    return VANILLA_META[key]?.name||key;
   }
-  function getSFColor(key){
-    const m=key.match(/^(oyster|conch|octopus|seaweed|urchin)/);
-    return m?sfColors[m[1]]:'var(--muted)';
+  function getRawColor(key){
+    const m=getSFMatch(key); return m?sfColors[m[1]]:'var(--muted)';
   }
-  function getRawName(key){ return getSFName(key)||VANILLA_META[key]?.name||key; }
 
   let html='';
 
@@ -745,18 +694,16 @@ function calcOpt(){
   const sfRaw={}, vanRaw={};
   for(const [k,v] of Object.entries(totalRaw)){
     if(v<=0) continue;
-    if(getSFName(k)) sfRaw[k]=v; else vanRaw[k]=v;
+    if(getSFMatch(k)) sfRaw[k]=v; else vanRaw[k]=v;
   }
   if(Object.keys(sfRaw).length||Object.keys(vanRaw).length){
     html+=`<div class="rsec"><div class="rsec-title" style="color:var(--acc)">📦 1단계 — 필요 원재료</div>`;
     for(const [k,v] of Object.entries(sfRaw)){
-      html+=`<div class="rrow"><span class="rl" style="color:${getSFColor(k)}">${getRawName(k)}</span><span class="rv" style="color:var(--muted)">${fmtQty(v)}</span></div>`;
+      html+=`<div class="rrow"><span class="rl" style="color:${getRawColor(k)}">${getRawName(k)}</span><span class="rv" style="color:var(--muted)">${fmtQty(v)}</span></div>`;
     }
     for(const [k,v] of Object.entries(vanRaw)){
       if(v<=0) continue;
-      const meta=VANILLA_META[k];
-      const qStr=meta?.blockToCraft?fmtQty(v):fmtQty(v);
-      html+=`<div class="rrow"><span class="rl">${getRawName(k)}</span><span class="rv" style="color:var(--muted)">${qStr}</span></div>`;
+      html+=`<div class="rrow"><span class="rl">${getRawName(k)}</span><span class="rv" style="color:var(--muted)">${fmtQty(v)}</span></div>`;
     }
     html+=`</div>`;
   }
@@ -764,7 +711,7 @@ function calcOpt(){
   // ② 1차 연금 (정수/에센스/엘릭서)
   const step2Items=Object.entries(totalStep2).filter(([,v])=>v>0);
   if(step2Items.length){
-    html+=`<div class="rsec"><div class="rsec-title" style="color:var(--acc)">⚗️ 2단계 — 1차 연금 제작 (정수·에센스·엘릭서)</div>`;
+    html+=`<div class="rsec"><div class="rsec-title" style="color:var(--acc)">⚗️ 2단계 — 1차 연금 (정수·에센스·엘릭서)</div>`;
     for(const [k,v] of step2Items){
       const rec=ALCHEMY[k];if(!rec)continue;
       html+=`<div class="rrow"><span class="rl" style="color:${rec.color||'#607090'}">${rec.name}</span><span class="rv" style="color:var(--muted)">${f(v)}개</span></div>`;
@@ -772,7 +719,7 @@ function calcOpt(){
     html+=`</div>`;
   }
 
-  // ③ 2차 가공품 (핵/결정/영약)
+  // ③ 2차 가공 (핵/결정/영약)
   const step3Items=Object.entries(totalStep3).filter(([,v])=>v>0);
   if(step3Items.length){
     html+=`<div class="rsec"><div class="rsec-title" style="color:var(--acc)">🔮 3단계 — 2차 가공 (핵·결정·영약)</div>`;
@@ -793,25 +740,19 @@ function calcOpt(){
   }
   html+=`</div>`;
 
-  const sk=getSK();
-  const fr=sk.fr; // 제작시간 감소율
-
-  // 단계별 제작시간 계산
-  let time2=0, time3=0, time4=0; // 2단계(정수), 3단계(핵), 4단계(최종)
+  // 단계별 제작시간
+  const sk=getSK(); const fr=sk.fr;
+  let time2=0, time3=0, time4=0;
   for(const [k,v] of step2Items){
     const rec=ALCHEMY[k];if(!rec)continue;
-    const batches=Math.ceil(v/rec.output);
-    time2 += batches*(rec.craftTimeSec||0);
+    time2 += Math.ceil(v/(rec.output||1))*(rec.craftTimeSec||0);
   }
   for(const [k,v] of step3Items){
     const rec=ALCHEMY[k];if(!rec)continue;
     time3 += v*(rec.craftTimeSec||0);
   }
-  for(const [fKey,cnt] of Object.entries(plan)){
-    time4 += cnt*(PRECISION_ALCHEMY[fKey].craftTimeSec||0);
-  }
-  const rawTime=time2+time3+time4;
-  const effTime=rawTime*(1-fr);
+  for(const [fKey,cnt] of Object.entries(plan)) time4+=cnt*(PRECISION_ALCHEMY[fKey].craftTimeSec||0);
+  const effTime=(time2+time3+time4)*(1-fr);
 
   html+=`<div class="result-box">
     <div style="margin-bottom:8px;padding-bottom:8px;border-bottom:1px dashed var(--bdr2)">
