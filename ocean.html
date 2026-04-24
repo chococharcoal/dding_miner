@@ -111,6 +111,31 @@ html,body{min-height:100vh;background:var(--bg) radial-gradient(circle at 10% 15
 .del-btn:hover{border-color:var(--red);color:var(--red)}
 .add-interm-btn{font-family:'Jua',sans-serif!important;font-size:12px;padding:6px 14px;border-radius:20px;border:1.5px solid var(--acc);background:var(--grn-bg);color:var(--acc);cursor:pointer;transition:all .15s;display:inline-block;margin-top:6px}
 .add-interm-btn:hover{background:var(--acc);color:#fff}
+/* 연금 최적화 탭 */
+.opt-tabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px}
+.opt-tab{font-family:'Jua',sans-serif!important;font-size:13px;padding:6px 14px;border-radius:20px;border:2px solid var(--tab-color,var(--bdr2));background:var(--surf);color:var(--muted);cursor:pointer;transition:all .15s;display:flex;flex-direction:column;align-items:center;gap:1px;min-width:64px}
+.opt-tab small{font-size:10px;font-weight:700}
+.opt-tab.active{background:var(--tab-color,var(--acc));border-color:var(--tab-color,var(--acc));color:#fff}
+.opt-tab:not(.active):hover{border-color:var(--tab-color,var(--acc));color:var(--tab-color,var(--acc))}
+/* 제작 플로우 카드 */
+.craft-flow-card{background:var(--bg);border:1.5px solid var(--bdr);border-radius:var(--rs);padding:12px;margin-bottom:10px}
+.craft-flow-title{font-family:'Jua',sans-serif!important;font-size:13px;font-weight:900;margin-bottom:10px;padding-bottom:6px;border-bottom:1px dashed var(--bdr2)}
+.craft-step{margin-bottom:10px;padding-bottom:8px;border-bottom:1px dashed var(--bdr)}
+.craft-step:last-of-type{margin-bottom:0;padding-bottom:0;border-bottom:none}
+.final-step .craft-row{border:1.5px solid var(--acc);border-radius:var(--rs);padding:6px;background:linear-gradient(135deg,#f0f5ff,#e8eeff)}
+.craft-row{display:flex;align-items:center;flex-wrap:wrap;gap:6px;min-height:56px}
+.craft-plus{color:var(--muted);font-size:14px;font-weight:900;padding:0 2px;flex-shrink:0}
+.craft-arrow{color:var(--acc);font-size:18px;font-weight:900;padding:0 4px;flex-shrink:0}
+/* 재료 셀 */
+.mat-cell{display:flex;flex-direction:column;align-items:center;gap:2px;min-width:52px;max-width:68px}
+.mat-icon{width:40px;height:40px;border-radius:8px;border:1.5px solid var(--bdr2);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:11px;font-weight:900}
+.mat-label{font-size:9px;font-weight:700;color:var(--txt);text-align:center;line-height:1.2;word-break:keep-all}
+.mat-qty{font-size:10px;font-weight:900;color:var(--muted);text-align:center}
+.mat-note{font-size:8px;color:var(--muted);text-align:center}
+.result-mat .mat-icon{width:46px;height:46px}
+.result-mat .mat-label{font-size:10px;font-weight:900}
+.result-mat .mat-qty{font-size:12px;font-weight:900}
+.craft-profit{font-size:11px;color:var(--muted);margin-top:8px;padding-top:6px;border-top:1px dashed var(--bdr2);text-align:right}
 ::-webkit-scrollbar{width:5px}
 ::-webkit-scrollbar-thumb{background:var(--bdr2);border-radius:3px}
 </style>
@@ -617,100 +642,76 @@ function calcOpt(){
     return;
   }
 
-  // ── 어패류 1성→2성 업그레이드 규칙: 1성 3개 → 2성 1개 (같은 종) ──
-  // 재고에서 2성이 부족할 때 1성으로 자동 변환 시도
-  function tryUpgrade(sfKey, inv){
-    // sfKey 예: oyster2 → oyster1 3개로 만들 수 있는지
-    const m = sfKey.match(/^(oyster|conch|octopus|seaweed|urchin)(\d)$/);
-    if(!m || +m[2] !== 2) return false; // 2성만 업그레이드 가능
-    const tier1Key = `${m[1]}1`;
-    if((inv[tier1Key]||0) >= 3){
-      inv[tier1Key] -= 3;
-      inv[sfKey] = (inv[sfKey]||0) + 1;
-      return true;
-    }
-    return false;
-  }
+  const SF_KEYS = SF_TYPES.flatMap(sf=>SF_TIERS.map(t=>`${sf}${t}`));
 
-  // 어패류 key를 need개 소모 (1성→2성 업그레이드 자동 시도)
+  // 1성→2성 업그레이드 (같은 종, 1성 3개→2성 1개)
   function consumeSF(sfKey, need, inv){
     const m = sfKey.match(/^(oyster|conch|octopus|seaweed|urchin)(\d)$/);
     if(!m) return false;
-    const sf = m[1], tier = +m[2];
+    const sf=m[1], tier=+m[2];
     let have = inv[sfKey]||0;
     let remaining = need - have;
     if(remaining <= 0){ inv[sfKey] = have - need; return true; }
-    // 부족분 시도: 2성이면 1성×3으로 업그레이드
     if(tier === 2){
-      const tier1Key = `${sf}1`;
-      const can1 = Math.floor((inv[tier1Key]||0) / 3); // 업그레이드 가능 수
-      const upgrade = Math.min(can1, remaining);
-      if(upgrade > 0){
-        inv[tier1Key] -= upgrade * 3;
-        inv[sfKey] = (inv[sfKey]||0) + upgrade;
-        have = inv[sfKey];
-        remaining = need - have;
-      }
+      const t1Key = `${sf}1`;
+      const canUp = Math.floor((inv[t1Key]||0) / 3);
+      const upgrade = Math.min(canUp, remaining);
+      if(upgrade > 0){ inv[t1Key] -= upgrade*3; inv[sfKey]=(inv[sfKey]||0)+upgrade; have=inv[sfKey]; remaining=need-have; }
     }
-    if(remaining > 0) return false; // 여전히 부족
+    if(remaining > 0) return false;
     inv[sfKey] = have - need;
     return true;
   }
+  function canAffordSF(sfNeed, inv){
+    const tmp={...inv};
+    for(const [k,v] of Object.entries(sfNeed)) if(!consumeSF(k,v,tmp)) return false;
+    return true;
+  }
+  function doConsumeSF(sfNeed, inv){
+    for(const [k,v] of Object.entries(sfNeed)) consumeSF(k,v,inv);
+  }
 
-  // ── 최종산물 1개당 어패류 소비 벡터 & 바닐라 재료비 사전 계산 ──
-  const SF_KEYS = SF_TYPES.flatMap(sf=>SF_TIERS.map(t=>`${sf}${t}`));
-
-  // 재귀적 재료 전개 (바닐라까지)
+  // 재귀 재료 전개
   function expandMaterials(key, qty, depth=0){
     if(depth>15) return {};
-    if(SF_KEYS.includes(key)) return {[key]: qty};
-    if(VANILLA_META[key]) return {[key]: qty};
-    const rec = ALCHEMY[key];
-    if(!rec) return {};
-    const batches = Math.ceil(qty / rec.output);
-    const result = {};
-    for(const [mk, mq] of Object.entries(rec.materials)){
-      const sub = expandMaterials(mk, mq*batches, depth+1);
+    if(SF_KEYS.includes(key)) return {[key]:qty};
+    if(VANILLA_META[key]) return {[key]:qty};
+    const rec=ALCHEMY[key]; if(!rec) return {};
+    const batches=Math.ceil(qty/(rec.output||1));
+    const result={};
+    for(const [mk,mq] of Object.entries(rec.materials)){
+      const sub=expandMaterials(mk,mq*batches,depth+1);
       for(const [k,v] of Object.entries(sub)) result[k]=(result[k]||0)+v;
     }
     return result;
   }
-
-  // 바닐라 재료비 계산
-  function calcVanillaCost(materials){
-    let cost = 0;
-    for(const [mk, mq] of Object.entries(materials)){
-      const expanded = expandMaterials(mk, mq);
-      for(const [k,v] of Object.entries(expanded)){
-        if(VANILLA_META[k]) cost += v * getVPrice(k);
-      }
+  function calcVanillaCost(mats){
+    let c=0;
+    for(const [mk,mq] of Object.entries(mats)){
+      const exp=expandMaterials(mk,mq);
+      for(const [k,v] of Object.entries(exp)) if(VANILLA_META[k]) c+=v*getVPrice(k);
     }
-    return cost;
+    return c;
   }
 
-  // 각 최종산물 분석
+  // 최종산물 분석
   const finalAnalysis = {};
-  for(const [fKey, fRec] of Object.entries(PRECISION_ALCHEMY)){
-    // 어패류 소비 벡터 (업그레이드 전 기준 - 1성 환산)
-    const sfNeed = {}; // {sfKey: qty} - 실제 필요량
-    const step2 = {}, step3 = {};
-
-    for(const [mk, mq] of Object.entries(fRec.materials)){
-      const rec = ALCHEMY[mk]; if(!rec) continue;
+  for(const [fKey,fRec] of Object.entries(PRECISION_ALCHEMY)){
+    const sfNeed={}, step2={}, step3={};
+    for(const [mk,mq] of Object.entries(fRec.materials)){
+      const rec=ALCHEMY[mk]; if(!rec) continue;
       if(rec.type==='compound'){
-        step3[mk] = (step3[mk]||0) + mq;
-        const b3 = Math.ceil(mq/(rec.output||1));
+        step3[mk]=(step3[mk]||0)+mq;
+        const b3=Math.ceil(mq/(rec.output||1));
         for(const [mk2,mq2] of Object.entries(rec.materials)){
-          const rec2 = ALCHEMY[mk2];
-          if(rec2 && rec2.type==='essence'){
-            step2[mk2] = (step2[mk2]||0) + mq2*b3;
-            const b2 = Math.ceil((mq2*b3)/(rec2.output||1));
+          const rec2=ALCHEMY[mk2];
+          if(rec2&&rec2.type==='essence'){
+            step2[mk2]=(step2[mk2]||0)+mq2*b3;
+            const b2=Math.ceil((mq2*b3)/(rec2.output||1));
             for(const [mk3,mq3] of Object.entries(rec2.materials)){
               if(SF_KEYS.includes(mk3)) sfNeed[mk3]=(sfNeed[mk3]||0)+mq3*b2;
             }
-          } else if(SF_KEYS.includes(mk2)){
-            sfNeed[mk2]=(sfNeed[mk2]||0)+mq2*b3;
-          }
+          } else if(SF_KEYS.includes(mk2)) sfNeed[mk2]=(sfNeed[mk2]||0)+mq2*b3;
         }
       } else if(rec.type==='essence'){
         step2[mk]=(step2[mk]||0)+mq;
@@ -720,191 +721,219 @@ function calcOpt(){
         }
       }
     }
-
-    const sellPrice = getAlchSellPrice(fKey);
-    const vanCost = calcVanillaCost(fRec.materials);
-    const netPerUnit = sellPrice - vanCost;
-
-    finalAnalysis[fKey] = {
-      name:fRec.name, tier:fRec.tier,
-      sfNeed,       // 어패류 필요량 (2성 기준)
-      vanCost, sellPrice, netPerUnit,
-      step2, step3,
-      craftTimeSec: fRec.craftTimeSec||0,
+    const sellPrice=getAlchSellPrice(fKey);
+    const vanCost=calcVanillaCost(fRec.materials);
+    finalAnalysis[fKey]={
+      name:fRec.name, tier:fRec.tier, sfNeed, vanCost, sellPrice,
+      netPerUnit:sellPrice-vanCost, step2, step3,
+      craftTimeSec:fRec.craftTimeSec||0,
     };
   }
 
-  // ── 최적화 ──
-  // 어패류 보유량(업그레이드 포함)으로 만들 수 있는지 체크
-  function canAfford(sfNeed, inv){
-    const tmpInv = {...inv};
-    for(const [k,v] of Object.entries(sfNeed)){
-      if(!consumeSF(k, v, tmpInv)) return false;
-    }
-    return true;
-  }
-
-  function consumeAll(sfNeed, inv){
-    for(const [k,v] of Object.entries(sfNeed)){
-      consumeSF(k, v, inv);
-    }
-  }
-
-  const workInv = {...inv};
-  const plan = {};
-  let iter = 0;
-  while(iter++ < 100000){
+  // ── 반복 그리디 최적화 ──
+  const workInv={...inv};
+  const plan={};
+  let iter=0;
+  while(iter++<100000){
     let bestKey=null, bestNet=-Infinity;
-    for(const [fKey, fa] of Object.entries(finalAnalysis)){
-      // 보유 중간재료로 어패류 절감 계산
-      const adjSFNeed = {...fa.sfNeed};
+    for(const [fKey,fa] of Object.entries(finalAnalysis)){
+      const adj={...fa.sfNeed};
       for(const [mk,mq] of Object.entries(fa.step3)){
-        const use=Math.min(workInv[mk]||0, mq);
-        if(use<=0) continue;
-        const rec=ALCHEMY[mk];if(!rec)continue;
+        const use=Math.min(workInv[mk]||0,mq); if(use<=0) continue;
+        const rec=ALCHEMY[mk]; if(!rec) continue;
         const b3=Math.ceil(use/(rec.output||1));
         for(const [mk2,mq2] of Object.entries(rec.materials)){
           const rec2=ALCHEMY[mk2];
           if(rec2&&rec2.type==='essence'){
             const b2=Math.ceil((mq2*b3)/(rec2.output||1));
             for(const [mk3,mq3] of Object.entries(rec2.materials)){
-              if(SF_KEYS.includes(mk3)) adjSFNeed[mk3]=Math.max(0,(adjSFNeed[mk3]||0)-mq3*b2);
+              if(SF_KEYS.includes(mk3)) adj[mk3]=Math.max(0,(adj[mk3]||0)-mq3*b2);
             }
-          } else if(SF_KEYS.includes(mk2)){
-            adjSFNeed[mk2]=Math.max(0,(adjSFNeed[mk2]||0)-mq2*b3);
-          }
+          } else if(SF_KEYS.includes(mk2)) adj[mk2]=Math.max(0,(adj[mk2]||0)-mq2*b3);
         }
       }
       for(const [mk,mq] of Object.entries(fa.step2)){
-        const use=Math.min(workInv[mk]||0, mq);
-        if(use<=0) continue;
-        const rec=ALCHEMY[mk];if(!rec)continue;
+        const use=Math.min(workInv[mk]||0,mq); if(use<=0) continue;
+        const rec=ALCHEMY[mk]; if(!rec) continue;
         const b2=Math.ceil(use/(rec.output||1));
         for(const [mk2,mq2] of Object.entries(rec.materials)){
-          if(SF_KEYS.includes(mk2)) adjSFNeed[mk2]=Math.max(0,(adjSFNeed[mk2]||0)-mq2*b2);
+          if(SF_KEYS.includes(mk2)) adj[mk2]=Math.max(0,(adj[mk2]||0)-mq2*b2);
         }
       }
-
-      if(!canAfford(adjSFNeed, workInv)) continue;
-      if(fa.netPerUnit > bestNet){ bestNet=fa.netPerUnit; bestKey=fKey; }
+      if(!canAffordSF(adj,workInv)) continue;
+      if(fa.netPerUnit>bestNet){ bestNet=fa.netPerUnit; bestKey=fKey; }
     }
     if(!bestKey) break;
-
     plan[bestKey]=(plan[bestKey]||0)+1;
     const fa=finalAnalysis[bestKey];
-    // 중간재료 먼저 소모
-    for(const [mk,mq] of Object.entries(fa.step3)){
-      const use=Math.min(workInv[mk]||0,mq);
-      if(use>0) workInv[mk]-=use;
-    }
-    for(const [mk,mq] of Object.entries(fa.step2)){
-      const use=Math.min(workInv[mk]||0,mq);
-      if(use>0) workInv[mk]-=use;
-    }
-    // 어패류 소모 (1성→2성 업그레이드 포함)
-    consumeAll(fa.sfNeed, workInv);
+    for(const [mk,mq] of Object.entries(fa.step3)){ const use=Math.min(workInv[mk]||0,mq); if(use>0) workInv[mk]-=use; }
+    for(const [mk,mq] of Object.entries(fa.step2)){ const use=Math.min(workInv[mk]||0,mq); if(use>0) workInv[mk]-=use; }
+    doConsumeSF(fa.sfNeed, workInv);
   }
 
   if(!Object.keys(plan).length){
-    document.getElementById('optRes').innerHTML='<div class="empty-msg">재료가 부족하여 만들 수 있는 연금품이 없습니다<br><small style="font-weight:500">어패류 보유량을 확인해주세요</small></div>';
+    document.getElementById('optRes').innerHTML='<div class="empty-msg">재료가 부족하여 만들 수 있는 연금품이 없습니다</div>';
     return;
   }
 
-  // ── 전체 재료 집계 (표시용) ──
-  const totalRaw={}, totalVan={}, totalStep2={}, totalStep3={};
-  for(const [fKey,cnt] of Object.entries(plan)){
-    const fa=finalAnalysis[fKey];
-    for(const [k,v] of Object.entries(fa.sfNeed))  totalRaw[k]=(totalRaw[k]||0)+v*cnt;
-    for(const [k,v] of Object.entries(fa.step2))   totalStep2[k]=(totalStep2[k]||0)+v*cnt;
-    for(const [k,v] of Object.entries(fa.step3))   totalStep3[k]=(totalStep3[k]||0)+v*cnt;
-    // 바닐라 집계
-    for(const [mk,mq] of Object.entries(PRECISION_ALCHEMY[fKey].materials)){
-      const exp=expandMaterials(mk, mq*cnt);
-      for(const [k,v] of Object.entries(exp)){
-        if(VANILLA_META[k]) totalVan[k]=(totalVan[k]||0)+v;
-      }
-    }
-  }
-  // 보유 중간재료 차감
-  document.querySelectorAll('.interm-row').forEach(row=>{
-    const sel=row.querySelector('select.interm-sel'), inp=row.querySelector('input.interm-qty');
-    if(!sel||!inp) return;
-    const key=sel.value, qty=parseInt(inp.value)||0; if(!key||!qty) return;
-    const rec=ALCHEMY[key]; if(!rec) return;
-    if(rec.type==='compound'&&totalStep3[key]) totalStep3[key]=Math.max(0,totalStep3[key]-qty);
-    else if(rec.type==='essence'&&totalStep2[key]) totalStep2[key]=Math.max(0,totalStep2[key]-qty);
-  });
-
+  // ── 성급별 탭 렌더링 ──
   const sfColors={oyster:'#3d6fd4',conch:'#c89c00',octopus:'#7c52c8',seaweed:'#d94f3d',urchin:'#3a9e68'};
   const tierColors={0:'#607090',1:'#3d6fd4',2:'#7c52c8',3:'#d94f3d'};
+  const tierLabels={0:'0성',1:'1성 ★',2:'2성 ★★',3:'3성 ★★★'};
+
   function getSFMatch(k){ return k.match(/^(oyster|conch|octopus|seaweed|urchin)(\d)$/); }
-  function getRawName(k){
-    const m=getSFMatch(k); if(m) return `${SEAFOOD_TYPES[m[1]]?.name||m[1]} ${'★'.repeat(+m[2])}`;
-    return VANILLA_META[k]?.name||k;
-  }
-  function getRawColor(k){ const m=getSFMatch(k); return m?sfColors[m[1]]:'var(--muted)'; }
+  function getSFName(k){ const m=getSFMatch(k); if(!m) return null; return `${SEAFOOD_TYPES[m[1]]?.name||m[1]} ${'★'.repeat(+m[2])}`; }
+  function getSFColor(k){ const m=getSFMatch(k); return m?sfColors[m[1]]:'var(--muted)'; }
+  function getVanName(k){ return VANILLA_META[k]?.name||k; }
 
-  let totalRev=0, time2=0, time3=0, time4=0;
-  let html='';
-
-  // ① 필요 원재료
-  const hasSF=Object.values(totalRaw).some(v=>v>0);
-  const hasVan=Object.values(totalVan).some(v=>v>0);
-  if(hasSF||hasVan){
-    html+=`<div class="rsec"><div class="rsec-title" style="color:var(--acc)">📦 1단계 — 필요 원재료</div>`;
-    for(const [k,v] of Object.entries(totalRaw)){
-      if(v<=0) continue;
-      html+=`<div class="rrow"><span class="rl" style="color:${getRawColor(k)}">${getRawName(k)}</span><span class="rv" style="color:var(--muted)">${fmtQty(v)}</span></div>`;
-    }
-    for(const [k,v] of Object.entries(totalVan)){
-      if(v<=0) continue;
-      html+=`<div class="rrow"><span class="rl">${getRawName(k)}</span><span class="rv" style="color:var(--muted)">${fmtQty(v)}</span></div>`;
-    }
-    html+=`</div>`;
-  }
-
-  // ② 1차 연금
-  const s2=Object.entries(totalStep2).filter(([,v])=>v>0);
-  if(s2.length){
-    html+=`<div class="rsec"><div class="rsec-title" style="color:var(--acc)">⚗️ 2단계 — 1차 연금 (정수·에센스·엘릭서)</div>`;
-    for(const [k,v] of s2){
-      const rec=ALCHEMY[k];if(!rec)continue;
-      time2+=Math.ceil(v/(rec.output||1))*(rec.craftTimeSec||0);
-      html+=`<div class="rrow"><span class="rl" style="color:${rec.color||'#607090'}">${rec.name}</span><span class="rv" style="color:var(--muted)">${f(v)}개</span></div>`;
-    }
-    html+=`</div>`;
-  }
-
-  // ③ 2차 가공
-  const s3=Object.entries(totalStep3).filter(([,v])=>v>0);
-  if(s3.length){
-    html+=`<div class="rsec"><div class="rsec-title" style="color:var(--acc)">🔮 3단계 — 2차 가공 (핵·결정·영약)</div>`;
-    for(const [k,v] of s3){
-      const rec=ALCHEMY[k];if(!rec)continue;
-      time3+=v*(rec.craftTimeSec||0);
-      html+=`<div class="rrow"><span class="rl" style="color:${rec.color||'#607090'}">${rec.name}</span><span class="rv" style="color:var(--muted)">${f(v)}개</span></div>`;
-    }
-    html+=`</div>`;
-  }
-
-  // ④ 최종 산출물
-  html+=`<div class="rsec"><div class="rsec-title" style="color:var(--acc)">🏆 4단계 — 최종 연금품 제작</div>`;
-  for(const [fKey,cnt] of Object.entries(plan)){
-    const fa=finalAnalysis[fKey];
-    const color=tierColors[fa.tier]||'#607090';
-    totalRev+=cnt*fa.sellPrice;
-    time4+=cnt*(fa.craftTimeSec||0);
-    html+=`<div class="rrow">
-      <span class="rl" style="color:${color}">${fa.name}</span>
-      <span class="rv"><b>${cnt}개</b> <small style="color:var(--muted)">${f(fa.sellPrice)}원 × ${cnt} = ${f(fa.sellPrice*cnt)}원</small></span>
+  // 재료 셀 HTML (이미지 추가 대비 구조)
+  function matCell(color, name, qty, note=''){
+    return `<div class="mat-cell">
+      <div class="mat-icon" style="background:${color}22;border-color:${color}66">
+        <span style="color:${color};font-size:10px;font-weight:900">${name.slice(0,2)}</span>
+      </div>
+      <div class="mat-label">${name}</div>
+      <div class="mat-qty">${qty}</div>
+      ${note?`<div class="mat-note">${note}</div>`:''}
     </div>`;
   }
-  html+=`</div>`;
 
+  // 화살표
+  const arrow = `<div class="craft-arrow">▶</div>`;
+  const plus  = `<div class="craft-plus">+</div>`;
+
+  // 결과물 셀
+  function resultCell(color, name, qty){
+    return `<div class="mat-cell result-mat">
+      <div class="mat-icon" style="background:${color}33;border:2px solid ${color}">
+        <span style="color:${color};font-size:10px;font-weight:900">${name.slice(0,2)}</span>
+      </div>
+      <div class="mat-label" style="color:${color};font-weight:900">${name}</div>
+      <div class="mat-qty" style="color:${color}">× ${qty}개</div>
+    </div>`;
+  }
+
+  // 각 최종산물의 단계별 제작 플로우 HTML 생성
+  function buildFlowHTML(fKey, cnt){
+    const fa = finalAnalysis[fKey];
+    const fRec = PRECISION_ALCHEMY[fKey];
+    const color = tierColors[fa.tier]||'#607090';
+    let html = `<div class="craft-flow-card">`;
+    html += `<div class="craft-flow-title" style="color:${color}">${fa.name} × ${cnt}개 제작 플로우</div>`;
+
+    // ── STEP 1: 원재료 → 1차 중간재료(정수/에센스/엘릭서) ──
+    for(const [mk2,mq2] of Object.entries(fa.step2)){
+      const rec2 = ALCHEMY[mk2]; if(!rec2) continue;
+      const need2 = mq2*cnt;
+      const batches2 = Math.ceil(need2/(rec2.output||1));
+      html += `<div class="craft-step">`;
+      html += `<div class="craft-row">`;
+      // 원재료
+      for(const [mk3,mq3] of Object.entries(rec2.materials)){
+        const sfm = getSFMatch(mk3);
+        if(sfm){
+          html += matCell(sfColors[sfm[1]], getSFName(mk3), fmtQty(mq3*batches2));
+        } else if(VANILLA_META[mk3]){
+          html += matCell('#607090', getVanName(mk3), fmtQty(mq3*batches2));
+        }
+        html += plus;
+      }
+      // 마지막 plus 제거는 CSS로
+      html += arrow;
+      html += matCell(rec2.color||'#607090', rec2.name, `${need2}개`, `(${batches2}배치)`);
+      html += `</div></div>`;
+    }
+
+    // ── STEP 2: 1차 중간재료 → 2차(핵/결정/영약) ──
+    for(const [mk,mq] of Object.entries(fa.step3)){
+      const rec = ALCHEMY[mk]; if(!rec) continue;
+      const need = mq*cnt;
+      html += `<div class="craft-step">`;
+      html += `<div class="craft-row">`;
+      for(const [mk2,mq2] of Object.entries(rec.materials)){
+        const rec2 = ALCHEMY[mk2];
+        if(rec2){
+          html += matCell(rec2.color||'#607090', rec2.name, `${mq2*need}개`);
+        } else if(VANILLA_META[mk2]){
+          html += matCell('#607090', getVanName(mk2), fmtQty(mq2*need));
+        }
+        html += plus;
+      }
+      html += arrow;
+      html += matCell(rec.color||'#607090', rec.name, `${need}개`);
+      html += `</div></div>`;
+    }
+
+    // ── STEP 3: 2차 중간재료 → 최종 산출물 ──
+    html += `<div class="craft-step final-step">`;
+    html += `<div class="craft-row">`;
+    for(const [mk,mq] of Object.entries(fRec.materials)){
+      const rec = ALCHEMY[mk];
+      if(rec){
+        html += matCell(rec.color||'#607090', rec.name, `${mq*cnt}개`);
+      }
+      html += plus;
+    }
+    html += arrow;
+    html += resultCell(color, fa.name, cnt);
+    html += `</div></div>`;
+
+    // 수익 요약
+    html += `<div class="craft-profit">
+      판매가 ${f(fa.sellPrice)}원 × ${cnt}개 = <b style="color:var(--grn)">${f(fa.sellPrice*cnt)}원</b>
+      ${fa.vanCost>0?`<span style="color:var(--muted);font-size:10px"> (재료비 ${f(Math.round(fa.vanCost*cnt))}원)</span>`:''}
+    </div>`;
+    html += `</div>`;
+    return html;
+  }
+
+  // 성급별로 그룹화
+  const byTier = {0:[], 1:[], 2:[], 3:[]};
+  let totalRev=0, time2=0, time3=0, time4=0;
+  for(const [fKey,cnt] of Object.entries(plan)){
+    const fa=finalAnalysis[fKey];
+    byTier[fa.tier].push({fKey,cnt,fa});
+    totalRev+=cnt*fa.sellPrice;
+    time4+=cnt*(fa.craftTimeSec||0);
+    // 중간재료 시간
+    for(const [mk,mq] of Object.entries(fa.step2)){
+      const rec=ALCHEMY[mk];if(!rec)continue;
+      time2+=Math.ceil((mq*cnt)/(rec.output||1))*(rec.craftTimeSec||0);
+    }
+    for(const [mk,mq] of Object.entries(fa.step3)){
+      const rec=ALCHEMY[mk];if(!rec)continue;
+      time3+=(mq*cnt)*(rec.craftTimeSec||0);
+    }
+  }
+
+  // 탭 UI 생성
+  const activeTiers = [0,1,2,3].filter(t=>byTier[t].length>0);
+  const firstTier = activeTiers[0];
+
+  let html = `<div class="opt-tabs">`;
+  for(const t of activeTiers){
+    const color = tierColors[t];
+    const ttlRev = byTier[t].reduce((s,{cnt,fa})=>s+cnt*fa.sellPrice,0);
+    html += `<div class="opt-tab${t===firstTier?' active':''}" onclick="switchOptTab(${t})" data-tier="${t}" style="--tab-color:${color}">
+      <span>${tierLabels[t]}</span>
+      <small>${f(ttlRev)}원</small>
+    </div>`;
+  }
+  html += `</div>`;
+
+  // 각 탭 콘텐츠
+  for(const t of activeTiers){
+    html += `<div class="opt-tab-content" id="opt-tier-${t}" style="${t===firstTier?'':'display:none'}">`;
+    for(const {fKey,cnt} of byTier[t]){
+      html += buildFlowHTML(fKey, cnt);
+    }
+    html += `</div>`;
+  }
+
+  // 결과 박스
   const sk=getSK(); const fr=sk.fr;
   const effTime=(time2+time3+time4)*(1-fr);
-
-  html+=`<div class="result-box">
+  html += `<div class="result-box" style="margin-top:12px">
     <div style="margin-bottom:8px;padding-bottom:8px;border-bottom:1px dashed var(--bdr2)">
       <div class="rb-label" style="margin-bottom:5px">⏱️ 단계별 제작 시간</div>
       ${time2>0?`<div style="display:flex;justify-content:space-between;font-size:11px;padding:2px 0"><span style="color:var(--muted)">⚗️ 2단계 — 1차 연금</span><span style="font-weight:700">${fmtTime(time2*(1-fr))}</span></div>`:''}
@@ -921,6 +950,15 @@ function calcOpt(){
 
   document.getElementById('optRes').innerHTML = html;
 }
+
+window.switchOptTab = (tier) => {
+  document.querySelectorAll('.opt-tab').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('.opt-tab-content').forEach(c=>c.style.display='none');
+  const tab = document.querySelector(`.opt-tab[data-tier="${tier}"]`);
+  if(tab) tab.classList.add('active');
+  const content = document.getElementById(`opt-tier-${tier}`);
+  if(content) content.style.display='block';
+};
 
 // ── 동적 UI 빌드 ──
 function buildVanillaPriceGrid(){
