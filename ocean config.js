@@ -221,16 +221,16 @@ export const PRECISION_ALCHEMY = {
    priceUnit: 'per_item'=개당, 'per_set'=세트당(기본)
 ════════════════════════════════════════ */
 export const VANILLA_META = {
-  /* 🐟 커스텀 물고기 (낚시 부재료, 개당 입력) */
-  shrimp:    { name:'깐 새우',     group:'fish', priceUnit:'per_item' },
-  sea_bream: { name:'도미 회',     group:'fish', priceUnit:'per_item' },
-  herring:   { name:'청어 회',     group:'fish', priceUnit:'per_item' },
-  goldfish:  { name:'금붕어 회',   group:'fish', priceUnit:'per_item' },
-  bass:      { name:'농어 회',     group:'fish', priceUnit:'per_item' },
-  firn:      { name:'불우렁쉥이',  group:'fish', priceUnit:'per_item' },
+  /* 🐟 커스텀 물고기 (낚시 부재료, 세트당 입력) */
+  shrimp:    { name:'깐 새우',     group:'fish', priceUnit:'per_set' },
+  sea_bream: { name:'도미 회',     group:'fish', priceUnit:'per_set' },
+  herring:   { name:'청어 회',     group:'fish', priceUnit:'per_set' },
+  goldfish:  { name:'금붕어 회',   group:'fish', priceUnit:'per_set' },
+  bass:      { name:'농어 회',     group:'fish', priceUnit:'per_set' },
   /* 🌊 해양 채집 (세트당 입력) */
-  seaweed_item: { name:'해초',       group:'ocean', priceUnit:'per_set' }, // 해초 (해양 채집)
-  kelp:         { name:'켈프',       group:'ocean', priceUnit:'per_set' }, // 켈프 (연금 재료)
+  firn:         { name:'불우렁쉥이', group:'ocean', priceUnit:'per_set' },
+  seaweed_item: { name:'해초',       group:'ocean', priceUnit:'per_set' },
+  kelp:         { name:'켈프',       group:'ocean', priceUnit:'per_set' },
   glass_bottle: { name:'유리병',     group:'ocean', priceUnit:'per_set' },
   glowberry:    { name:'발광 열매',  group:'ocean', priceUnit:'per_set' },
   /* 🍃 나뭇잎 (세트당) */
@@ -247,9 +247,10 @@ export const VANILLA_META = {
   granite:       { name:'화강암',        group:'mineral', priceUnit:'per_set' },
   lapis_block:   { name:'청금석 블록',   group:'mineral', priceUnit:'per_set' },
   redstone_block:{ name:'레드스톤 블록', group:'mineral', priceUnit:'per_set' },
-  iron_ingot:    { name:'철 주괴',       group:'mineral', priceUnit:'per_set' },
-  gold_ingot:    { name:'금 주괴',       group:'mineral', priceUnit:'per_set' },
-  diamond:       { name:'다이아몬드',    group:'mineral', priceUnit:'per_set' },
+  /* 철·금·다이아: 블록 세트 기준 입력 → 내부에서 주괴로 환산 (블록 1개 = 주괴 9개) */
+  iron_ingot:    { name:'철 블록',       group:'mineral', priceUnit:'per_set', blockToCraft:9 },
+  gold_ingot:    { name:'금 블록',       group:'mineral', priceUnit:'per_set', blockToCraft:9 },
+  diamond:       { name:'다이아 블록',   group:'mineral', priceUnit:'per_set', blockToCraft:9 },
   /* 🔥 네더 (세트당) */
   netherrack:    { name:'네더랙',        group:'nether', priceUnit:'per_set' },
   magma:         { name:'마그마 블록',   group:'nether', priceUnit:'per_set' },
@@ -262,4 +263,31 @@ export const VANILLA_META = {
   coral_dead_bubble:{ name:'죽은 거품 산호 블록',  group:'coral', priceUnit:'per_set' },
   coral_dead_fire:  { name:'죽은 불 산호 블록',    group:'coral', priceUnit:'per_set' },
   coral_dead_horn:  { name:'죽은 뇌 산호 블록',    group:'coral', priceUnit:'per_set' },
+};
+
+/* ════════════════════════════════════════
+   기본 시세 — 자동채우기 기준값
+   ★ seafood: 원/개
+   ★ vanilla: per_set → 세트당 원, per_item → 개당 원
+   ★ blockToCraft 있는 항목(철/금/다이아): 블록 세트당 가격 입력
+════════════════════════════════════════ */
+export const DEFAULT_PRICES = {
+  seafood: { tier1: 0, tier2: 0, tier3: 0 }, // 어패류 원/개
+  vanilla: {
+    /* 커스텀 물고기 (세트당) */
+    shrimp:0, sea_bream:0, herring:0, goldfish:0, bass:0,
+    /* 해양 채집 (세트당) */
+    firn:0, seaweed_item:0, kelp:0, glass_bottle:0, glowberry:0,
+    /* 나뭇잎 (세트당) */
+    oak_leaf:0, spruce_leaf:0, birch_leaf:0, cherry_leaf:0, dark_oak_leaf:0,
+    /* 광물 (세트당, 철/금/다이아는 블록 세트 기준) */
+    clay:0, sand:0, dirt:0, gravel:0, granite:0,
+    lapis_block:0, redstone_block:0,
+    iron_ingot:0, gold_ingot:0, diamond:0,
+    /* 네더 (세트당) */
+    netherrack:0, magma:0, soul_soil:0, crimson_stem:0, warped_stem:0,
+    /* 죽은 산호 (세트당) */
+    coral_dead_tube:0, coral_dead_brain:0, coral_dead_bubble:0,
+    coral_dead_fire:0, coral_dead_horn:0,
+  },
 };

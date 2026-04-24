@@ -66,6 +66,8 @@ html,body{min-height:100vh;background:var(--bg) radial-gradient(circle at 10% 15
 .tab.on{background:var(--acc);border-color:var(--acc);color:#fff;box-shadow:0 3px 10px rgba(61,111,212,.3)}
 .reset-btn{font-family:'Jua',sans-serif!important;font-size:12px;padding:5px 11px;border-radius:20px;border:1.5px solid var(--bdr2);background:var(--surf);color:var(--muted);cursor:pointer;transition:all .15s}
 .reset-btn:hover{border-color:var(--red);color:var(--red);background:var(--red-bg)}
+.autofill-btn{font-family:'Jua',sans-serif!important;font-size:12px;padding:5px 11px;border-radius:20px;border:1.5px solid var(--grn);background:var(--grn-bg);color:var(--grn);cursor:pointer;transition:all .15s}
+.autofill-btn:hover{background:var(--grn);color:#fff}
 .panel{display:flex;flex-direction:column;gap:16px}
 .card{background:var(--surf);border:1.5px solid var(--bdr);border-radius:var(--r);padding:14px 15px;box-shadow:var(--sh)}
 .card-title{font-family:'Jua',sans-serif!important;font-size:14px;color:var(--txt);margin-bottom:10px;display:flex;align-items:center;gap:6px}
@@ -205,7 +207,10 @@ html,body{min-height:100vh;background:var(--bg) radial-gradient(circle at 10% 15
     <div class="tab on" onclick="sw(0,this)">🐟 하루 수익</div>
     <div class="tab"    onclick="sw(1,this)">📦 시세 입력</div>
     <div class="tab"    onclick="sw(2,this)">⚗️ 연금 최적화</div>
-    <div style="margin-left:auto"><button class="reset-btn" onclick="resetAll()">🗑 초기화</button></div>
+    <div style="margin-left:auto;display:flex;gap:6px;align-items:center">
+      <button class="autofill-btn" onclick="autoFill()">✨ 자동채우기</button>
+      <button class="reset-btn" onclick="resetAll()">🗑 초기화</button>
+    </div>
   </div>
 
   <!-- TAB 0 -->
@@ -248,7 +253,7 @@ html,body{min-height:100vh;background:var(--bg) radial-gradient(circle at 10% 15
     </div>
     <div class="card">
       <div class="card-title">🧪 바닐라 재료 시세</div>
-      <div class="fnote" style="margin-bottom:8px">📌 어패류·커스텀 물고기는 원/개 · 나머지는 원/세트</div>
+      <div class="fnote" style="margin-bottom:8px">📌 커스텀 물고기·해양 채집·광물 등 모두 세트당 가격 · 철·금·다이아는 블록 세트 기준 (블록 1개=낱개 9개 자동 환산)</div>
       <div id="vanillaPriceGrid"></div>
     </div>
   </div>
@@ -340,17 +345,27 @@ function getENG(){
     frPct:ENGRAVING.FISHER_ROULETTE.dicePct[fr]??0,cs,sl,fr};
 }
 
-// 진주 가격: 공예품 최고가 기준 자동 계산
+// 진주 가격: 공예품 최고가 × 판매 보너스 (조개 좀 사조개 스킬)
 function getPearlPrice(pearlKey){
   const craft=Object.values(CRAFTS).find(c=>c.pearlKey===pearlKey);
-  return craft?craft.priceMax:0;
+  if(!craft)return 0;
+  const sk=getSK();
+  return Math.round(craft.priceMax*(1+sk.cb));
 }
 
-// 바닐라 재료 단가 (per_item: 개당, per_set: 세트당→개당 환산)
+// 바닐라 재료 단가 → 개당 원가로 환산
+// per_set: 세트당 입력 → ÷64 = 개당
+// blockToCraft: 블록 세트 기준 입력 → ÷64(블록개당) ÷blockToCraft(낱개당)
 function getVPrice(key){
   const meta=VANILLA_META[key];if(!meta)return 0;
   const raw=gi(`vprice_${key}`);
-  return meta.priceUnit==='per_item'?raw:raw/SET_SIZE;
+  if(raw===0)return 0;
+  if(meta.blockToCraft){
+    // 블록 세트당 가격 → 블록 1개당 → 낱개(주괴/다이아) 1개당
+    return (raw/SET_SIZE)/meta.blockToCraft;
+  }
+  // per_set: 세트당 → 개당, per_item: 개당 그대로
+  return meta.priceUnit==='per_set' ? raw/SET_SIZE : raw;
 }
 
 // 어패류 단가 (성급 공통)
@@ -457,10 +472,12 @@ window.calcDaily=()=>{
     <div class="rrow"><span class="rl">총 어패류</span><span class="rv">${fmtQty(total)} <small style="color:var(--muted)">(1성 ${Math.round(r1*100)}%/2성 ${Math.round(r2*100)}%/3성 ${Math.round(r3*100)}%)</small></span></div>
     <div class="rrow rrow-strong"><span class="rl">어패류 수익</span><span class="rv g">${f(sfRev)}원</span></div>
   </div>
-  ${clamDrop>0.01?`<div class="rsec"><div class="rsec-title" style="color:var(--acc)">🐚 조개 &amp; 진주 (공예품 최고가 기준)</div>
-    <div class="rrow"><span class="rl">조개 드롭</span><span class="rv">${fd(clamDrop,1)}개 · 개당 기댓값 ${f(Math.round(clamEV))}원</span></div>
+  ${clamDrop>0.01?`<div class="rsec"><div class="rsec-title" style="color:var(--acc)">🐚 알쏭달쏭 조개</div>
+    <div class="rrow"><span class="rl">총 조개 등장 횟수</span><span class="rv">${fd(hc*(rod.clamPct+sk.clmPct+eng.csPct)/100,1)}마리 <small style="color:var(--muted)">(${rod.clamPct}%낚싯대+${sk.clmPct}%스킬+${eng.csPct}%각인)</small></span></div>
+    <div class="rrow"><span class="rl">조개 드롭 수 (50%)</span><span class="rv">${fd(clamDrop,1)}개</span></div>
+    <div class="rrow"><span class="rl">조개 개당 기댓값</span><span class="rv"><b>${f(Math.round(clamEV))}원</b> <small style="color:var(--muted)">(공예품 최고가 × 판매보너스 반영)</small></span></div>
     ${pearlRows}
-    <div class="rrow rrow-strong"><span class="rl">진주 수익</span><span class="rv g">${f(clamRev)}원</span></div>
+    <div class="rrow rrow-strong"><span class="rl">오늘 예상 진주 수익</span><span class="rv g">${f(clamRev)}원</span></div>
   </div>`:''}
   <div class="result-box"><div style="display:flex;gap:0">
     <div style="flex:1;text-align:center;padding:4px 8px"><div class="rb-label">어패류 수익</div><div class="rb-value" style="font-size:18px">${f(sfRev)}원</div></div>
@@ -701,10 +718,10 @@ window.calcOpt=calcOpt;
 function buildVanillaPriceGrid(){
   const el=document.getElementById('vanillaPriceGrid');if(!el)return;
   const groups={
-    fish:'🐟 커스텀 물고기 (원/개)',
+    fish:'🐟 커스텀 물고기 (원/세트)',
     ocean:'🌊 해양 채집 (원/세트)',
     leaf:'🍃 나뭇잎 (원/세트)',
-    mineral:'⛏️ 광물·블록 (원/세트)',
+    mineral:'⛏️ 광물·블록 (원/세트, 철·금·다이아는 블록 세트 기준)',
     nether:'🔥 네더 (원/세트)',
     coral:'🪸 죽은 산호 (원/세트)',
   };
@@ -715,7 +732,8 @@ function buildVanillaPriceGrid(){
     const items=byGroup[grp]||[];if(!items.length)continue;
     html+=`<div class="slabel" style="margin-top:8px">${label}</div><div class="g3" style="margin-bottom:4px">`;
     for(const[k,v]of items){
-      html+=`<div class="field"><label>${v.name}</label><input id="vprice_${k}" type="number" inputmode="numeric" placeholder="0" oninput="onPriceChange()"></div>`;
+      const subLabel=v.blockToCraft?`${v.name} (블록세트→주괴환산)`:v.name;
+      html+=`<div class="field"><label>${subLabel}</label><input id="vprice_${k}" type="number" inputmode="numeric" placeholder="0" oninput="onPriceChange()"></div>`;
     }
     html+=`</div>`;
   }
@@ -775,7 +793,20 @@ window.addIntermRow=()=>{
   saveAll();
 };
 
-// ── localStorage ──
+// ── 자동채우기 ──
+window.autoFill=()=>{
+  if(!DEFAULT_PRICES)return;
+  const fill=(id,val)=>{if(!val||val<=0)return;const e=document.getElementById(id);if(e&&(!e.value||+e.value===0)){e.value=Math.round(val);e.dispatchEvent(new Event('input'));}};
+  // 어패류
+  fill('price_sf_1', DEFAULT_PRICES.seafood.tier1);
+  fill('price_sf_2', DEFAULT_PRICES.seafood.tier2);
+  fill('price_sf_3', DEFAULT_PRICES.seafood.tier3);
+  // 바닐라 재료
+  for(const[k,v]of Object.entries(DEFAULT_PRICES.vanilla||{})){
+    if(v>0)fill(`vprice_${k}`,v);
+  }
+  onPriceChange();
+};
 const KEY='ocean_calc_v4';
 function getStaticIds(){
   return['skillFurnace','skillCraftBonus','skillAlchBonus','skillDeepHarvest','skillStarBonus','skillClamBonus',
