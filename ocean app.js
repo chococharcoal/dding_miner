@@ -779,15 +779,18 @@ window.addIntermRow=()=>{
 ════════════════════════════════════════ */
 // ── 자동채우기 ──
 window.autoFill=()=>{
-  if(!DEFAULT_PRICES)return;
+  if(!DEFAULT_PRICES) return;
   const fill=(id,val)=>{if(!val||val<=0)return;const e=document.getElementById(id);if(e&&(!e.value||+e.value===0)){e.value=Math.round(val);e.dispatchEvent(new Event('input'));}};
-  // 어패류
+
+  // 어패류: 원/개 → 개당 필드에 그대로
   fill('price_sf_1', DEFAULT_PRICES.seafood.tier1);
   fill('price_sf_2', DEFAULT_PRICES.seafood.tier2);
   fill('price_sf_3', DEFAULT_PRICES.seafood.tier3);
-  // 바닐라 재료
-  for(const[k,v]of Object.entries(DEFAULT_PRICES.vanilla||{})){
-    if(v>0)fill(`vprice_${k}`,v);
+
+  // 바닐라 재료: config는 원/개 → 필드는 세트당 → ×64
+  // blockToCraft 항목(철/금/다이아)은 블록 기준이므로 동일하게 ×64 (블록 세트당)
+  for(const [k,v] of Object.entries(DEFAULT_PRICES.vanilla||{})){
+    if(v>0) fill(`vprice_${k}`, v * SET_SIZE);
   }
   onPriceChange();
 };

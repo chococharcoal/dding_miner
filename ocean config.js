@@ -267,26 +267,26 @@ export const VANILLA_META = {
 
 /* ════════════════════════════════════════
    기본 시세 — 자동채우기 기준값
-   ★ seafood: 원/개
-   ★ vanilla: per_set → 세트당 원, per_item → 개당 원
-   ★ blockToCraft 있는 항목(철/금/다이아): 블록 세트당 가격 입력
+   ★ seafood : 원/개  → 자동채우기 시 그대로 개당 필드에 채움
+   ★ vanilla : 원/개  → 자동채우기 시 ×64 하여 세트당 필드에 채움
+              (단, blockToCraft 항목(철/금/다이아)은 ×64로 블록 세트당 필드에 채움)
 ════════════════════════════════════════ */
 export const DEFAULT_PRICES = {
   seafood: { tier1: 0, tier2: 0, tier3: 0 }, // 어패류 원/개
-  vanilla: {
-    /* 커스텀 물고기 (세트당) */
+  vanilla: {                                   // 모두 원/개 → autoFill 시 ×64
+    /* 커스텀 물고기 (원/개) */
     shrimp:0, sea_bream:0, herring:0, goldfish:0, bass:0,
-    /* 해양 채집 (세트당) */
+    /* 해양 채집 (원/개) */
     firn:0, seaweed_item:0, kelp:0, glass_bottle:0, glowberry:0,
-    /* 나뭇잎 (세트당) */
+    /* 나뭇잎 (원/개) */
     oak_leaf:0, spruce_leaf:0, birch_leaf:0, cherry_leaf:0, dark_oak_leaf:0,
-    /* 광물 (세트당, 철/금/다이아는 블록 세트 기준) */
+    /* 광물 (원/개, 철/금/다이아는 블록 기준 원/개) */
     clay:0, sand:0, dirt:0, gravel:0, granite:0,
     lapis_block:0, redstone_block:0,
     iron_ingot:0, gold_ingot:0, diamond:0,
-    /* 네더 (세트당) */
+    /* 네더 (원/개) */
     netherrack:0, magma:0, soul_soil:0, crimson_stem:0, warped_stem:0,
-    /* 죽은 산호 (세트당) */
+    /* 죽은 산호 (원/개) */
     coral_dead_tube:0, coral_dead_brain:0, coral_dead_bubble:0,
     coral_dead_fire:0, coral_dead_horn:0,
   },
