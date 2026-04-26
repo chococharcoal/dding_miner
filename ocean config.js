@@ -275,19 +275,19 @@ export const DEFAULT_PRICES = {
   seafood: { tier1: 0, tier2: 0, tier3: 0 }, // 어패류 원/개
   vanilla: {                                   // 모두 원/개 → autoFill 시 ×64
     /* 커스텀 물고기 (원/개) */
-    shrimp:0, sea_bream:0, herring:0, goldfish:0, bass:0,
+    shrimp:372, sea_bream:616, herring:395, goldfish:314, bass:167,
     /* 해양 채집 (원/개) */
-    firn:0, seaweed_item:0, kelp:0, glass_bottle:0, glowberry:0,
+    firn:45, seaweed_item:47, kelp:1, glass_bottle:43, glowberry:14,
     /* 나뭇잎 (원/개) */
-    oak_leaf:0, spruce_leaf:0, birch_leaf:0, cherry_leaf:0, dark_oak_leaf:0,
+    oak_leaf:35, spruce_leaf:35, birch_leaf:35, cherry_leaf:35, dark_oak_leaf:0,
     /* 광물 (원/개, 철/금/다이아는 블록 기준 원/개) */
-    clay:0, sand:0, dirt:0, gravel:0, granite:0,
-    lapis_block:0, redstone_block:0,
-    iron_ingot:0, gold_ingot:0, diamond:0,
+    clay:78, sand:47, dirt:10, gravel:23, granite:59,
+    lapis_block:876, redstone_block:407,
+    iron_ingot:1045, gold_ingot:2232, diamond:2870,
     /* 네더 (원/개) */
-    netherrack:0, magma:0, soul_soil:0, crimson_stem:0, warped_stem:0,
+    netherrack:0, magma:70, soul_soil:62, crimson_stem:101, warped_stem:101,
     /* 죽은 산호 (원/개) */
-    coral_dead_tube:0, coral_dead_brain:0, coral_dead_bubble:0,
-    coral_dead_fire:0, coral_dead_horn:0,
+    coral_dead_tube:157, coral_dead_brain:157, coral_dead_bubble:157,
+    coral_dead_fire:157, coral_dead_horn:157,
   },
 };

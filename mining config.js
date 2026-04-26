@@ -189,9 +189,9 @@ export const MARKET_FEE = 0.05;
 ════════════════════════════════════════ */
 export const DEFAULT_PRICES = {
   ingot: {
-    corum:  3500,
-    rifton: 3750,
-    serent: 4000,
+    corum:  6108,
+    rifton: 6401,
+    serent: 6187,
   },
   gem: {
     corum:  7000,
@@ -199,25 +199,25 @@ export const DEFAULT_PRICES = {
     serent: 8000,
   },
   /* ★ 라이프스톤·어빌리티 스톤 — 거래소 등록가(원/개) */
-  ls1:  0,    // 하급 라이프스톤 — 실제 시세로 교체
-  ls2:  0,    // 중급 라이프스톤
-  ls3:  0,    // 상급 라이프스톤
-  abil: 0,    // 어빌리티 스톤
+  ls1:  14654,    // 하급 라이프스톤 — 실제 시세로 교체
+  ls2:  42271,    // 중급 라이프스톤
+  ls3:  71420,    // 상급 라이프스톤
+  abil: 19313,    // 어빌리티 스톤
   vanilla: {
-    cobblestone:           1250,
-    deepslate_cobblestone:  281,
-    copper:                 125,
-    iron:                  1109,
-    gold:                  2031,
-    diamond:               2938,
-    redstone:               383,
-    lapis:                  625,
-    amethyst:               102,
+    cobblestone:           1249,
+    deepslate_cobblestone:  370,
+    copper:                 165,
+    iron:                  1045,
+    gold:                  2232,
+    diamond:               2870,
+    redstone:               407,
+    lapis:                  876,
+    amethyst:               173,
   },
   precious: {
-    topaz:    75855,
-    sapphire: 79087,
-    platinum: 78740,
+    topaz:    79044,
+    sapphire: 80156,
+    platinum: 88430,
   },
   stone: {
     diorite:   70,
@@ -226,8 +226,8 @@ export const DEFAULT_PRICES = {
   },
   charcoal:   30,
   wood:       27,
-  skillPulse:  500,
-  artifactPt: 5400,
+  skillPulse:  407,
+  artifactPt: 6432,
 };
 
 export const UNITS = {
