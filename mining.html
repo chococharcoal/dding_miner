@@ -151,12 +151,18 @@ html,body{min-height:100vh;background:var(--bg) radial-gradient(circle at 10% 15
 ::-webkit-scrollbar{width:5px}
 ::-webkit-scrollbar-thumb{background:var(--bdr2);border-radius:3px}
 
+/* number input 화살표 제거 */
+input[type=number]::-webkit-inner-spin-button,
+input[type=number]::-webkit-outer-spin-button{-webkit-appearance:none;margin:0}
+input[type=number]{-moz-appearance:textfield}
+
 /* 상자/세트/개 분리 입력 */
 .split-qty-wrap{display:grid;grid-template-columns:1fr 1fr 1fr;border:1.5px solid var(--bdr);border-radius:var(--rs);overflow:hidden;margin-top:2px;background:var(--bg)}
 .split-qty-wrap>div{display:flex;flex-direction:column;border-right:1px solid var(--bdr)}
 .split-qty-wrap>div:last-child{border-right:none}
-.sq-label{font-size:8px;font-weight:700;text-align:center;padding:2px 0;border-bottom:1px solid var(--bdr);background:var(--surf)}
-.sq-input{border:none!important;outline:none!important;background:transparent!important;width:100%!important;text-align:center;font-size:13px!important;font-weight:700!important;color:var(--txt)!important;padding:5px 2px!important;box-shadow:none!important}
+.sq-label{font-family:'Jua',sans-serif!important;font-size:9px;font-weight:700;text-align:center;padding:2px 0;border-bottom:1px solid var(--bdr);background:var(--surf)}
+.sq-input{border:none!important;outline:none!important;background:transparent!important;width:100%!important;text-align:center;font-family:'Jua',sans-serif!important;font-size:13px!important;font-weight:700!important;color:var(--txt)!important;padding:5px 2px!important;box-shadow:none!important;-moz-appearance:textfield!important}
+.sq-input::-webkit-inner-spin-button,.sq-input::-webkit-outer-spin-button{-webkit-appearance:none!important;margin:0!important}
 .sq-parsed{font-size:10px;font-weight:700;text-align:right;min-height:13px;margin-top:2px}
 
 /* 최적화 제작 카드 */
@@ -350,8 +356,15 @@ html,body{min-height:100vh;background:var(--bg) radial-gradient(circle at 10% 15
     <div class="card">
       <div class="card-title">📋 제작 계획</div>
       <div class="g2">
-        <div class="field"><label>만들 횃불 수</label><input id="tWantCount" type="text" placeholder="예) 2상자 3세트 5개" oninput="ct()" style="font-size:12px">
-          <span id="tWantCountParsed" style="font-size:10px;color:var(--muted);min-height:14px;display:block;margin-top:2px"></span></div>
+        <div class="field">
+          <label>만들 횃불 수</label>
+          <div class="split-qty-wrap">
+            <div><span class="sq-label">상자</span><input id="tWantCount_box" type="number" inputmode="numeric" placeholder="0" min="0" oninput="ct()" class="sq-input"></div>
+            <div><span class="sq-label">세트</span><input id="tWantCount_set" type="number" inputmode="numeric" placeholder="0" min="0" oninput="ct()" class="sq-input"></div>
+            <div><span class="sq-label">개</span><input id="tWantCount_ea"  type="number" inputmode="numeric" placeholder="0" min="0" oninput="ct()" class="sq-input"></div>
+          </div>
+          <div id="tWantCountParsed" class="sq-parsed" style="color:var(--acc)"></div>
+        </div>
         <div class="field"><label>횃불 판매가 (원/세트) <span class="opt">선택</span></label><input id="tSellPrice" type="number" inputmode="numeric" placeholder="미입력 시 재료비만" oninput="ct()"></div>
       </div>
     </div>
@@ -444,7 +457,14 @@ html,body{min-height:100vh;background:var(--bg) radial-gradient(circle at 10% 15
       <div class="fnote" style="margin-top:6px">📌 증서는 개당 10,000원 고정 반영됩니다</div>
     </div>
     <div class="card">
-      <div class="card-title">📊 최적화 결과 <span style="font-size:11px;color:var(--muted);font-weight:500">(직판 vs 라스/어빌/귀중품 통합 비교)</span></div>
+      <div class="card-title">📊 최적화 결과</div>
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;padding:8px 10px;background:var(--ylw-bg);border:1.5px solid var(--ylw);border-radius:var(--rs)">
+        <label style="display:flex;align-items:center;gap:7px;cursor:pointer;font-family:'Jua',sans-serif;font-size:13px;color:var(--txt);user-select:none">
+          <input type="checkbox" id="swapEnabled" onchange="co()" style="width:16px;height:16px;accent-color:var(--acc);cursor:pointer;flex-shrink:0">
+          🔄 주괴 교환 고려
+        </label>
+        <span style="font-size:10px;color:var(--muted);font-weight:500">체크 시 다른 종류 주괴로 교환 후 제작 비교</span>
+      </div>
       <div id="oRes"><div class="empty-msg">값을 입력하면 계산됩니다</div></div>
     </div>
   </div>
@@ -486,7 +506,8 @@ html,body{min-height:100vh;background:var(--bg) radial-gradient(circle at 10% 15
     'oCo','oRi','oSe',
     'vCo','vDc','vCu','vIr','vGo','vDi','vRe','vLa','vAm',
     'vTopaz','vSapphire','vPlatinum','vDiorite','vTuff','vAndesite',
-    'tCharcoalPrice','tWoodPrice','tSellPrice','tWantCount',
+    'tCharcoalPrice','tWoodPrice','tSellPrice',
+    'tWantCount_box','tWantCount_set','tWantCount_ea',
   ];
   const KEY = 'miner_calc_v5';
 

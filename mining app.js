@@ -428,10 +428,9 @@ export function ct() {
   const charU        = gi('tCharcoalPrice') / SET_SIZE;
   const woodSetPrice = gi('tWoodPrice');
   const stickU       = woodSetPrice / (SET_SIZE * 8);
-  const tWantEl = document.getElementById('tWantCount');
-  const wantN   = parseQty(tWantEl ? tWantEl.value : '');
+  const wantN   = readSplitQty('tWantCount');
   const parsedEl = document.getElementById('tWantCountParsed');
-  if (parsedEl) parsedEl.textContent = wantN > 0 ? `(총 ${wantN.toLocaleString('ko-KR')}개)` : '';
+  if (parsedEl) parsedEl.textContent = wantN > 0 ? `총 ${f(wantN)}개` : '';
   const sellEa   = gi('tSellPrice') / SET_SIZE;
   const costEa   = charU + stickU;
   const totalCost = costEa * wantN;
@@ -782,16 +781,18 @@ export function co() {
     return row(label, f(net)+'원'+perHtml, color);
   };
 
-  // ── 교환 여부에 따라 표시할 plan 결정 ──
-  const swapBetter   = swapResult && swapCraftRev > craftRev;
-  const winResults   = swapBetter ? swapCraftResult : craftResult;
-  const winRev       = swapBetter ? swapCraftRev    : craftRev;
-  const winTime      = swapBetter ? swapCraftTime   : craftTime;
-  const winRemC      = swapBetter ? swapRemCo       : remCo;
-  const winRemR      = swapBetter ? swapRemRi       : remRi;
-  const winRemS      = swapBetter ? swapRemSe       : remSe;
+  // ── 교환 체크박스 반영 ──
+  const swapEnabled = document.getElementById('swapEnabled')?.checked ?? false;
+  const swapBetter  = swapEnabled && swapResult && swapCraftRev > craftRev;
+  const winResults  = swapBetter ? swapCraftResult : craftResult;
+  const winRev      = swapBetter ? swapCraftRev    : craftRev;
+  const winTime     = swapBetter ? swapCraftTime   : craftTime;
+  const winRemC     = swapBetter ? swapRemCo       : remCo;
+  const winRemR     = swapBetter ? swapRemRi       : remRi;
+  const winRemS     = swapBetter ? swapRemSe       : remSe;
 
-  const swapInfoHtml = swapBetter && swapResult ? (() => {
+  // 교환 정보 배너
+  const swapInfoHtml = swapEnabled && swapResult ? (() => {
     const kindColor = {'코룸':CC,'리프톤':CR,'세렌트':CS};
     const rows = swapResult.swapLog.map(s=>
       '<div style="display:flex;align-items:center;gap:6px;font-size:12px;padding:4px 0;border-bottom:1px dashed var(--bdr)">'
@@ -801,9 +802,11 @@ export function co() {
       +' <b>'+f(s.count)+'개</b> 교환'
       +'</div>'
     ).join('');
+    const gain = swapCraftRev - craftRev;
     return '<div style="background:var(--ylw-bg);border:1.5px solid var(--ylw);border-radius:var(--rs);padding:8px 10px;margin-bottom:10px">'
-      +'<div style="font-family:\'Jua\',sans-serif;font-size:12px;color:var(--ylw);margin-bottom:5px">🔄 교환 후 제작 시 +'+f(swapCraftRev-craftRev)+'원 이득</div>'
-      +rows+'</div>';
+      +'<div style="font-family:\'Jua\',sans-serif;font-size:12px;color:var(--ylw);margin-bottom:5px">'
+      +(gain>0?'🔄 교환 후 제작 시 +'+f(gain)+'원 이득':'🔄 교환해도 추가 이득 없음')
+      +'</div>'+rows+'</div>';
   })() : '';
 
   const remHtml = (winRemC+winRemR+winRemS)>0
@@ -813,15 +816,14 @@ export function co() {
       +(winRemS>0?'<span style="color:'+CS+'">'+f(winRemS)+'개</span>':'')
       +'</span></div>' : '';
 
+  // 입력 없을 때
+  if (iCo===0 && iRi===0 && iSe===0) {
+    document.getElementById('oRes').innerHTML = '<div class="empty-msg">보유 주괴를 입력해주세요</div>';
+    return;
+  }
+
   document.getElementById('oRes').innerHTML =
-  '<div class="rsec"><div class="rsec-title">📦 보유 주괴 &amp; 단가</div>'
-    +(iCo>0?'<div class="rrow"><span class="rl" style="color:'+CC+';font-weight:700">코룸</span><span class="rv">'+f(iCo)+'개 <small>(개당 '+f(cP)+'원)</small></span></div>':'')
-    +(iRi>0?'<div class="rrow"><span class="rl" style="color:'+CR+';font-weight:700">리프톤</span><span class="rv">'+f(iRi)+'개 <small>(개당 '+f(rP)+'원)</small></span></div>':'')
-    +(iSe>0?'<div class="rrow"><span class="rl" style="color:'+CS+';font-weight:700">세렌트</span><span class="rv">'+f(iSe)+'개 <small>(개당 '+f(sP)+'원)</small></span></div>':'')
-    +(iCo===0&&iRi===0&&iSe===0?'<div class="empty-msg" style="padding:6px 0">보유 주괴를 입력해주세요</div>':'')
-    +row('전량 직판 수익', f(rawSell)+'원')
-  +'</div>'
-  +'<div class="rsec"><div class="rsec-title">📊 개당 순이익</div>'
+  '<div class="rsec"><div class="rsec-title">📊 개당 순이익</div>'
     +(oL1>0?netSummaryRow('하급 라스',  netLS1,  RECIPES.LS1.ingot_corum,  0, 0):'')
     +(oL2>0?netSummaryRow('중급 라스',  netLS2,  0, RECIPES.LS2.ingot_rifton,  0):'')
     +(oL3>0?netSummaryRow('상급 라스',  netLS3,  0, 0, RECIPES.LS3.ingot_serent):'')
@@ -839,7 +841,6 @@ export function co() {
   +'<div class="result-box" style="margin-top:8px">'
     +'<div class="rb-label">최적 제작 예상 수익</div>'
     +'<div class="rb-value" style="color:var(--grn)">'+f(winRev)+'원</div>'
-    +(swapResult&&!swapBetter?'<div style="font-size:11px;color:var(--muted);margin-top:4px">교환 없이 직접 제작이 유리합니다</div>':'')
   +'</div>';
 }
 
