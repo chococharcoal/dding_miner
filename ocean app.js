@@ -86,10 +86,10 @@ function getENG() {
         fr=gi('engFisherRoulette'), sw=gi('engSpiritWhale');
   const slD = ENGRAVING.SEAFOOD_LUCK.drops[sl] || {pct:0, count:0};
   return {
-    csPct: ENGRAVING.CLAM_SEARCH.pct[cs]              ?? 0,
+    csPct: ENGRAVING.CLAM_SEARCH.pct[cs]                     ?? 0,
     slPct: slD.pct, slCnt: slD.count,
-    frPct: ENGRAVING.FISHER_ROULETTE.dicePct[fr]      ?? 0,
-    swPct: ENGRAVING.SPIRIT_WHALE.appearPct[sw]       ?? 0,
+    frPct: ENGRAVING.FISHER_ROULETTE.dicePct[fr]              ?? 0,
+    swPct: (ENGRAVING.SPIRIT_WHALE?.appearPct?.[sw])          ?? 0,
     cs, sl, fr, sw,
   };
 }
@@ -215,7 +215,7 @@ window.calcDaily = () => {
   // 정령 고래
   const whaleCount = hc * (eng.swPct / 100);
   let whaleEV = 0;
-  for (const [, drop] of Object.entries(ENGRAVING.SPIRIT_WHALE.drops)) {
+  for (const [, drop] of Object.entries(ENGRAVING.SPIRIT_WHALE?.drops || {})) {
     if (drop.type === 'craft') whaleEV += drop.pct / 100 * getPearlPrice(drop.pearlKey);
   }
   const whaleRev = whaleCount * whaleEV;

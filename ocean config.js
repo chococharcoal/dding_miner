@@ -50,6 +50,24 @@ export const ENGRAVING = {
   FISHER_ROULETTE: {
     dicePct:[0,1,2,3,4,5], normalMult:5, goldenMult:10, goldenPct:10,
   },
+  /* 🐋 정령 고래 — 수중 어획 시 n% 확률로 등장, 조개껍데기·공예품 드롭
+     최소 강화 조건: I~II=7강, III~IV=9강, V=11강
+     drops: 드롭 테이블 (고래 1마리당 확률%)                          */
+  SPIRIT_WHALE: {
+    appearPct: [0, 1, 2, 3, 4, 5], // 레벨별 등장 확률(%)
+    drops: {
+      shell_1: { label:'깨진 조개껍데기 1개', pct:29, type:'shell', count:1 },
+      shell_2: { label:'깨진 조개껍데기 2개', pct:15, type:'shell', count:2 },
+      shell_3: { label:'깨진 조개껍데기 3개', pct:10, type:'shell', count:3 },
+      shell_4: { label:'깨진 조개껍데기 4개', pct: 5, type:'shell', count:4 },
+      brooch:  { label:'조개껍데기 브로치',   pct:15, type:'craft', pearlKey:'yellow' },
+      perfume: { label:'푸른 향수병',         pct:10, type:'craft', pearlKey:'blue'   },
+      mirror:  { label:'자개 손거울',         pct: 7, type:'craft', pearlKey:'cyan'   },
+      hairpin: { label:'분홍 헤어핀',         pct: 5, type:'craft', pearlKey:'pink'   },
+      fan:     { label:'자개 부채',           pct: 3, type:'craft', pearlKey:'purple' },
+      watch:   { label:'흑진주 시계',         pct: 1, type:'craft', pearlKey:'black'  },
+    },
+  },
 };
 
 /* ── 세이지 낚싯대 강화별 스펙 ── */
@@ -275,19 +293,19 @@ export const DEFAULT_PRICES = {
   seafood: { tier1: 0, tier2: 0, tier3: 0 }, // 어패류 원/개
   vanilla: {                                   // 모두 원/개 → autoFill 시 ×64
     /* 커스텀 물고기 (원/개) */
-    shrimp:372, sea_bream:616, herring:395, goldfish:314, bass:167,
+    shrimp:0, sea_bream:0, herring:0, goldfish:0, bass:0,
     /* 해양 채집 (원/개) */
-    firn:45, seaweed_item:47, kelp:1, glass_bottle:43, glowberry:14,
+    firn:0, seaweed_item:0, kelp:0, glass_bottle:0, glowberry:0,
     /* 나뭇잎 (원/개) */
-    oak_leaf:35, spruce_leaf:35, birch_leaf:35, cherry_leaf:35, dark_oak_leaf:0,
+    oak_leaf:0, spruce_leaf:0, birch_leaf:0, cherry_leaf:0, dark_oak_leaf:0,
     /* 광물 (원/개, 철/금/다이아는 블록 기준 원/개) */
-    clay:78, sand:47, dirt:10, gravel:23, granite:59,
-    lapis_block:876, redstone_block:407,
-    iron_ingot:1045, gold_ingot:2232, diamond:2870,
+    clay:0, sand:0, dirt:0, gravel:0, granite:0,
+    lapis_block:0, redstone_block:0,
+    iron_ingot:0, gold_ingot:0, diamond:0,
     /* 네더 (원/개) */
-    netherrack:0, magma:70, soul_soil:62, crimson_stem:101, warped_stem:101,
+    netherrack:0, magma:0, soul_soil:0, crimson_stem:0, warped_stem:0,
     /* 죽은 산호 (원/개) */
-    coral_dead_tube:157, coral_dead_brain:157, coral_dead_bubble:157,
-    coral_dead_fire:157, coral_dead_horn:157,
+    coral_dead_tube:0, coral_dead_brain:0, coral_dead_bubble:0,
+    coral_dead_fire:0, coral_dead_horn:0,
   },
 };
