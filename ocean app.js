@@ -918,9 +918,9 @@ function calcOpt(){
     }
 
     // STEP 3: 최종 조합
-    html+=`<div class="step-block" style="border-color:${color};background:color-mix(in srgb,${color} 4%,white)">
+    html+=`<div class="step-block" style="border-color:${color}">
       <div class="step-block-label" style="color:${color}">🏆 최종 조합</div>
-      <div class="step-row" style="border-color:${color};background:color-mix(in srgb,${color} 6%,white)">`;
+      <div class="step-row" style="border-color:${color}">`;
     const fmats=Object.entries(PRECISION_ALCHEMY[fKey].materials);
     fmats.forEach(([mk,mq],idx)=>{html+=chip(mk,mq*cnt);if(idx<fmats.length-1)html+=plus;});
     html+=arrow+`<div class="final-chip" style="--tier-color:${color}">

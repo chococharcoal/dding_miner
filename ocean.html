@@ -132,7 +132,7 @@ html,body{min-height:100vh;background:var(--bg) radial-gradient(circle at 10% 15
   display:flex;justify-content:space-between;align-items:flex-start;
   padding:12px 14px;
   border-left:4px solid var(--tier-color,var(--acc));
-  background:linear-gradient(90deg,color-mix(in srgb,var(--tier-color,var(--acc)) 6%,white),transparent);
+  background:var(--bg);
 }
 .cfc-header-left .cfc-name{
   font-family:'Jua',sans-serif!important;
@@ -170,12 +170,12 @@ html,body{min-height:100vh;background:var(--bg) radial-gradient(circle at 10% 15
 .sf-chip{
   display:inline-flex;flex-direction:column;align-items:center;gap:2px;
   padding:5px 9px;border-radius:8px;
-  border:1.5px solid color-mix(in srgb,var(--chip-color) 40%,transparent);
-  background:color-mix(in srgb,var(--chip-color) 10%,white);
+  border:1.5px solid var(--bdr2);
+  background:var(--bg);
   min-width:52px;
 }
-.sf-chip .sc-name{font-size:10px;font-weight:700;color:var(--chip-color);text-align:center;word-break:keep-all}
-.sf-chip .sc-qty{font-size:12px;font-weight:900;color:var(--chip-color);text-align:center}
+.sf-chip .sc-name{font-size:10px;font-weight:700;color:var(--chip-color,var(--txt));text-align:center;word-break:keep-all}
+.sf-chip .sc-qty{font-size:12px;font-weight:900;color:var(--chip-color,var(--txt));text-align:center}
 
 /* 제작 가이드 토글 */
 .guide-toggle{
@@ -218,10 +218,10 @@ html,body{min-height:100vh;background:var(--bg) radial-gradient(circle at 10% 15
 .flow-arrow{color:var(--acc);font-size:16px;font-weight:900;flex-shrink:0;padding:0 2px}
 
 /* 재료 칩 (기존 호환) */
-.mat-chip-flow{display:inline-flex;flex-direction:column;align-items:center;gap:1px;padding:4px 7px;border-radius:6px;border:1.5px solid color-mix(in srgb,var(--chip-color) 40%,transparent);background:color-mix(in srgb,var(--chip-color) 10%,white);min-width:44px;max-width:90px;vertical-align:top}
+.mat-chip-flow{display:inline-flex;flex-direction:column;align-items:center;gap:1px;padding:4px 7px;border-radius:6px;border:1.5px solid var(--bdr2);background:var(--bg);min-width:44px;max-width:90px;vertical-align:top}
 .chip-name{font-size:9px;font-weight:700;color:var(--chip-color,var(--txt));text-align:center;line-height:1.3;word-break:keep-all;white-space:normal}
 .chip-qty{font-size:10px;font-weight:900;color:var(--chip-color,var(--muted));text-align:center;white-space:nowrap}
-.result-chip{border-width:2px;padding:5px 10px}
+.result-chip{border-width:2px;border-color:var(--chip-color,var(--acc));padding:5px 10px}
 .result-chip .chip-name{font-size:10px}
 .result-chip .chip-qty{font-size:11px}
 
@@ -230,7 +230,7 @@ html,body{min-height:100vh;background:var(--bg) radial-gradient(circle at 10% 15
   display:inline-flex;flex-direction:column;align-items:center;gap:2px;
   padding:6px 12px;border-radius:8px;
   border:2px solid var(--tier-color,var(--acc));
-  background:color-mix(in srgb,var(--tier-color,var(--acc)) 10%,white);
+  background:var(--surf);
   min-width:60px;
 }
 .final-chip .fc-name{font-size:11px;font-weight:900;color:var(--tier-color,var(--acc));text-align:center}
