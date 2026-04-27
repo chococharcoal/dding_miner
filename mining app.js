@@ -792,7 +792,10 @@ export function co() {
   const winRemS     = swapBetter ? swapRemSe       : remSe;
 
   // 교환 정보 배너
-  const swapInfoHtml = swapEnabled && swapResult ? (() => {
+  const swapInfoHtml = swapEnabled ? (() => {
+    if (!swapResult) {
+      return '<div style="background:var(--bg);border:1px solid var(--bdr);border-radius:var(--rs);padding:8px 10px;margin-bottom:10px;font-size:12px;color:var(--muted)">교환으로 추가 이득을 볼 수 있는 조합이 없습니다</div>';
+    }
     const kindColor = {'코룸':CC,'리프톤':CR,'세렌트':CS};
     const rows = swapResult.swapLog.map(s=>
       '<div style="display:flex;align-items:center;gap:6px;font-size:12px;padding:4px 0;border-bottom:1px dashed var(--bdr)">'
@@ -804,7 +807,7 @@ export function co() {
     ).join('');
     const gain = swapCraftRev - craftRev;
     return '<div style="background:var(--ylw-bg);border:1.5px solid var(--ylw);border-radius:var(--rs);padding:8px 10px;margin-bottom:10px">'
-      +'<div style="font-family:\'Jua\',sans-serif;font-size:12px;color:var(--ylw);margin-bottom:5px">'
+      +'<div style="font-family:\'Jua\',sans-serif!important;font-size:12px;color:var(--ylw);margin-bottom:5px">'
       +(gain>0?'🔄 교환 후 제작 시 +'+f(gain)+'원 이득':'🔄 교환해도 추가 이득 없음')
       +'</div>'+rows+'</div>';
   })() : '';
@@ -830,7 +833,7 @@ export function co() {
     +(oAb>0?netSummaryRow('어빌리티 스톤', netAbil, 1, 1, 1):'')
     +precItems.map(p=>netSummaryRow(p.item.name, p.netPerItem, p.ingotKey==='C'?p.ingotCnt:0, p.ingotKey==='R'?p.ingotCnt:0, p.ingotKey==='S'?p.ingotCnt:0)).join('')
   +'</div>'
-  +'<div style="font-family:\'Jua\',sans-serif;font-size:14px;color:var(--txt);margin:4px 0 8px;display:flex;align-items:center;gap:6px">🔨 최적 제작 계획 '+fBdg+'</div>'
+  +'<div style="font-family:\'Jua\',sans-serif!important;font-size:14px;color:var(--txt);margin:4px 0 8px;display:flex;align-items:center;gap:6px">🔨 최적 제작 계획 '+fBdg+'</div>'
   +swapInfoHtml
   +buildPlanCards(winResults)
   +matSummaryHtml(winResults)

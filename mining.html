@@ -9,7 +9,8 @@
 <link href="https://fonts.googleapis.com/css2?family=Jua&family=Noto+Sans+KR:wght@500;700;900&display=swap" rel="stylesheet">
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-*,input,select,button,textarea{font-family:'Noto Sans KR','Apple SD Gothic Neo','Malgun Gothic',sans-serif!important;font-weight:700}
+*{font-family:'Noto Sans KR','Apple SD Gothic Neo','Malgun Gothic',sans-serif;font-weight:700}
+input,select,button,textarea{font-family:'Noto Sans KR','Apple SD Gothic Neo','Malgun Gothic',sans-serif!important;font-weight:700}
 :root{
   --bg:#f7f3ee;--surf:#ffffff;--bdr:#e8ddd0;--bdr2:#d4c4b0;
   --txt:#2d1f12;--muted:#8a7060;--acc:#e07b2a;--acc2:#f5a623;
@@ -601,6 +602,9 @@ input[type=number]{-moz-appearance:textfield}
       const e = document.getElementById(id); if(!e) return;
       e.addEventListener(e.tagName==='SELECT'?'change':'input', saveAll);
     });
+    // 체크박스 별도 바인딩 (SAVE_IDS 밖)
+    const swapCb = document.getElementById('swapEnabled');
+    if (swapCb) swapCb.addEventListener('change', () => { window.co(); });
   });
 </script>
 </body>
