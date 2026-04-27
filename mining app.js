@@ -493,47 +493,49 @@ export function autoFillPrices() {
   cs(); ct(); co();
 }
 
-function calcSwapPlan(iCo, iRi, iSe, allOptions, cP, rP, sP) {
+// 교환 계획: 전체 주괴를 순이익/주괴 최고인 레시피 종류로 1:1 전량 교환
+function calcSwapPlan(iCo, iRi, iSe, allOptions) {
   if (allOptions.length === 0) return null;
-  const bestPerKind = { C: -Infinity, R: -Infinity, S: -Infinity };
+
+  // 단일 주괴 종류만 쓰는 레시피 중 npi 최고 찾기
+  const bestPerKind = { C: { npi: -Infinity, label: '' }, R: { npi: -Infinity, label: '' }, S: { npi: -Infinity, label: '' } };
   for (const c of allOptions) {
-    const kind = c.iC > 0 ? 'C' : c.iR > 0 ? 'R' : 'S';
-    const singleKind = [c.iC > 0, c.iR > 0, c.iS > 0].filter(Boolean).length === 1;
-    if (!singleKind) continue;
+    const kinds = [c.iC > 0 ? 'C' : null, c.iR > 0 ? 'R' : null, c.iS > 0 ? 'S' : null].filter(Boolean);
+    if (kinds.length !== 1) continue; // 복합 주괴(어빌리티 스톤 등) 제외
+    const kind = kinds[0];
     const ingotCnt = c.iC || c.iR || c.iS;
     const npi = c.net / ingotCnt;
-    if (npi > bestPerKind[kind]) bestPerKind[kind] = npi;
+    if (npi > bestPerKind[kind].npi) bestPerKind[kind] = { npi, label: c.label };
   }
-  const sellPerKind = { C: cP, R: rP, S: sP };
-  const kindName    = { C:'코룸', R:'리프톤', S:'세렌트' };
-  const holdMap = { C: iCo, R: iRi, S: iSe };
-  const [bestKind] = Object.entries(bestPerKind).sort((a, b) => b[1] - a[1]);
-  if (bestPerKind[bestKind[0]] <= 0) return null;
-  const toKind = bestKind[0];
-  const toBest = bestPerKind[toKind];
+
+  // 전체 중 npi 최고인 종류 선택
+  const sorted = Object.entries(bestPerKind)
+    .filter(([, v]) => v.npi > 0)
+    .sort((a, b) => b[1].npi - a[1].npi);
+  if (!sorted.length) return null;
+
+  const [toKind, { npi: toNpi, label: toLabel }] = sorted[0];
+  const kindName = { C: '코룸', R: '리프톤', S: '세렌트' };
+  const holdMap  = { C: iCo, R: iRi, S: iSe };
+
+  // 다른 종류 주괴를 전량 toKind로 1:1 교환
   const swapLog = [];
   const newHold = { ...holdMap };
-  for (const fromKind of ['C','R','S']) {
+  for (const fromKind of ['C', 'R', 'S']) {
     if (fromKind === toKind) continue;
-    if (holdMap[fromKind] <= 0) continue;
-    const gain = toBest - sellPerKind[fromKind];
-    if (gain <= 0) continue;
-    const toOpts = allOptions.filter(c => {
-      const singleKind = [c.iC > 0, c.iR > 0, c.iS > 0].filter(Boolean).length === 1;
-      return singleKind && (toKind === 'C' ? c.iC > 0 : toKind === 'R' ? c.iR > 0 : c.iS > 0);
-    });
-    if (toOpts.length === 0) continue;
-    const bestOpt  = toOpts[0];
-    const ingotCnt = bestOpt.iC || bestOpt.iR || bestOpt.iS;
-    const maxCraft  = Math.floor(holdMap[fromKind] / ingotCnt);
-    if (maxCraft <= 0) continue;
-    const swapCount = maxCraft * ingotCnt;
-    swapLog.push({ from: kindName[fromKind], to: kindName[toKind], count: swapCount, forItem: bestOpt.label, craftCount: maxCraft, gain });
-    newHold[fromKind] -= swapCount;
-    newHold[toKind]   += swapCount;
+    const qty = holdMap[fromKind];
+    if (qty <= 0) continue;
+    swapLog.push({ from: kindName[fromKind], to: kindName[toKind], count: qty });
+    newHold[fromKind] = 0;
+    newHold[toKind]  += qty;
   }
-  if (swapLog.length === 0) return null;
-  return { swapLog, swapRemCo: newHold.C, swapRemRi: newHold.R, swapRemSe: newHold.S };
+  if (!swapLog.length) return null; // 교환할 다른 종류가 없음 (이미 전부 toKind)
+
+  return {
+    toKind, toLabel, toNpi,
+    swapLog,
+    newCo: newHold.C, newRi: newHold.R, newSe: newHold.S,
+  };
 }
 
 // 상자/세트/개 3칸 합산
@@ -648,11 +650,14 @@ export function co() {
     craftResult.push({ ...c, count: maxN });
     remCo -= c.iC * maxN; remRi -= c.iR * maxN; remSe -= c.iS * maxN;
   }
-  const swapResult = calcSwapPlan(iCo, iRi, iSe, allOptions, cP, rP, sP);
+  const swapResult = calcSwapPlan(iCo, iRi, iSe, allOptions);
   let swapCraftResult = [];
   let swapRemCo = iCo, swapRemRi = iRi, swapRemSe = iSe;
   if (swapResult) {
-    swapRemCo = swapResult.swapRemCo; swapRemRi = swapResult.swapRemRi; swapRemSe = swapResult.swapRemSe;
+    // 교환 후 보유량으로 재계산
+    swapRemCo = swapResult.newCo;
+    swapRemRi = swapResult.newRi;
+    swapRemSe = swapResult.newSe;
     for (const c of allOptions) {
       const maxN = Math.min(
         c.iC > 0 ? Math.floor(swapRemCo / c.iC) : Infinity,
@@ -796,26 +801,28 @@ export function co() {
     if (!swapResult) {
       return '<div style="background:var(--bg);border:1px solid var(--bdr);border-radius:var(--rs);padding:8px 10px;margin-bottom:10px;font-size:12px;color:var(--muted)">교환으로 추가 이득을 볼 수 있는 조합이 없습니다</div>';
     }
-    const kindColor = {'코룸':CC,'리프톤':CR,'세렌트':CS};
-    const rows = swapResult.swapLog.map(s=>
+    const kindColor = { '코룸': CC, '리프톤': CR, '세렌트': CS };
+    const kindName  = { C: '코룸', R: '리프톤', S: '세렌트' };
+    const toName = kindName[swapResult.toKind];
+    const rows = swapResult.swapLog.map(s =>
       '<div style="display:flex;align-items:center;gap:6px;font-size:12px;padding:4px 0;border-bottom:1px dashed var(--bdr)">'
-      +'<span style="color:'+kindColor[s.from]+'">'+s.from+'</span>'
-      +'<span style="color:var(--muted)"> → </span>'
-      +'<span style="color:'+kindColor[s.to]+'">'+s.to+'</span>'
-      +' <b>'+f(s.count)+'개</b> 교환'
-      +'</div>'
+      + '<span style="color:' + kindColor[s.from] + '">' + s.from + '</span>'
+      + '<span style="color:var(--muted)"> → </span>'
+      + '<span style="color:' + kindColor[s.to] + '">' + s.to + '</span>'
+      + ' <b>' + fmtQty(s.count) + '</b> 전량 교환'
+      + '</div>'
     ).join('');
     const gain = swapCraftRev - craftRev;
     const isGain = gain > 0;
     const borderColor = isGain ? 'var(--ylw)' : 'var(--bdr2)';
     const bgColor     = isGain ? 'var(--ylw-bg)' : 'var(--bg)';
     const label = isGain
-      ? '🔄 교환 시 +'+f(gain)+'원 이득'
-      : '🔄 교환 시 '+f(Math.abs(gain))+'원 손해 (그래도 교환 결과 표시)';
+      ? '🔄 교환 시 +' + f(gain) + '원 이득 — ' + toName + '으로 전환'
+      : '🔄 교환 시 ' + f(Math.abs(gain)) + '원 손해 (그래도 교환 결과 표시)';
     const labelColor = isGain ? 'var(--ylw)' : 'var(--muted)';
-    return '<div style="background:'+bgColor+';border:1.5px solid '+borderColor+';border-radius:var(--rs);padding:8px 10px;margin-bottom:10px">'
-      +'<div style="font-family:\'Jua\',sans-serif!important;font-size:12px;color:'+labelColor+';margin-bottom:5px">'+label+'</div>'
-      +rows+'</div>';
+    return '<div style="background:' + bgColor + ';border:1.5px solid ' + borderColor + ';border-radius:var(--rs);padding:8px 10px;margin-bottom:10px">'
+      + '<div style="font-family:\'Jua\',sans-serif!important;font-size:12px;color:' + labelColor + ';margin-bottom:5px">' + label + '</div>'
+      + rows + '</div>';
   })() : '';
 
   const remHtml = (winRemC+winRemR+winRemS)>0
