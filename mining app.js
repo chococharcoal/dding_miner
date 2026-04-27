@@ -781,15 +781,15 @@ export function co() {
     return row(label, f(net)+'원'+perHtml, color);
   };
 
-  // ── 교환 체크박스 반영 ──
+  // ── 교환 체크박스 반영 — 체크하면 교환 결과 무조건 표시 ──
   const swapEnabled = document.getElementById('swapEnabled')?.checked ?? false;
-  const swapBetter  = swapEnabled && swapResult && swapCraftRev > craftRev;
-  const winResults  = swapBetter ? swapCraftResult : craftResult;
-  const winRev      = swapBetter ? swapCraftRev    : craftRev;
-  const winTime     = swapBetter ? swapCraftTime   : craftTime;
-  const winRemC     = swapBetter ? swapRemCo       : remCo;
-  const winRemR     = swapBetter ? swapRemRi       : remRi;
-  const winRemS     = swapBetter ? swapRemSe       : remSe;
+  const useSwap     = swapEnabled && !!swapResult;
+  const winResults  = useSwap ? swapCraftResult : craftResult;
+  const winRev      = useSwap ? swapCraftRev    : craftRev;
+  const winTime     = useSwap ? swapCraftTime   : craftTime;
+  const winRemC     = useSwap ? swapRemCo       : remCo;
+  const winRemR     = useSwap ? swapRemRi       : remRi;
+  const winRemS     = useSwap ? swapRemSe       : remSe;
 
   // 교환 정보 배너
   const swapInfoHtml = swapEnabled ? (() => {
@@ -806,10 +806,16 @@ export function co() {
       +'</div>'
     ).join('');
     const gain = swapCraftRev - craftRev;
-    return '<div style="background:var(--ylw-bg);border:1.5px solid var(--ylw);border-radius:var(--rs);padding:8px 10px;margin-bottom:10px">'
-      +'<div style="font-family:\'Jua\',sans-serif!important;font-size:12px;color:var(--ylw);margin-bottom:5px">'
-      +(gain>0?'🔄 교환 후 제작 시 +'+f(gain)+'원 이득':'🔄 교환해도 추가 이득 없음')
-      +'</div>'+rows+'</div>';
+    const isGain = gain > 0;
+    const borderColor = isGain ? 'var(--ylw)' : 'var(--bdr2)';
+    const bgColor     = isGain ? 'var(--ylw-bg)' : 'var(--bg)';
+    const label = isGain
+      ? '🔄 교환 시 +'+f(gain)+'원 이득'
+      : '🔄 교환 시 '+f(Math.abs(gain))+'원 손해 (그래도 교환 결과 표시)';
+    const labelColor = isGain ? 'var(--ylw)' : 'var(--muted)';
+    return '<div style="background:'+bgColor+';border:1.5px solid '+borderColor+';border-radius:var(--rs);padding:8px 10px;margin-bottom:10px">'
+      +'<div style="font-family:\'Jua\',sans-serif!important;font-size:12px;color:'+labelColor+';margin-bottom:5px">'+label+'</div>'
+      +rows+'</div>';
   })() : '';
 
   const remHtml = (winRemC+winRemR+winRemS)>0

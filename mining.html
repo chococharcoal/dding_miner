@@ -166,7 +166,17 @@ input[type=number]{-moz-appearance:textfield}
 .sq-input::-webkit-inner-spin-button,.sq-input::-webkit-outer-spin-button{-webkit-appearance:none!important;margin:0!important}
 .sq-parsed{font-size:10px;font-weight:700;text-align:right;min-height:13px;margin-top:2px}
 
-/* 최적화 제작 카드 */
+/* 교환 토글 스위치 */
+.swap-toggle-wrap{display:flex;align-items:center;gap:10px;cursor:pointer;user-select:none;padding:10px 12px;background:var(--bg);border:1.5px solid var(--bdr);border-radius:var(--rs);margin-bottom:12px;transition:border-color .15s}
+.swap-toggle-wrap:hover{border-color:var(--acc)}
+.swap-toggle-input{display:none}
+.swap-toggle-track{position:relative;width:40px;height:22px;background:var(--bdr2);border-radius:11px;flex-shrink:0;transition:background .2s}
+.swap-toggle-thumb{position:absolute;top:3px;left:3px;width:16px;height:16px;background:#fff;border-radius:50%;box-shadow:0 1px 4px rgba(0,0,0,.2);transition:transform .2s}
+.swap-toggle-input:checked+.swap-toggle-track{background:var(--acc)}
+.swap-toggle-input:checked+.swap-toggle-track .swap-toggle-thumb{transform:translateX(18px)}
+.swap-toggle-input:checked~.swap-toggle-label{color:var(--acc)}
+.swap-toggle-label{font-family:'Jua',sans-serif!important;font-size:13px;color:var(--txt);flex-shrink:0}
+.swap-toggle-desc{font-size:10px;color:var(--muted);font-weight:500}
 .m-craft-card{background:var(--surf);border:1.5px solid var(--bdr);border-radius:var(--rs);padding:12px 13px;margin-bottom:8px;box-shadow:var(--sh)}
 .m-craft-header{display:flex;justify-content:space-between;align-items:flex-start;gap:8px;margin-bottom:4px}
 .m-craft-name{font-family:'Jua',sans-serif!important;font-size:14px;color:var(--txt)}
@@ -459,13 +469,14 @@ input[type=number]{-moz-appearance:textfield}
     </div>
     <div class="card">
       <div class="card-title">📊 최적화 결과</div>
-      <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;padding:8px 10px;background:var(--ylw-bg);border:1.5px solid var(--ylw);border-radius:var(--rs)">
-        <label style="display:flex;align-items:center;gap:7px;cursor:pointer;font-family:'Jua',sans-serif;font-size:13px;color:var(--txt);user-select:none">
-          <input type="checkbox" id="swapEnabled" onchange="co()" style="width:16px;height:16px;accent-color:var(--acc);cursor:pointer;flex-shrink:0">
-          🔄 주괴 교환 고려
-        </label>
-        <span style="font-size:10px;color:var(--muted);font-weight:500">체크 시 다른 종류 주괴로 교환 후 제작 비교</span>
-      </div>
+      <label class="swap-toggle-wrap">
+        <input type="checkbox" id="swapEnabled" onchange="co()" class="swap-toggle-input">
+        <span class="swap-toggle-track">
+          <span class="swap-toggle-thumb"></span>
+        </span>
+        <span class="swap-toggle-label">🔄 주괴 교환 고려</span>
+        <span class="swap-toggle-desc">다른 종류 주괴로 교환 후 제작 비교</span>
+      </label>
       <div id="oRes"><div class="empty-msg">값을 입력하면 계산됩니다</div></div>
     </div>
   </div>
