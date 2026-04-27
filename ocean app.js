@@ -186,6 +186,7 @@ function calcClamEV() {
 }
 
 window.calcDaily = () => {
+  try {
   const sk = getSK(), eng = getENG();
   const rod = ROD[gi('rodLevel')] ?? ROD[0];
   const stamina = gi('totalStamina');
@@ -261,6 +262,10 @@ window.calcDaily = () => {
   <div style="text-align:center;margin-top:8px;padding-top:8px;border-top:1px dashed var(--bdr2)">
     <div class="rb-label">하루 합계</div><div class="rb-value" style="color:var(--grn)">${f(totalRev)}원</div>
   </div></div>`;
+  } catch(err) {
+    document.getElementById('dailyRes').innerHTML = '<div class="empty-msg" style="color:var(--red)">계산 오류: '+err.message+'</div>';
+    console.error('calcDaily error:', err);
+  }
 };
 
 
@@ -306,11 +311,6 @@ function calcOpt() {
   for (const sf of SF_TYPES) for (const t of SF_TIERS) {
     const v = readSplitQty(`have_${sf}_${t}`);
     if (v > 0) inv[`${sf}${t}`] = (inv[`${sf}${t}`] || 0) + v;
-  }
-  const fishKeys = ['shrimp','sea_bream','herring','goldfish','bass'];
-  for (const k of fishKeys) {
-    const v = readSplitQty(`have_fish_${k}`);
-    if (v > 0) inv[k] = (inv[k] || 0) + v;
   }
   // 중간재료 — 동적 추가 행에서 읽기
   document.querySelectorAll('#intermList .interm-row').forEach(row => {
@@ -732,17 +732,6 @@ function buildHaveSeafoodGrid() {
     html += '</div></div>';
   }
 
-  // 물고기
-  const fishKeys = ['shrimp','sea_bream','herring','goldfish','bass'];
-  html += '<div class="slabel" style="margin-top:8px">🐟 물고기 (보유 재고)</div>';
-  html += '<div class="g3">';
-  for (const k of fishKeys) {
-    const meta = VANILLA_META[k]; if (!meta) continue;
-    const id = 'have_fish_'+k;
-    html += '<div class="field"><label>'+meta.name+'</label>'+splitQtyHtml(id, '#607090')+'</div>';
-  }
-  html += '</div>';
-
   // 중간재료 — 동적 추가
   html += '<div class="slabel" style="margin-top:8px">⚗️ 보유 중간재료 <small style="font-weight:500;font-size:9px">(선택)</small></div>';
   html += '<div id="intermList"></div>';
@@ -807,20 +796,17 @@ window.autoFill = () => {
 /* ════════════════════════════════════════
    ⑪ localStorage 저장·불러오기
 ════════════════════════════════════════ */
-const KEY = 'ocean_calc_v6';
-const fishKeys_store      = ['shrimp','sea_bream','herring','goldfish','bass'];
+const KEY = 'ocean_calc_v7'; // v7: 물고기 재고 제거
 const splitSuffixes = ['_box','_set','_ea'];
 
 function getStaticIds() {
-  const sfSplitIds   = SF_TYPES.flatMap(sf => SF_TIERS.flatMap(t => splitSuffixes.map(s => 'have_'+sf+'_'+t+s)));
-  const fishSplitIds = fishKeys_store.flatMap(k => splitSuffixes.map(s => 'have_fish_'+k+s));
+  const sfSplitIds = SF_TYPES.flatMap(sf => SF_TIERS.flatMap(t => splitSuffixes.map(s => 'have_'+sf+'_'+t+s)));
   return [
     'skillFurnace','skillCraftBonus','skillAlchBonus','skillDeepHarvest','skillStarBonus','skillClamBonus',
     'engClamSearch','engSeafoodLuck','engFisherRoulette','engSpiritWhale','rodLevel','totalStamina',
     'price_sf_1','price_sf_2','price_sf_3',
     ...Object.keys(VANILLA_META).map(k => 'vprice_'+k),
     ...sfSplitIds,
-    ...fishSplitIds,
   ];
 }
 function saveAll() {
@@ -840,15 +826,11 @@ function loadAll() {
   try {
     const d = JSON.parse(localStorage.getItem(KEY) || '{}');
     getStaticIds().forEach(id => { const e = document.getElementById(id); if (e && d[id] !== undefined) e.value = d[id]; });
-    // 총 n개 표시 갱신
+    // 어패류 총 n개 표시 갱신
     SF_TYPES.forEach(sf => SF_TIERS.forEach(t => {
       const id = 'have_'+sf+'_'+t, p = document.getElementById(id+'_p'), n = readSplitQty(id);
       if (p && n > 0) p.textContent = '총 '+f(n)+'개';
     }));
-    fishKeys_store.forEach(k => {
-      const id = 'have_fish_'+k, p = document.getElementById(id+'_p'), n = readSplitQty(id);
-      if (p && n > 0) p.textContent = '총 '+f(n)+'개';
-    });
     // 중간재료 동적 행 복원
     if (Array.isArray(d.__irows)) {
       d.__irows.forEach(({key, qty}) => {
@@ -883,7 +865,6 @@ window.resetAll = () => {
   localStorage.removeItem(KEY);
   getStaticIds().forEach(id => { const e = document.getElementById(id); if (!e) return; if (e.tagName==='SELECT') e.selectedIndex=0; else e.value=''; });
   SF_TYPES.forEach(sf => SF_TIERS.forEach(t => { const p=document.getElementById('have_'+sf+'_'+t+'_p'); if(p)p.textContent=''; }));
-  fishKeys_store.forEach(k => { const p=document.getElementById('have_fish_'+k+'_p'); if(p)p.textContent=''; });
   const il = document.getElementById('intermList'); if (il) il.innerHTML = '';
   intermRowId = 0;
   syncDropdownLabels();
