@@ -468,38 +468,40 @@ function buildHaveSeafoodGrid(){
   const el=document.getElementById('haveSeafoodGrid'); if(!el) return;
 
   const sfColors={oyster:'#3d6fd4',conch:'#c89c00',octopus:'#7c52c8',seaweed:'#d94f3d',urchin:'#3a9e68'};
+  const starLabels={1:'★ 1성',2:'★★ 2성',3:'★★★ 3성'};
   let html='';
 
   // ── 어패류 (5종 × 3성급) ──
-  html+=`<div class="slabel">🦀 어패류</div>`;
+  html+='<div class="slabel">🦀 어패류</div>';
   for(const sf of SF_TYPES){
-    const meta=SEAFOOD_TYPES[sf]; const cl=sfColors[sf];
-    html+=`<div style="margin-bottom:8px">`;
-    html+=`<div style="font-size:10px;font-weight:700;color:${cl};margin-bottom:4px">${meta.name}</div>`;
-    html+=`<div class="g3">`;
+    const meta=SEAFOOD_TYPES[sf];
+    const cl=sfColors[sf];
+    html+='<div style="margin-bottom:8px">';
+    html+='<div style="font-size:10px;font-weight:700;color:'+cl+';margin-bottom:4px">'+meta.name+'</div>';
+    html+='<div class="g3">';
     for(const t of SF_TIERS){
-      const id=`have_${sf}_${t}`;
-      html+=`<div class="field">
-        <label style="color:${cl}">${'★'.repeat(t)} ${t}성</label>
-        ${splitQtyHtml(id, cl)}
-      </div>`;
+      const id='have_'+sf+'_'+t;
+      html+='<div class="field">';
+      html+='<label style="color:'+cl+'">'+starLabels[t]+'</label>';
+      html+=splitQtyHtml(id, cl);
+      html+='</div>';
     }
-    html+=`</div></div>`;
+    html+='</div></div>';
   }
 
-  // ── 물고기 (바닐라 fish 그룹) ──
+  // ── 물고기 ──
   const fishKeys=['shrimp','sea_bream','herring','goldfish','bass'];
-  html+=`<div class="slabel" style="margin-top:8px">🐟 물고기 (보유 재고)</div>`;
-  html+=`<div class="g3">`;
+  html+='<div class="slabel" style="margin-top:8px">🐟 물고기 (보유 재고)</div>';
+  html+='<div class="g3">';
   for(const k of fishKeys){
     const meta=VANILLA_META[k]; if(!meta) continue;
-    const id=`have_fish_${k}`;
-    html+=`<div class="field">
-      <label>${meta.name}</label>
-      ${splitQtyHtml(id, '#607090')}
-    </div>`;
+    const id='have_fish_'+k;
+    html+='<div class="field">';
+    html+='<label>'+meta.name+'</label>';
+    html+=splitQtyHtml(id, '#607090');
+    html+='</div>';
   }
-  html+=`</div>`;
+  html+='</div>';
 
   // ── 중간재료 ──
   const step1Groups=[
@@ -510,20 +512,19 @@ function buildHaveSeafoodGrid(){
     {label:'3차 엘릭서 ★★★', keys:['elixir_guardian','elixir_wave','elixir_chaos','elixir_life','elixir_corrosion']},
     {label:'3차 영약 ★★★',   keys:['potion_immortal','potion_barrier','potion_corrupt','potion_frenzy','potion_venom']},
   ];
-  html+=`<div class="slabel" style="margin-top:8px">⚗️ 보유 중간재료 <small style="font-weight:500;font-size:9px">(선택)</small></div>`;
+  html+='<div class="slabel" style="margin-top:8px">⚗️ 보유 중간재료 <small style="font-weight:500;font-size:9px">(선택)</small></div>';
   for(const grp of step1Groups){
-    html+=`<div style="font-size:10px;font-weight:700;color:var(--muted);margin:6px 0 3px">${grp.label}</div>`;
-    html+=`<div class="g3">`;
+    html+='<div style="font-size:10px;font-weight:700;color:var(--muted);margin:6px 0 3px">'+grp.label+'</div>';
+    html+='<div class="g3">';
     for(const k of grp.keys){
       const rec=ALCHEMY[k]; if(!rec) continue;
-      const id=`have_interm_${k}`;
-      html+=`<div class="field">
-        <label style="color:${rec.color||'#607090'}">${rec.name}</label>
-        <input id="${id}" type="number" inputmode="numeric" placeholder="0" min="0"
-          oninput="calcOpt();saveAll()">
-      </div>`;
+      const id='have_interm_'+k;
+      html+='<div class="field">';
+      html+='<label style="color:'+(rec.color||'#607090')+'">'+rec.name+'</label>';
+      html+='<input id="'+id+'" type="number" inputmode="numeric" placeholder="0" min="0" oninput="calcOpt();saveAll()">';
+      html+='</div>';
     }
-    html+=`</div>`;
+    html+='</div>';
   }
 
   el.innerHTML=html;
