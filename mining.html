@@ -190,19 +190,19 @@ html,body{min-height:100vh;background:var(--bg) radial-gradient(circle at 10% 15
         <select id="skillGemSell" onchange="onSkillChange()">
           <option value="0">0레벨 — 기본</option><option value="1">1레벨 — +5%</option><option value="2">2레벨 — +7%</option>
           <option value="3">3레벨 — +10%</option><option value="4">4레벨 — +20%</option><option value="5">5레벨 — +30%</option><option value="6">6레벨 — +50%</option>
-        </select>
+        </select><span class="skinfo" id="skillGemSellInfo">기본</span>
       </div>
       <div class="skrow"><span class="skname">👑 귀하신 몸값</span>
         <select id="skillPrecious" onchange="onSkillChange()">
           <option value="0">0레벨 — 기본</option><option value="1">1레벨 — +5%</option><option value="2">2레벨 — +7%</option>
           <option value="3">3레벨 — +10%</option><option value="4">4레벨 — +15%</option><option value="5">5레벨 — +20%</option><option value="6">6레벨 — +30%</option>
-        </select>
+        </select><span class="skinfo" id="skillPreciousInfo">기본</span>
       </div>
       <div class="skrow"><span class="skname">🔥 초고속 용광로</span>
         <select id="skillFurnace" onchange="onSkillChange()">
           <option value="0">0레벨 — 기본</option><option value="1">1레벨 — -10%</option><option value="2">2레벨 — -30%</option>
           <option value="3">3레벨 — -40%</option><option value="4">4레벨 — -60%</option><option value="5">5레벨 — -80%</option>
-        </select>
+        </select><span class="skinfo" id="skillFurnaceInfo">기본</span>
       </div>
     </div>
     <div class="sksec">⛏ 채굴 드랍</div>
@@ -212,7 +212,7 @@ html,body{min-height:100vh;background:var(--bg) radial-gradient(circle at 10% 15
           <option value="0">0레벨 — 기본</option><option value="1">1레벨 — +1%</option><option value="2">2레벨 — +1.5%</option>
           <option value="3">3레벨 — +2%</option><option value="4">4레벨 — +2.5%</option><option value="5">5레벨 — +3%</option>
           <option value="6">6레벨 — +4%</option><option value="7">7레벨 — +5%</option>
-        </select>
+        </select><span class="skinfo" id="skillCobbyInfo">기본</span>
       </div>
       <div class="skrow"><span class="skname">🍀 럭키 히트</span>
         <select id="skillLucky" onchange="onSkillChange()">
@@ -220,13 +220,13 @@ html,body{min-height:100vh;background:var(--bg) radial-gradient(circle at 10% 15
           <option value="3">3레벨 — 3%/+3개</option><option value="4">4레벨 — 4%/+4개</option><option value="5">5레벨 — 5%/+6개</option>
           <option value="6">6레벨 — 6%/+8개</option><option value="7">7레벨 — 7%/+10개</option><option value="8">8레벨 — 8%/+12개</option>
           <option value="9">9레벨 — 10%/+16개</option><option value="10">10레벨 — 15%/+20개</option>
-        </select>
+        </select><span class="skinfo" id="skillLuckyInfo">기본</span>
       </div>
       <div class="skrow"><span class="skname">💫 반짝임의 시작</span>
         <select id="skillSparkle" onchange="onSkillChange()">
           <option value="0">0레벨 — 기본</option><option value="1">1레벨 — 3% / 1개</option>
           <option value="2">2레벨 — 7% / 1개</option><option value="3">3레벨 — 10% / 2개</option>
-        </select>
+        </select><span class="skinfo" id="skillSparkleInfo">기본</span>
       </div>
       <div class="skrow"><span class="skname">🔥 불붙은 곡괭이</span>
         <select id="skillFirePick" onchange="onSkillChange()">
@@ -234,7 +234,7 @@ html,body{min-height:100vh;background:var(--bg) radial-gradient(circle at 10% 15
           <option value="3">3레벨 — 3%</option><option value="4">4레벨 — 4%</option><option value="5">5레벨 — 5%</option>
           <option value="6">6레벨 — 6%</option><option value="7">7레벨 — 7%</option><option value="8">8레벨 — 8%</option>
           <option value="9">9레벨 — 9%</option><option value="10">10레벨 — 15%</option>
-        </select>
+        </select><span class="skinfo" id="skillFirePickInfo">기본</span>
       </div>
     </div>
   </div>
@@ -248,35 +248,35 @@ html,body{min-height:100vh;background:var(--bg) radial-gradient(circle at 10% 15
         <select id="engOreLuck" onchange="onEngravingChange()">
           <option value="0">없음</option><option value="1">1강 — 25%/+1개</option><option value="2">2강 — 50%/+1개</option>
           <option value="3">3강 — 75%/+1개</option><option value="4">4강 — 100%/+1개</option>
-        </select>
+        </select><span class="skinfo" id="engOreLuckInfo">없음</span>
       </div>
       <div class="skrow"><span class="skname">🗿 유물 탐색</span>
         <select id="engRelic" onchange="onEngravingChange()">
           <option value="0">없음</option><option value="1">1강 — +1%</option><option value="2">2강 — +3%</option><option value="3">3강 — +5%</option>
-        </select>
+        </select><span class="skinfo" id="engRelicInfo">없음</span>
       </div>
       <div class="skrow"><span class="skname">🐾 코비 소환</span>
         <select id="engCobby" onchange="onEngravingChange()">
           <option value="0">없음</option><option value="1">1강 — +1%</option><option value="2">2강 — +3%</option><option value="3">3강 — +5%</option>
-        </select>
+        </select><span class="skinfo" id="engCobbyInfo">없음</span>
       </div>
       <div class="skrow"><span class="skname">💎 보석 코비</span>
         <select id="engGemCobby" onchange="onEngravingChange()">
           <option value="0">없음</option><option value="1">1강 — 5%</option><option value="2">2강 — 10%</option>
           <option value="3">3강 — 20%</option><option value="4">4강 — 30%</option><option value="5">5강 — 50%</option>
-        </select>
+        </select><span class="skinfo" id="engGemCobbyInfo">없음</span>
       </div>
       <div class="skrow"><span class="skname">🚂 광산 수레</span>
         <select id="engCart" onchange="onEngravingChange()">
           <option value="0">없음</option><option value="1">1강 — 0.5%</option><option value="2">2강 — 1%</option>
           <option value="3">3강 — 1.5%</option><option value="4">4강 — 2%</option><option value="5">5강 — 3%</option>
-        </select>
+        </select><span class="skinfo" id="engCartInfo">없음</span>
       </div>
       <div class="skrow"><span class="skname">🎲 광부 룰렛</span>
         <select id="engRoulette" onchange="onEngravingChange()">
           <option value="0">없음</option><option value="1">1강 — 1%</option><option value="2">2강 — 2%</option>
           <option value="3">3강 — 3%</option><option value="4">4강 — 4%</option><option value="5">5강 — 5%</option>
-        </select>
+        </select><span class="skinfo" id="engRouletteInfo">없음</span>
       </div>
     </div>
   </div>
@@ -562,11 +562,16 @@ html,body{min-height:100vh;background:var(--bg) radial-gradient(circle at 10% 15
     });
   }
 
-  document.addEventListener('click', () => {
-    document.querySelectorAll('.cdd.open').forEach(el=>el.classList.remove('open'));
+  document.addEventListener('click', e => {
+    if(!e.target.closest('.cdd')) document.querySelectorAll('.cdd.open').forEach(el=>el.classList.remove('open'));
   });
 
-  document.addEventListener('DOMContentLoaded', () => {
+  function domReady(fn) {
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', fn);
+    else fn();
+  }
+
+  domReady(() => {
     loadAll();
     document.querySelectorAll('.skrow select, .field select').forEach(sel=>initOneCdd(sel));
     syncDropdownLabels();
