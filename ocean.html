@@ -112,29 +112,156 @@ html,body{min-height:100vh;background:var(--bg) radial-gradient(circle at 10% 15
 .add-interm-btn{font-family:'Jua',sans-serif!important;font-size:12px;padding:6px 14px;border-radius:20px;border:1.5px solid var(--acc);background:var(--grn-bg);color:var(--acc);cursor:pointer;transition:all .15s;display:inline-block;margin-top:6px}
 .add-interm-btn:hover{background:var(--acc);color:#fff}
 /* 연금 최적화 탭 */
-.opt-tabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px}
+.opt-tabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px}
 .opt-tab{font-family:'Jua',sans-serif!important;font-size:13px;padding:6px 14px;border-radius:20px;border:2px solid var(--tab-color,var(--bdr2));background:var(--surf);color:var(--muted);cursor:pointer;transition:all .15s;display:flex;flex-direction:column;align-items:center;gap:1px;min-width:64px}
 .opt-tab small{font-size:10px;font-weight:700}
 .opt-tab.active{background:var(--tab-color,var(--acc));border-color:var(--tab-color,var(--acc));color:#fff}
 .opt-tab:not(.active):hover{border-color:var(--tab-color,var(--acc));color:var(--tab-color,var(--acc))}
-/* 제작 플로우 카드 */
-.craft-flow-card{background:var(--bg);border:1.5px solid var(--bdr);border-radius:var(--rs);padding:14px;margin-bottom:10px}
-.craft-flow-title{font-family:'Jua',sans-serif!important;font-size:13px;font-weight:900;margin-bottom:12px;padding-bottom:7px;border-bottom:1.5px solid var(--bdr2)}
-.craft-step-label{font-family:'Jua',sans-serif!important;font-size:11px;color:var(--muted);font-weight:700;margin:10px 0 5px;letter-spacing:.3px}
-.craft-step-label:first-of-type{margin-top:0}
-/* 원재료 묶음 (wrap) */
-.craft-row-wrap{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:4px}
-/* 재료→결과 한 줄 */
-.craft-row-flow{display:flex;align-items:center;flex-wrap:wrap;gap:4px;margin-bottom:5px;padding:5px 8px;background:var(--surf);border-radius:var(--rs);border:1px solid var(--bdr)}
-.flow-plus{color:var(--muted);font-size:13px;font-weight:900;flex-shrink:0;padding:0 1px}
-.flow-arrow{color:var(--acc);font-size:15px;font-weight:900;flex-shrink:0;padding:0 3px}
-/* 재료 칩 */
+
+/* 최종산물 카드 */
+.craft-flow-card{
+  background:var(--surf);
+  border:2px solid var(--bdr);
+  border-radius:var(--r);
+  overflow:hidden;
+  margin-bottom:12px;
+  box-shadow:var(--sh);
+}
+/* 카드 헤더 — 성급 색상 왼쪽 바 */
+.cfc-header{
+  display:flex;justify-content:space-between;align-items:flex-start;
+  padding:12px 14px;
+  border-left:4px solid var(--tier-color,var(--acc));
+  background:linear-gradient(90deg,color-mix(in srgb,var(--tier-color,var(--acc)) 6%,white),transparent);
+}
+.cfc-header-left .cfc-name{
+  font-family:'Jua',sans-serif!important;
+  font-size:16px;font-weight:900;
+  color:var(--tier-color,var(--acc));
+}
+.cfc-header-left .cfc-sub{
+  font-size:11px;color:var(--muted);margin-top:3px;
+}
+.cfc-header-right{text-align:right;flex-shrink:0}
+.cfc-count{
+  font-family:'Jua',sans-serif!important;
+  font-size:22px;font-weight:900;
+  color:var(--tier-color,var(--acc));
+  line-height:1;
+}
+.cfc-revenue{font-size:13px;color:var(--grn);font-weight:700;margin-top:3px}
+
+/* 섹션 구분 */
+.cfc-section{
+  padding:10px 14px;
+  border-top:1px solid var(--bdr);
+}
+.cfc-section-label{
+  font-family:'Jua',sans-serif!important;
+  font-size:11px;font-weight:700;
+  color:var(--muted);letter-spacing:.5px;
+  margin-bottom:8px;
+  display:flex;align-items:center;gap:5px;
+}
+.cfc-section-label::after{content:'';flex:1;height:1px;background:var(--bdr)}
+
+/* 어패류 칩 묶음 */
+.sf-chip-wrap{display:flex;flex-wrap:wrap;gap:6px}
+.sf-chip{
+  display:inline-flex;flex-direction:column;align-items:center;gap:2px;
+  padding:5px 9px;border-radius:8px;
+  border:1.5px solid color-mix(in srgb,var(--chip-color) 40%,transparent);
+  background:color-mix(in srgb,var(--chip-color) 10%,white);
+  min-width:52px;
+}
+.sf-chip .sc-name{font-size:10px;font-weight:700;color:var(--chip-color);text-align:center;word-break:keep-all}
+.sf-chip .sc-qty{font-size:12px;font-weight:900;color:var(--chip-color);text-align:center}
+
+/* 제작 가이드 토글 */
+.guide-toggle{
+  display:flex;align-items:center;gap:6px;
+  cursor:pointer;user-select:none;
+  padding:8px 14px;
+  border-top:1px solid var(--bdr);
+  background:var(--bg);
+  font-family:'Jua',sans-serif!important;
+  font-size:11px;color:var(--acc);
+  transition:background .15s;
+}
+.guide-toggle:hover{background:color-mix(in srgb,var(--acc) 6%,white)}
+.guide-toggle-arrow{font-size:10px;transition:transform .2s}
+.guide-body{display:none;padding:10px 14px;border-top:1px solid var(--bdr)}
+
+/* 단계 블록 */
+.step-block{
+  background:var(--bg);
+  border:1.5px solid var(--bdr);
+  border-radius:var(--rs);
+  padding:8px 10px;
+  margin-bottom:8px;
+}
+.step-block:last-child{margin-bottom:0}
+.step-block-label{
+  font-family:'Jua',sans-serif!important;
+  font-size:10px;font-weight:700;color:var(--muted);
+  margin-bottom:6px;letter-spacing:.3px;
+}
+/* 재료 → 결과 한 줄 */
+.step-row{
+  display:flex;align-items:center;flex-wrap:wrap;gap:4px;
+  padding:5px 8px;margin-bottom:4px;
+  background:var(--surf);border-radius:6px;
+  border:1px solid var(--bdr);
+}
+.step-row:last-child{margin-bottom:0}
+.flow-plus{color:var(--muted);font-size:13px;font-weight:900;flex-shrink:0}
+.flow-arrow{color:var(--acc);font-size:16px;font-weight:900;flex-shrink:0;padding:0 2px}
+
+/* 재료 칩 (기존 호환) */
 .mat-chip-flow{display:inline-flex;flex-direction:column;align-items:center;gap:1px;padding:4px 7px;border-radius:6px;border:1.5px solid color-mix(in srgb,var(--chip-color) 40%,transparent);background:color-mix(in srgb,var(--chip-color) 10%,white);min-width:44px;max-width:90px;vertical-align:top}
 .chip-name{font-size:9px;font-weight:700;color:var(--chip-color,var(--txt));text-align:center;line-height:1.3;word-break:keep-all;white-space:normal}
 .chip-qty{font-size:10px;font-weight:900;color:var(--chip-color,var(--muted));text-align:center;white-space:nowrap}
 .result-chip{border-width:2px;padding:5px 10px}
 .result-chip .chip-name{font-size:10px}
 .result-chip .chip-qty{font-size:11px}
+
+/* 최종 조합 결과 칩 (강조) */
+.final-chip{
+  display:inline-flex;flex-direction:column;align-items:center;gap:2px;
+  padding:6px 12px;border-radius:8px;
+  border:2px solid var(--tier-color,var(--acc));
+  background:color-mix(in srgb,var(--tier-color,var(--acc)) 10%,white);
+  min-width:60px;
+}
+.final-chip .fc-name{font-size:11px;font-weight:900;color:var(--tier-color,var(--acc));text-align:center}
+.final-chip .fc-qty{font-size:13px;font-weight:900;color:var(--tier-color,var(--acc));text-align:center}
+
+/* 바닐라 재료 합계 */
+.van-section{
+  background:var(--bg);border:1.5px solid var(--bdr);
+  border-radius:var(--rs);padding:10px 12px;margin-top:12px;
+}
+.van-section-title{
+  font-family:'Jua',sans-serif!important;
+  font-size:12px;color:var(--muted);font-weight:700;
+  margin-bottom:8px;padding-bottom:5px;
+  border-bottom:1px dashed var(--bdr2);
+}
+.van-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:5px}
+.van-item{
+  display:flex;justify-content:space-between;align-items:center;
+  padding:4px 7px;border-radius:6px;
+  background:var(--surf);border:1px solid var(--bdr);
+  font-size:11px;gap:6px;
+}
+.van-item .vi-name{color:var(--txt);font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.van-item .vi-qty{color:var(--muted);font-weight:700;white-space:nowrap;flex-shrink:0}
+
+/* 이전 클래스 호환 */
+.craft-flow-title{font-family:'Jua',sans-serif!important;font-size:13px;font-weight:900;margin-bottom:12px;padding-bottom:7px;border-bottom:1.5px solid var(--bdr2)}
+.craft-step-label{font-family:'Jua',sans-serif!important;font-size:11px;color:var(--muted);font-weight:700;margin:10px 0 5px;letter-spacing:.3px}
+.craft-row-wrap{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:4px}
+.craft-row-flow{display:flex;align-items:center;flex-wrap:wrap;gap:4px;margin-bottom:5px;padding:5px 8px;background:var(--surf);border-radius:var(--rs);border:1px solid var(--bdr)}
 ::-webkit-scrollbar{width:5px}
 ::-webkit-scrollbar-thumb{background:var(--bdr2);border-radius:3px}
 </style>
@@ -225,6 +352,14 @@ html,body{min-height:100vh;background:var(--bg) radial-gradient(circle at 10% 15
             <option value="3">III — 3%</option><option value="4">IV — 4%</option><option value="5">V — 5%</option>
           </select><span class="skinfo" id="infoFisherRoulette">없음</span>
         </div>
+        <div class="skrow"><span class="skname">🐋 정령 고래</span>
+          <select id="engSpiritWhale" onchange="onEngChange()">
+            <option value="0">없음</option>
+            <option value="1">I — 1%</option><option value="2">II — 2%</option>
+            <option value="3">III — 3%</option><option value="4">IV — 4%</option>
+            <option value="5">V — 5%</option>
+          </select><span class="skinfo" id="infoSpiritWhale">없음</span>
+        </div>
       </div>
     </div>
   </div>
@@ -289,17 +424,12 @@ html,body{min-height:100vh;background:var(--bg) radial-gradient(circle at 10% 15
   <!-- TAB 2 -->
   <div id="t2" class="panel" style="display:none">
     <div class="card">
-      <div class="card-title">📦 현재 보유 어패류</div>
-      <div class="fnote" style="margin-bottom:8px">5종 × 3성급 = 15칸 · n상자 n세트 n개 형식 가능</div>
+      <div class="card-title">📦 보유 재고 입력</div>
+      <div class="fnote" style="margin-bottom:10px">어패류·물고기·연금품 보유량을 입력하세요 · n상자 n세트 n개 형식 가능</div>
       <div id="haveSeafoodGrid"></div>
     </div>
     <div class="card">
-      <div class="card-title">🔮 보유 중간재료 <span style="font-size:11px;color:var(--muted);font-weight:500">(선택, 있는 것만 추가)</span></div>
-      <div id="intermList"></div>
-      <button class="add-interm-btn" onclick="addIntermRow()">+ 중간재료 추가</button>
-    </div>
-    <div class="card">
-      <div class="card-title">📋 최적화 결과</div>
+      <div class="card-title">📋 연금 최적화 결과</div>
       <div id="optRes"><div class="empty-msg">보유 어패류를 입력하면 계산됩니다</div></div>
     </div>
   </div>
