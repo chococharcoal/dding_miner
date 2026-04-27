@@ -537,18 +537,26 @@ function calcSwapPlan(iCo, iRi, iSe, allOptions, cP, rP, sP) {
   return { swapLog, swapRemCo: newHold.C, swapRemRi: newHold.R, swapRemSe: newHold.S };
 }
 
+// 상자/세트/개 3칸 합산
+function readSplitQty(id) {
+  const box = parseInt(document.getElementById(id+'_box')?.value||'0')||0;
+  const set = parseInt(document.getElementById(id+'_set')?.value||'0')||0;
+  const ea  = parseInt(document.getElementById(id+'_ea') ?.value||'0')||0;
+  return box*BOX_SIZE + set*SET_SIZE + ea;
+}
+
 export function co() {
   const { ib, fr, pb } = getSK();
-  const iCo = parseQty(document.getElementById('iCo')?.value || '');
-  const iRi = parseQty(document.getElementById('iRi')?.value || '');
-  const iSe = parseQty(document.getElementById('iSe')?.value || '');
-  const showParsed = (spanId, n) => {
-    const el = document.getElementById(spanId);
-    if (el) el.textContent = n > 0 ? `(총 ${n.toLocaleString('ko-KR')}개)` : '';
+  const iCo = readSplitQty('iCo');
+  const iRi = readSplitQty('iRi');
+  const iSe = readSplitQty('iSe');
+  const showParsed = (pId, n) => {
+    const el = document.getElementById(pId);
+    if (el) el.textContent = n > 0 ? '총 '+f(n)+'개' : '';
   };
-  showParsed('iCoParsed', iCo);
-  showParsed('iRiParsed', iRi);
-  showParsed('iSeParsed', iSe);
+  showParsed('iCo_p', iCo);
+  showParsed('iRi_p', iRi);
+  showParsed('iSe_p', iSe);
   const userCo = gi('oCo'), userRi = gi('oRi'), userSe = gi('oSe');
   const rawC = userCo > 0 ? userCo : (DEFAULT_PRICES.ingot?.corum  ?? 0);
   const rawR = userRi > 0 ? userRi : (DEFAULT_PRICES.ingot?.rifton ?? 0);
@@ -678,8 +686,163 @@ export function co() {
     return { ingotTotals, mats };
   }
   const ingotChip = (label, color, total) =>
-    `<span class="mat-chip" style="background:${color}18;color:${color};border-color:${color}55">${label} 주괴 ${fmtQty(total)}</span>`;
-  function buildPlanItems(results) {
+    '<span class="mat-chip" style="background:'+color+'18;color:'+color+';border-color:'+color+'55">'+label+' 주괴 '+fmtQty(total)+'</span>';
+
+  // ── 제작 아이템 카드 빌드 ──
+  function buildPlanCards(results) {
+    if (!results.length) return '<div class="empty-msg" style="padding:14px 0">제작 가능한 옵션 없음</div>';
+    return results.map(c => {
+      const rev = c.count * (c.type === 'precious' ? c.extra.avgSell : c.sell);
+      const t   = c.count * c.ct;
+      const npi = totalIngots(c);
+      const precBadge = c.type === 'precious' ? ' '+bdg('bpu','귀중품') : '';
+      const npiTxt = npi > 0 ? '<span style="font-size:10px;color:var(--muted);font-weight:500;margin-left:4px">주괴당 '+f(c.net/npi)+'원</span>' : '';
+
+      // 필요 주괴 칩
+      let ingotChips = '';
+      if (c.iC > 0) ingotChips += ingotChip('코룸',   CC, c.iC*c.count);
+      if (c.iR > 0) ingotChips += ingotChip('리프톤', CR, c.iR*c.count);
+      if (c.iS > 0) ingotChips += ingotChip('세렌트', CS, c.iS*c.count);
+
+      // 바닐라 재료 칩
+      let vanChips = '';
+      if (c.type === 'ls') {
+        vanChips = Object.entries(RECIPES[c.key].vanilla||{}).filter(([,q])=>q>0).map(([mat,qty])=>matChipQty(mat,qty*c.count)).join('');
+      } else {
+        const rec = c.extra.rec;
+        const chips = Object.entries(rec.vanilla||{}).filter(([,q])=>q>0).map(([mat,qty])=>matChipQty(mat,qty*c.count));
+        if (rec.doc) chips.push('<span class="mat-chip" style="background:#ff980018;color:#e07b2a;border-color:#e07b2a55">증서 '+c.count+'개</span>');
+        vanChips = chips.join('');
+      }
+
+      // 감정가 (귀중품)
+      const apprHtml = c.type==='precious'
+        ? '<div style="display:flex;flex-wrap:wrap;gap:4px 10px;font-size:10px;color:var(--muted);margin-top:4px">'
+          +'<span>하 '+f(c.extra.item.prices.LOW*(1+pb))+'원</span>'
+          +'<span>우수 '+f(c.extra.item.prices.GOOD*(1+pb))+'원</span>'
+          +'<span>황실 '+f(c.extra.item.prices.ROYAL*(1+pb))+'원</span>'
+          +'<span style="color:var(--grn);font-weight:700">기댓값 '+f(c.extra.avgSell)+'원</span>'
+          +'</div>' : '';
+
+      // 제작 가이드 (접기/펼치기)
+      const guideId = 'cg_'+c.key+'_'+c.count;
+      let guideHtml = '';
+      if (ingotChips||vanChips) {
+        guideHtml = '<div onclick="var g=this.nextElementSibling;g.style.display=g.style.display===\'none\'?\'block\':\'none\';this.querySelector(\'.ga\').textContent=g.style.display===\'none\'?\'▶\':\'▼\'" '
+          +'style="display:flex;align-items:center;gap:5px;cursor:pointer;font-size:11px;color:var(--acc);padding:6px 0;border-top:1px dashed var(--bdr);margin-top:6px;user-select:none">'
+          +'<span class="ga">▶</span> 필요 재료 보기</div>'
+          +'<div style="display:none;padding-top:4px">'
+          +(ingotChips ? '<div style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:4px">'+ingotChips+'</div>' : '')
+          +(vanChips   ? '<div style="display:flex;flex-wrap:wrap;gap:4px">'+vanChips+'</div>' : '')
+          +'</div>';
+      }
+
+      return '<div class="m-craft-card">'
+        +'<div class="m-craft-header">'
+        +  '<div><div class="m-craft-name">'+c.label+precBadge+npiTxt+'</div>'+apprHtml+'</div>'
+        +  '<div style="text-align:right;flex-shrink:0">'
+        +    '<div class="m-craft-rev">'+f(rev)+'원</div>'
+        +    '<div class="m-craft-count">'+fmtQty(c.count)+'</div>'
+        +  '</div>'
+        +'</div>'
+        +(t>0?'<div style="font-size:10px;color:var(--blu);font-weight:700;margin-top:4px">⏱ '+fmtTime(t)+'</div>':'')
+        +guideHtml
+        +'</div>';
+    }).join('');
+  }
+
+  // ── 재료 합산 토글 ──
+  let _matIdx = 0;
+  function matSummaryHtml(results) {
+    if (!results.length) return '';
+    const uid = 'mt'+(++_matIdx);
+    const { ingotTotals, mats } = aggregateMats(results);
+    const ingotRows = [
+      ingotTotals['코룸']   > 0 ? '<div class="mat-summary-row"><span class="mn" style="color:'+CC+'">● 코룸 주괴</span><span class="mv">'+fmtQty(ingotTotals['코룸'])+'</span></div>' : '',
+      ingotTotals['리프톤'] > 0 ? '<div class="mat-summary-row"><span class="mn" style="color:'+CR+'">● 리프톤 주괴</span><span class="mv">'+fmtQty(ingotTotals['리프톤'])+'</span></div>' : '',
+      ingotTotals['세렌트'] > 0 ? '<div class="mat-summary-row"><span class="mn" style="color:'+CS+'">● 세렌트 주괴</span><span class="mv">'+fmtQty(ingotTotals['세렌트'])+'</span></div>' : '',
+    ].join('');
+    const vanRows = Object.entries(mats).filter(([k])=>k!=='__doc__').map(([mat,qty])=>{
+      const m = MAT_META[mat]||{name:mat,color:'#888'};
+      return '<div class="mat-summary-row"><span class="mn" style="color:'+m.color+'">● '+m.name+'</span><span class="mv">'+fmtQty(qty)+'</span></div>';
+    }).join('');
+    const docRow = mats['__doc__'] ? '<div class="mat-summary-row"><span class="mn" style="color:#e07b2a">● 증서</span><span class="mv">'+mats['__doc__']+'개</span></div>' : '';
+    return '<div class="mat-toggle" onclick="this.nextElementSibling.classList.toggle(\'open\');this.querySelector(\'.mat-arr\').textContent=this.nextElementSibling.classList.contains(\'open\')?\'▲\':\'▼\'">📋 총 필요 재료 <span class="mat-arr">▼</span></div>'
+      +'<div class="mat-detail" id="'+uid+'"><div class="mat-summary">'+ingotRows+vanRows+docRow+'</div></div>';
+  }
+
+  const fBdg = fr > 0 ? bdg('bg', '초고속 용광로 -'+Math.round(fr*100)+'%') : '';
+  const netSummaryRow = (label, net, iC, iR, iS) => {
+    if (!label || net === 0) return '';
+    const color = net >= 0 ? 'g' : 'r';
+    const n = iC+iR+iS;
+    const kl = [iC>0?'코룸 ':null, iR>0?'리프톤 ':null, iS>0?'세렌트 ':null].filter(Boolean).length===1
+      ? (iC>0?'코룸 ':iR>0?'리프톤 ':'세렌트 ') : '';
+    const perHtml = n>0 ? ' <small style="color:var(--muted)">· '+kl+'주괴당 '+f(net/n)+'원</small>' : '';
+    return row(label, f(net)+'원'+perHtml, color);
+  };
+
+  // ── 교환 여부에 따라 표시할 plan 결정 ──
+  const swapBetter   = swapResult && swapCraftRev > craftRev;
+  const winResults   = swapBetter ? swapCraftResult : craftResult;
+  const winRev       = swapBetter ? swapCraftRev    : craftRev;
+  const winTime      = swapBetter ? swapCraftTime   : craftTime;
+  const winRemC      = swapBetter ? swapRemCo       : remCo;
+  const winRemR      = swapBetter ? swapRemRi       : remRi;
+  const winRemS      = swapBetter ? swapRemSe       : remSe;
+
+  const swapInfoHtml = swapBetter && swapResult ? (() => {
+    const kindColor = {'코룸':CC,'리프톤':CR,'세렌트':CS};
+    const rows = swapResult.swapLog.map(s=>
+      '<div style="display:flex;align-items:center;gap:6px;font-size:12px;padding:4px 0;border-bottom:1px dashed var(--bdr)">'
+      +'<span style="color:'+kindColor[s.from]+'">'+s.from+'</span>'
+      +'<span style="color:var(--muted)"> → </span>'
+      +'<span style="color:'+kindColor[s.to]+'">'+s.to+'</span>'
+      +' <b>'+f(s.count)+'개</b> 교환'
+      +'</div>'
+    ).join('');
+    return '<div style="background:var(--ylw-bg);border:1.5px solid var(--ylw);border-radius:var(--rs);padding:8px 10px;margin-bottom:10px">'
+      +'<div style="font-family:\'Jua\',sans-serif;font-size:12px;color:var(--ylw);margin-bottom:5px">🔄 교환 후 제작 시 +'+f(swapCraftRev-craftRev)+'원 이득</div>'
+      +rows+'</div>';
+  })() : '';
+
+  const remHtml = (winRemC+winRemR+winRemS)>0
+    ? '<div class="rrow"><span class="rl">남은 주괴</span><span class="rv" style="font-size:11px">'
+      +(winRemC>0?'<span style="color:'+CC+'">'+f(winRemC)+'개</span> ':'')
+      +(winRemR>0?'<span style="color:'+CR+'">'+f(winRemR)+'개</span> ':'')
+      +(winRemS>0?'<span style="color:'+CS+'">'+f(winRemS)+'개</span>':'')
+      +'</span></div>' : '';
+
+  document.getElementById('oRes').innerHTML =
+  '<div class="rsec"><div class="rsec-title">📦 보유 주괴 &amp; 단가</div>'
+    +(iCo>0?'<div class="rrow"><span class="rl" style="color:'+CC+';font-weight:700">코룸</span><span class="rv">'+f(iCo)+'개 <small>(개당 '+f(cP)+'원)</small></span></div>':'')
+    +(iRi>0?'<div class="rrow"><span class="rl" style="color:'+CR+';font-weight:700">리프톤</span><span class="rv">'+f(iRi)+'개 <small>(개당 '+f(rP)+'원)</small></span></div>':'')
+    +(iSe>0?'<div class="rrow"><span class="rl" style="color:'+CS+';font-weight:700">세렌트</span><span class="rv">'+f(iSe)+'개 <small>(개당 '+f(sP)+'원)</small></span></div>':'')
+    +(iCo===0&&iRi===0&&iSe===0?'<div class="empty-msg" style="padding:6px 0">보유 주괴를 입력해주세요</div>':'')
+    +row('전량 직판 수익', f(rawSell)+'원')
+  +'</div>'
+  +'<div class="rsec"><div class="rsec-title">📊 개당 순이익</div>'
+    +(oL1>0?netSummaryRow('하급 라스',  netLS1,  RECIPES.LS1.ingot_corum,  0, 0):'')
+    +(oL2>0?netSummaryRow('중급 라스',  netLS2,  0, RECIPES.LS2.ingot_rifton,  0):'')
+    +(oL3>0?netSummaryRow('상급 라스',  netLS3,  0, 0, RECIPES.LS3.ingot_serent):'')
+    +(oAb>0?netSummaryRow('어빌리티 스톤', netAbil, 1, 1, 1):'')
+    +precItems.map(p=>netSummaryRow(p.item.name, p.netPerItem, p.ingotKey==='C'?p.ingotCnt:0, p.ingotKey==='R'?p.ingotCnt:0, p.ingotKey==='S'?p.ingotCnt:0)).join('')
+  +'</div>'
+  +'<div style="font-family:\'Jua\',sans-serif;font-size:14px;color:var(--txt);margin:4px 0 8px;display:flex;align-items:center;gap:6px">🔨 최적 제작 계획 '+fBdg+'</div>'
+  +swapInfoHtml
+  +buildPlanCards(winResults)
+  +matSummaryHtml(winResults)
+  +'<div class="rsec" style="margin-top:8px">'
+    +remHtml
+    +(winTime>0?'<div class="rrow"><span class="rl">총 제작 시간</span><span class="rv">'+fmtTime(winTime)+'</span></div>':'')
+  +'</div>'
+  +'<div class="result-box" style="margin-top:8px">'
+    +'<div class="rb-label">최적 제작 예상 수익</div>'
+    +'<div class="rb-value" style="color:var(--grn)">'+f(winRev)+'원</div>'
+    +(swapResult&&!swapBetter?'<div style="font-size:11px;color:var(--muted);margin-top:4px">교환 없이 직접 제작이 유리합니다</div>':'')
+  +'</div>';
+}
+
     if (!results.length) return '<div class="empty-msg" style="padding:10px 0;font-size:12px">제작 가능한 옵션 없음</div>';
     return results.map(c => {
       const rev = c.count * (c.type === 'precious' ? c.extra.avgSell : c.sell);
