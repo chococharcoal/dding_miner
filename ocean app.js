@@ -312,22 +312,18 @@ function calcOpt() {
     const v = readSplitQty(`have_fish_${k}`);
     if (v > 0) inv[k] = (inv[k] || 0) + v;
   }
-  const allIntermKeys = [
-    'essence_guardian1','essence_wave1','essence_chaos1','essence_life1','essence_corrosion1',
-    'core_guard','core_wave','core_chaos','core_life','core_corrosion',
-    'essence_guardian2','essence_wave2','essence_chaos2','essence_life2','essence_corrosion2',
-    'crystal_vitality','crystal_erosion','crystal_defense','crystal_torrent','crystal_poison',
-    'elixir_guardian','elixir_wave','elixir_chaos','elixir_life','elixir_corrosion',
-    'potion_immortal','potion_barrier','potion_corrupt','potion_frenzy','potion_venom',
-  ];
-  for (const k of allIntermKeys) {
-    const v = parseInt(document.getElementById(`have_interm_${k}`)?.value || '0') || 0;
-    if (v > 0) inv[k] = (inv[k] || 0) + v;
-  }
+  // 중간재료 — 동적 추가 행에서 읽기
+  document.querySelectorAll('#intermList .interm-row').forEach(row => {
+    const sel = row.querySelector('select.interm-sel');
+    const inp = row.querySelector('input.interm-qty');
+    if (!sel || !inp) return;
+    const key = sel.value, qty = parseInt(inp.value || '0') || 0;
+    if (key && qty > 0) inv[key] = (inv[key] || 0) + qty;
+  });
 
   const SF_KEYS = SF_TYPES.flatMap(sf => SF_TIERS.map(t => `${sf}${t}`));
   const sfTotal    = SF_KEYS.reduce((s,k) => s + (inv[k]||0), 0);
-  const intermTotal = allIntermKeys.reduce((s,k) => s + (inv[k]||0), 0);
+  const intermTotal = Object.keys(inv).filter(k => ALCHEMY[k]).reduce((s,k) => s + (inv[k]||0), 0);
   if (sfTotal <= 0 && intermTotal <= 0) {
     document.getElementById('optRes').innerHTML = '<div class="empty-msg">보유 어패류를 입력하면 계산됩니다</div>';
     return;
@@ -655,18 +651,66 @@ function readSplitQty(id) {
   return box*BOX_SIZE + set*SET_SIZE + ea;
 }
 
-// 상자/세트/개 분리 입력 HTML
+// 상자/세트/개를 하나의 통합 입력 박스처럼 보이게
 function splitQtyHtml(id, color) {
   color = color || 'var(--muted)';
-  const inputStyle = 'font-size:12px!important;font-weight:700!important;border:1.5px solid var(--bdr);border-radius:var(--rs);padding:5px 4px;background:var(--bg);color:var(--txt);outline:none;width:100%;text-align:center;box-sizing:border-box';
-  const spanStyle  = 'font-size:9px;font-weight:700;text-align:center;display:block;margin-bottom:1px';
-  return '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:3px;margin-top:2px">'
-    + '<div><span style="'+spanStyle+';color:'+color+'">상자</span><input id="'+id+'_box" type="number" inputmode="numeric" placeholder="0" min="0" style="'+inputStyle+'" oninput="onSFQtyInput(\''+id+'\')"></div>'
-    + '<div><span style="'+spanStyle+';color:'+color+'">세트</span><input id="'+id+'_set" type="number" inputmode="numeric" placeholder="0" min="0" style="'+inputStyle+'" oninput="onSFQtyInput(\''+id+'\')"></div>'
-    + '<div><span style="'+spanStyle+';color:'+color+'">개</span><input id="'+id+'_ea"  type="number" inputmode="numeric" placeholder="0" min="0" style="'+inputStyle+'" oninput="onSFQtyInput(\''+id+'\')"></div>'
+  return '<div style="display:flex;border:1.5px solid var(--bdr);border-radius:var(--rs);overflow:hidden;background:var(--bg);margin-top:2px">'
+    + '<div style="display:flex;flex-direction:column;flex:1;border-right:1px solid var(--bdr)">'
+    +   '<span style="font-size:8px;font-weight:700;color:'+color+';text-align:center;padding:2px 0;border-bottom:1px solid var(--bdr);background:var(--surf)">상자</span>'
+    +   '<input id="'+id+'_box" type="number" inputmode="numeric" placeholder="0" min="0" oninput="onSFQtyInput(\''+id+'\')" style="border:none;outline:none;background:transparent;width:100%;text-align:center;font-size:13px!important;font-weight:700!important;color:var(--txt);padding:5px 2px">'
+    + '</div>'
+    + '<div style="display:flex;flex-direction:column;flex:1;border-right:1px solid var(--bdr)">'
+    +   '<span style="font-size:8px;font-weight:700;color:'+color+';text-align:center;padding:2px 0;border-bottom:1px solid var(--bdr);background:var(--surf)">세트</span>'
+    +   '<input id="'+id+'_set" type="number" inputmode="numeric" placeholder="0" min="0" oninput="onSFQtyInput(\''+id+'\')" style="border:none;outline:none;background:transparent;width:100%;text-align:center;font-size:13px!important;font-weight:700!important;color:var(--txt);padding:5px 2px">'
+    + '</div>'
+    + '<div style="display:flex;flex-direction:column;flex:1">'
+    +   '<span style="font-size:8px;font-weight:700;color:'+color+';text-align:center;padding:2px 0;border-bottom:1px solid var(--bdr);background:var(--surf)">개</span>'
+    +   '<input id="'+id+'_ea" type="number" inputmode="numeric" placeholder="0" min="0" oninput="onSFQtyInput(\''+id+'\')" style="border:none;outline:none;background:transparent;width:100%;text-align:center;font-size:13px!important;font-weight:700!important;color:var(--txt);padding:5px 2px">'
+    + '</div>'
     + '</div>'
     + '<div id="'+id+'_p" style="font-size:10px;color:'+color+';min-height:13px;font-weight:700;text-align:right;margin-top:1px"></div>';
 }
+
+// 중간재료 select options 생성
+function makeIntermOptions() {
+  const groups = [
+    {label:'── 1차 정수 ──',    keys:['essence_guardian1','essence_wave1','essence_chaos1','essence_life1','essence_corrosion1']},
+    {label:'── 1차 핵 ──',      keys:['core_guard','core_wave','core_chaos','core_life','core_corrosion']},
+    {label:'── 2차 에센스 ──',  keys:['essence_guardian2','essence_wave2','essence_chaos2','essence_life2','essence_corrosion2']},
+    {label:'── 2차 결정 ──',    keys:['crystal_vitality','crystal_erosion','crystal_defense','crystal_torrent','crystal_poison']},
+    {label:'── 3차 엘릭서 ──',  keys:['elixir_guardian','elixir_wave','elixir_chaos','elixir_life','elixir_corrosion']},
+    {label:'── 3차 영약 ──',    keys:['potion_immortal','potion_barrier','potion_corrupt','potion_frenzy','potion_venom']},
+  ];
+  let opts = '<option value="">중간재료 선택</option>';
+  for (const {label, keys} of groups) {
+    opts += '<optgroup label="'+label+'">';
+    for (const k of keys) {
+      const rec = ALCHEMY[k]; if (!rec) continue;
+      opts += '<option value="'+k+'">'+rec.name+'</option>';
+    }
+    opts += '</optgroup>';
+  }
+  return opts;
+}
+
+let intermRowId = 0;
+window.addIntermRow = () => {
+  const list = document.getElementById('intermList'); if (!list) return;
+  const rid = ++intermRowId;
+  const row = document.createElement('div');
+  row.className = 'interm-row'; row.id = 'irow_'+rid;
+  row.innerHTML =
+    '<div class="interm-sel-wrap">'
+    +  '<select class="interm-sel" id="isel_'+rid+'" onchange="calcOpt();saveAll()">'+makeIntermOptions()+'</select>'
+    + '</div>'
+    + '<div class="interm-qty-wrap">'
+    +  '<input class="interm-qty" id="iqty_'+rid+'" type="number" inputmode="numeric" placeholder="개수" min="0" oninput="calcOpt();saveAll()">'
+    + '</div>'
+    + '<button class="del-btn" onclick="document.getElementById(\'irow_'+rid+'\').remove();calcOpt();saveAll()">✕</button>';
+  list.appendChild(row);
+  initOneCdd(row.querySelector('select'));
+  saveAll();
+};
 
 function buildHaveSeafoodGrid() {
   const el = document.getElementById('haveSeafoodGrid'); if (!el) return;
@@ -699,27 +743,11 @@ function buildHaveSeafoodGrid() {
   }
   html += '</div>';
 
-  // 중간재료
-  const groups = [
-    {label:'1차 정수 ★',    keys:['essence_guardian1','essence_wave1','essence_chaos1','essence_life1','essence_corrosion1']},
-    {label:'1차 핵 ★',      keys:['core_guard','core_wave','core_chaos','core_life','core_corrosion']},
-    {label:'2차 에센스 ★★', keys:['essence_guardian2','essence_wave2','essence_chaos2','essence_life2','essence_corrosion2']},
-    {label:'2차 결정 ★★',   keys:['crystal_vitality','crystal_erosion','crystal_defense','crystal_torrent','crystal_poison']},
-    {label:'3차 엘릭서 ★★★',keys:['elixir_guardian','elixir_wave','elixir_chaos','elixir_life','elixir_corrosion']},
-    {label:'3차 영약 ★★★',  keys:['potion_immortal','potion_barrier','potion_corrupt','potion_frenzy','potion_venom']},
-  ];
+  // 중간재료 — 동적 추가
   html += '<div class="slabel" style="margin-top:8px">⚗️ 보유 중간재료 <small style="font-weight:500;font-size:9px">(선택)</small></div>';
-  for (const grp of groups) {
-    html += '<div style="font-size:10px;font-weight:700;color:var(--muted);margin:6px 0 3px">'+grp.label+'</div>';
-    html += '<div class="g3">';
-    for (const k of grp.keys) {
-      const rec = ALCHEMY[k]; if (!rec) continue;
-      const id = 'have_interm_'+k;
-      html += '<div class="field"><label style="color:'+(rec.color||'#607090')+'">'+rec.name+'</label>'
-           +  '<input id="'+id+'" type="number" inputmode="numeric" placeholder="0" min="0" oninput="calcOpt();saveAll()"></div>';
-    }
-    html += '</div>';
-  }
+  html += '<div id="intermList"></div>';
+  html += '<button class="add-interm-btn" onclick="addIntermRow()">+ 중간재료 추가</button>';
+
   el.innerHTML = html;
 }
 
@@ -781,14 +809,6 @@ window.autoFill = () => {
 ════════════════════════════════════════ */
 const KEY = 'ocean_calc_v6';
 const fishKeys_store      = ['shrimp','sea_bream','herring','goldfish','bass'];
-const allIntermKeys_store = [
-  'essence_guardian1','essence_wave1','essence_chaos1','essence_life1','essence_corrosion1',
-  'core_guard','core_wave','core_chaos','core_life','core_corrosion',
-  'essence_guardian2','essence_wave2','essence_chaos2','essence_life2','essence_corrosion2',
-  'crystal_vitality','crystal_erosion','crystal_defense','crystal_torrent','crystal_poison',
-  'elixir_guardian','elixir_wave','elixir_chaos','elixir_life','elixir_corrosion',
-  'potion_immortal','potion_barrier','potion_corrupt','potion_frenzy','potion_venom',
-];
 const splitSuffixes = ['_box','_set','_ea'];
 
 function getStaticIds() {
@@ -801,12 +821,19 @@ function getStaticIds() {
     ...Object.keys(VANILLA_META).map(k => 'vprice_'+k),
     ...sfSplitIds,
     ...fishSplitIds,
-    ...allIntermKeys_store.map(k => 'have_interm_'+k),
   ];
 }
 function saveAll() {
   const d = {};
   getStaticIds().forEach(id => { const e = document.getElementById(id); if (e) d[id] = e.value; });
+  // 중간재료 동적 행 저장
+  const irows = [];
+  document.querySelectorAll('#intermList .interm-row').forEach(row => {
+    const sel = row.querySelector('select.interm-sel');
+    const inp = row.querySelector('input.interm-qty');
+    irows.push({key: sel?.value || '', qty: inp?.value || ''});
+  });
+  d.__irows = irows;
   localStorage.setItem(KEY, JSON.stringify(d));
 }
 function loadAll() {
@@ -822,6 +849,25 @@ function loadAll() {
       const id = 'have_fish_'+k, p = document.getElementById(id+'_p'), n = readSplitQty(id);
       if (p && n > 0) p.textContent = '총 '+f(n)+'개';
     });
+    // 중간재료 동적 행 복원
+    if (Array.isArray(d.__irows)) {
+      d.__irows.forEach(({key, qty}) => {
+        addIntermRow();
+        const list = document.getElementById('intermList');
+        const row = list?.lastElementChild; if (!row) return;
+        const sel = row.querySelector('select.interm-sel');
+        if (sel && key) {
+          sel.value = key;
+          const cdd = sel.previousElementSibling;
+          if (cdd?.classList.contains('cdd')) {
+            const lbl = cdd.querySelector('.cdd-label');
+            if (lbl) lbl.textContent = sel.options[sel.selectedIndex]?.text || '';
+            cdd.querySelectorAll('.cdd-item').forEach(item => item.classList.toggle('selected', item.dataset.value === key));
+          }
+        }
+        const inp = row.querySelector('input.interm-qty'); if (inp) inp.value = qty;
+      });
+    }
   } catch(e) {}
 }
 
@@ -838,6 +884,8 @@ window.resetAll = () => {
   getStaticIds().forEach(id => { const e = document.getElementById(id); if (!e) return; if (e.tagName==='SELECT') e.selectedIndex=0; else e.value=''; });
   SF_TYPES.forEach(sf => SF_TIERS.forEach(t => { const p=document.getElementById('have_'+sf+'_'+t+'_p'); if(p)p.textContent=''; }));
   fishKeys_store.forEach(k => { const p=document.getElementById('have_fish_'+k+'_p'); if(p)p.textContent=''; });
+  const il = document.getElementById('intermList'); if (il) il.innerHTML = '';
+  intermRowId = 0;
   syncDropdownLabels();
   onSkillChange();
 };
