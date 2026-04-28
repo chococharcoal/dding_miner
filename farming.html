@@ -9,7 +9,12 @@
 <link href="https://fonts.googleapis.com/css2?family=Jua&family=Noto+Sans+KR:wght@500;700;900&display=swap" rel="stylesheet">
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-*,input,select,button,textarea{font-family:'Noto Sans KR','Apple SD Gothic Neo',sans-serif!important;font-weight:700}
+*{font-family:'Noto Sans KR','Apple SD Gothic Neo',sans-serif;font-weight:700}
+input,select,button,textarea{font-family:'Noto Sans KR','Apple SD Gothic Neo',sans-serif!important;font-weight:700}
+/* number input 화살표 제거 */
+input[type=number]::-webkit-inner-spin-button,
+input[type=number]::-webkit-outer-spin-button{-webkit-appearance:none;appearance:none;margin:0}
+input[type=number]{-moz-appearance:textfield;appearance:textfield}
 :root{
   --bg:#f2f9f5;--surf:#ffffff;--bdr:#cde8d8;--bdr2:#a8d4ba;
   --txt:#1a2e22;--muted:#6a9478;--acc:#3a9e68;--acc2:#5bc88a;
@@ -153,6 +158,30 @@ html,body{min-height:100vh;background:var(--bg) radial-gradient(circle at 10% 15
 .del-dish-btn{font-size:11px;padding:5px 9px;border-radius:20px;border:1.5px solid var(--bdr2);background:var(--surf);color:var(--muted);cursor:pointer;flex-shrink:0;transition:all .15s;align-self:flex-start;margin-top:1px}
 .del-dish-btn:hover{border-color:var(--red);color:var(--red)}
 .empty-msg{color:var(--muted);font-size:12px;text-align:center;padding:14px 0;font-weight:500}
+/* 상자/세트/개 분리 입력 */
+.split-qty-wrap{display:grid;grid-template-columns:1fr 1fr 1fr;border:1.5px solid var(--bdr);border-radius:var(--rs);overflow:hidden;margin-top:2px;background:var(--bg)}
+.split-qty-wrap>div{display:flex;flex-direction:column;border-right:1px solid var(--bdr)}
+.split-qty-wrap>div:last-child{border-right:none}
+.sq-label{font-size:8px;font-weight:700;text-align:center;padding:2px 0;border-bottom:1px solid var(--bdr);background:var(--surf)}
+.sq-input{border:none!important;outline:none!important;background:transparent!important;width:100%!important;text-align:center;font-size:13px!important;font-weight:700!important;color:var(--txt)!important;padding:5px 2px!important;box-shadow:none!important;-moz-appearance:textfield!important;appearance:textfield!important}
+.sq-input::-webkit-inner-spin-button,.sq-input::-webkit-outer-spin-button{-webkit-appearance:none!important;appearance:none!important;margin:0!important}
+.sq-parsed{font-size:10px;font-weight:700;text-align:right;min-height:13px;margin-top:2px;color:var(--acc)}
+/* 베이스 원가 포함 토글 */
+.base-cost-toggle-wrap{display:flex;align-items:center;gap:8px;cursor:pointer;user-select:none;padding:8px 10px;background:var(--bg);border:1.5px solid var(--bdr);border-radius:var(--rs);margin-bottom:10px;transition:border-color .15s}
+.base-cost-toggle-wrap:hover{border-color:var(--acc)}
+.base-cost-toggle-input{display:none}
+.base-cost-toggle-track{position:relative;width:36px;height:20px;background:var(--bdr2);border-radius:10px;flex-shrink:0;transition:background .2s}
+.base-cost-toggle-thumb{position:absolute;top:2px;left:2px;width:16px;height:16px;background:#fff;border-radius:50%;box-shadow:0 1px 4px rgba(0,0,0,.2);transition:transform .2s}
+.base-cost-toggle-input:checked+.base-cost-toggle-track{background:var(--acc)}
+.base-cost-toggle-input:checked+.base-cost-toggle-track .base-cost-toggle-thumb{transform:translateX(16px)}
+.base-cost-toggle-input:checked~.base-cost-toggle-label{color:var(--acc)}
+.base-cost-toggle-label{font-family:'Jua',sans-serif!important;font-size:13px;color:var(--txt);flex-shrink:0}
+.base-cost-toggle-desc{font-size:10px;color:var(--muted);font-weight:500}
+.seed-result-card{background:var(--surf);border:1.5px solid var(--bdr);border-radius:var(--rs);padding:12px 13px;margin-bottom:8px;box-shadow:var(--sh)}
+.seed-result-header{display:flex;justify-content:space-between;align-items:flex-start;gap:8px}
+.seed-result-name{font-family:'Jua',sans-serif!important;font-size:13px}
+.seed-result-qty{font-family:'Jua',sans-serif!important;font-size:15px;font-weight:900;text-align:right}
+.seed-result-sub{font-size:10px;color:var(--muted);text-align:right;margin-top:1px}
 ::-webkit-scrollbar{width:5px}
 ::-webkit-scrollbar-thumb{background:var(--bdr2);border-radius:3px}
 </style>
@@ -387,6 +416,12 @@ html,body{min-height:100vh;background:var(--bg) radial-gradient(circle at 10% 15
   <div id="t2" class="panel" style="display:none">
     <div class="card">
       <div class="card-title">🍳 현재 요리 효율</div>
+      <label class="base-cost-toggle-wrap">
+        <input type="checkbox" id="includBaseCoast" onchange="calcDishEff()" class="base-cost-toggle-input">
+        <span class="base-cost-toggle-track"><span class="base-cost-toggle-thumb"></span></span>
+        <span class="base-cost-toggle-label">베이스 원가 포함</span>
+        <span class="base-cost-toggle-desc">씨앗 가격 기반 원가 반영</span>
+      </label>
       <div style="font-size:11px;color:var(--muted);margin-bottom:10px;font-weight:500">개당 순이익 기준 내림차순 · 1~3위 강조</div>
       <div id="dishEffRes"><div class="empty-msg">탭2에서 재료 시세를 입력해주세요</div></div>
     </div>
@@ -396,16 +431,40 @@ html,body{min-height:100vh;background:var(--bg) radial-gradient(circle at 10% 15
   <div id="t3" class="panel" style="display:none">
     <div class="card">
       <div class="card-title">🍳 만들 요리 선택</div>
-      <div class="fnote" style="margin-bottom:10px">요리를 추가하고 수량을 입력하세요 (n상자 n세트 n개)</div>
+      <div class="fnote" style="margin-bottom:10px">요리를 추가하고 상자·세트·개 수량을 입력하세요</div>
       <div id="dishPickerList"></div>
       <button class="add-dish-btn" onclick="addDishRow()">+ 요리 추가</button>
     </div>
     <div class="card">
       <div class="card-title">📦 현재 보유 베이스</div>
       <div class="g3">
-        <div class="field"><label>토마토 베이스</label><input id="haveBaseTomato" type="number" inputmode="numeric" placeholder="0" oninput="calcMats()"></div>
-        <div class="field"><label>양파 베이스</label><input id="haveBaseOnion" type="number" inputmode="numeric" placeholder="0" oninput="calcMats()"></div>
-        <div class="field"><label>마늘 베이스</label><input id="haveBaseGarlic" type="number" inputmode="numeric" placeholder="0" oninput="calcMats()"></div>
+        <div class="field">
+          <label style="color:#d94f3d">토마토 베이스</label>
+          <div class="split-qty-wrap">
+            <div><span class="sq-label">상자</span><input id="haveBaseTomato_box" type="number" inputmode="numeric" placeholder="0" min="0" oninput="onBaseQtyInput('tomato')" class="sq-input"></div>
+            <div><span class="sq-label">세트</span><input id="haveBaseTomato_set" type="number" inputmode="numeric" placeholder="0" min="0" oninput="onBaseQtyInput('tomato')" class="sq-input"></div>
+            <div><span class="sq-label">개</span><input id="haveBaseTomato_ea"  type="number" inputmode="numeric" placeholder="0" min="0" oninput="onBaseQtyInput('tomato')" class="sq-input"></div>
+          </div>
+          <div id="haveBaseTomato_p" class="sq-parsed"></div>
+        </div>
+        <div class="field">
+          <label style="color:#c89c00">양파 베이스</label>
+          <div class="split-qty-wrap">
+            <div><span class="sq-label">상자</span><input id="haveBaseOnion_box" type="number" inputmode="numeric" placeholder="0" min="0" oninput="onBaseQtyInput('onion')" class="sq-input"></div>
+            <div><span class="sq-label">세트</span><input id="haveBaseOnion_set" type="number" inputmode="numeric" placeholder="0" min="0" oninput="onBaseQtyInput('onion')" class="sq-input"></div>
+            <div><span class="sq-label">개</span><input id="haveBaseOnion_ea"  type="number" inputmode="numeric" placeholder="0" min="0" oninput="onBaseQtyInput('onion')" class="sq-input"></div>
+          </div>
+          <div id="haveBaseOnion_p" class="sq-parsed"></div>
+        </div>
+        <div class="field">
+          <label style="color:#9ab0c8">마늘 베이스</label>
+          <div class="split-qty-wrap">
+            <div><span class="sq-label">상자</span><input id="haveBaseGarlic_box" type="number" inputmode="numeric" placeholder="0" min="0" oninput="onBaseQtyInput('garlic')" class="sq-input"></div>
+            <div><span class="sq-label">세트</span><input id="haveBaseGarlic_set" type="number" inputmode="numeric" placeholder="0" min="0" oninput="onBaseQtyInput('garlic')" class="sq-input"></div>
+            <div><span class="sq-label">개</span><input id="haveBaseGarlic_ea"  type="number" inputmode="numeric" placeholder="0" min="0" oninput="onBaseQtyInput('garlic')" class="sq-input"></div>
+          </div>
+          <div id="haveBaseGarlic_p" class="sq-parsed"></div>
+        </div>
       </div>
     </div>
     <div class="card">

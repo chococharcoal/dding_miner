@@ -39,7 +39,7 @@ function splitQtyHtml(id, color) {
     + '</div><div id="'+id+'_p" class="sq-parsed"></div>';
 }
 
-const TAB_TITLES=['🌱 하루 수익 예상','📦 재료 시세 입력','🍳 요리 효율','🧮 재료 계산기'];
+const TAB_TITLES=['하루 수익 예상','재료 시세 입력','요리 효율','재료 계산기'];
 window.sw=(i,el)=>{
   document.querySelectorAll('.tab').forEach(t=>t.classList.remove('on'));
   [0,1,2,3].forEach(k=>{const p=document.getElementById('t'+k);if(p)p.style.display='none';});
@@ -176,14 +176,15 @@ function calcBaseUnitCost(seedType, prices, sk) {
 }
 
 // ── 요리 1개 재료비 계산 ──
-function calcRecipeCost(rec, prices, sk) {
-  // sk는 getSK() 결과 전체 (kingCropPct 포함)
+function calcRecipeCost(rec, prices, sk, includeBaseCost=true) {
   const kingCropPct = typeof sk === 'object' && sk !== null ? sk.kingCropPct : sk;
   let cost = 0;
-  // 베이스 원가 (씨앗은덤·대왕작물·풍년이다 반영)
-  for (const [k, q] of Object.entries(rec.materials.base || {})) {
-    const seedType = BASES[k]?.seedType || k;
-    cost += q * calcBaseUnitCost(seedType, prices, sk);
+  // 베이스 원가 (토글 꺼지면 0)
+  if (includeBaseCost) {
+    for (const [k, q] of Object.entries(rec.materials.base || {})) {
+      const seedType = BASES[k]?.seedType || k;
+      cost += q * calcBaseUnitCost(seedType, prices, sk);
+    }
   }
   // 작물 묶음: q개 × 개당 가격 (prices.crops[k]는 이미 개당)
   for (const [k, q] of Object.entries(rec.materials.crops || {}))
@@ -250,11 +251,12 @@ window.calcDaily=()=>{
 /* TAB 2: 요리 효율 */
 window.calcDishEff=()=>{
   const sk=getSK(),prices=getPrices(),totalBonus=sk.mb+sk.fp;
+  const includeBaseCost = document.getElementById('includBaseCoast')?.checked ?? false;
 
   const results=Object.entries(RECIPES).map(([key,rec])=>{
     const inputPrice = rec.currentPrice > 0 ? rec.currentPrice : 0;
     const skillSellPrice = inputPrice > 0 ? Math.round(inputPrice * (1 + totalBonus)) : 0;
-    const cost = calcRecipeCost(rec, prices, sk);
+    const cost = calcRecipeCost(rec, prices, sk, includeBaseCost);
     const net = skillSellPrice > 0 ? skillSellPrice - cost : null;
     return { key, rec, inputPrice, skillSellPrice, cost, net };
   }).sort((a, b) => {
@@ -285,11 +287,14 @@ window.calcDishEff=()=>{
     // 베이스 칩 (씨앗은덤·대왕작물·풍년이다 반영 원가)
     for (const [k, q] of Object.entries(r.rec.materials.base || {})) {
       const seedType = BASES[k]?.seedType || k;
-      const baseCost = q * calcBaseUnitCost(seedType, prices, sk);
       const bc = BASES[k]?.color || '#888';
-      const costTxt = prices.seed[seedType] > 0
-        ? ` <span style="opacity:.7;font-size:9px">(${f(Math.round(baseCost))}원)</span>`
-        : ` <span style="opacity:.5;font-size:9px">씨앗가 미입력</span>`;
+      let costTxt = '';
+      if (includeBaseCost) {
+        const baseCost = q * calcBaseUnitCost(seedType, prices, sk);
+        costTxt = prices.seed[seedType] > 0
+          ? ` <span style="opacity:.7;font-size:9px">(${f(Math.round(baseCost))}원)</span>`
+          : ` <span style="opacity:.5;font-size:9px">씨앗가 미입력</span>`;
+      }
       matChips += `<span class="mat-chip" style="color:${bc};border-color:${bc}44">${BASES[k]?.name||k}${q>1?` ×${q}`:''}${costTxt}</span>`;
     }
     // 작물 묶음 칩 (×1 표시 생략)
@@ -652,6 +657,7 @@ function saveDishRows(){
 function saveAll(){
   const d={};
   STATIC_IDS.forEach(id=>{const e=document.getElementById(id);if(e)d[id]=e.value;});
+  d.__includBaseCoast = document.getElementById('includBaseCoast')?.checked ?? false;
   d.__dishRows=saveDishRows();
   localStorage.setItem(KEY,JSON.stringify(d));
 }
@@ -659,6 +665,8 @@ function loadAll(){
   try{
     const d=JSON.parse(localStorage.getItem(KEY)||'{}');
     STATIC_IDS.forEach(id=>{const e=document.getElementById(id);if(e&&d[id]!==undefined)e.value=d[id];});
+    const cb=document.getElementById('includBaseCoast');
+    if(cb&&d.__includBaseCoast!==undefined)cb.checked=d.__includBaseCoast;
     // 보유 베이스 총n개 표시 갱신
     BASE_TYPES.forEach(t=>{
       const key=BASE_ID_PREFIX+t.charAt(0).toUpperCase()+t.slice(1);
@@ -768,4 +776,6 @@ domReady(()=>{
     const e=document.getElementById(id);if(!e)return;
     e.addEventListener(e.tagName==='SELECT'?'change':'input',saveAll);
   });
+  const toggleCb=document.getElementById('includBaseCoast');
+  if(toggleCb) toggleCb.addEventListener('change',saveAll);
 });

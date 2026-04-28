@@ -48,7 +48,7 @@ function fmtTime(sec) {
 
 const SF_TYPES  = ['oyster','conch','octopus','seaweed','urchin'];
 const SF_TIERS  = [1, 2, 3];
-const TAB_TITLES = ['🐟 하루 수익 예상','📦 시세 입력','⚗️ 연금 최적화'];
+const TAB_TITLES = ['하루 수익 예상','시세 입력','연금 최적화'];
 
 
 /* ════════════════════════════════════════

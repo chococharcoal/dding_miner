@@ -101,7 +101,7 @@ function matChipQty(matKey, totalQty) {
   return `<span class="mat-chip" style="background:${m.color}18;color:${m.color};border-color:${m.color}55">${m.name} ${fmtQty(totalQty)}</span>`;
 }
 
-const TAB_TITLES = ['⛏ 채광 계산기','🔥 강화횃불 제작기','💰 수익 최적화'];
+const TAB_TITLES = ['채굴 수익','강화횃불 제작','수익 최적화'];
 
 export function sw(i, el) {
   document.querySelectorAll('.tab').forEach(t => t.classList.remove('on'));
@@ -113,7 +113,7 @@ export function sw(i, el) {
   document.getElementById('t' + i).style.display = 'block';
   const titleEl = document.getElementById('pageTabTitle');
   if (titleEl && TAB_TITLES[i]) titleEl.textContent = TAB_TITLES[i];
-  document.title = `광부 계산기 — ${TAB_TITLES[i]}`;
+  document.title = `채광 계산기 — ${TAB_TITLES[i]}`;
 }
 
 export function getSK() {
@@ -864,7 +864,7 @@ export function co() {
 export function init() {
   const titleEl = document.getElementById('pageTabTitle');
   if (titleEl) titleEl.textContent = TAB_TITLES[0];
-  document.title = `광부 계산기 — ${TAB_TITLES[0]}`;
+  document.title = `채광 계산기 — ${TAB_TITLES[0]}`;
   onSkillChange();
   onEngravingChange();
 }
