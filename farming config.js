@@ -140,7 +140,7 @@ export const ENGRAVING = {
 
 /* ── 세이지 괭이 강화별 씨앗 드롭 수 ── */
 export const HOE = [
-  { seedDrop: 0  }, // 0강
+  { seedDrop: 1  }, // 0강
   { seedDrop: 2  }, // 1강
   { seedDrop: 3  }, // 2강
   { seedDrop: 3  }, // 3강

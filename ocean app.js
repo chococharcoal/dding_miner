@@ -156,22 +156,6 @@ window.onPriceChange = () => {
 };
 
 
-/* ════════════════════════════════════════
-   ⑥ TAB1: 연금품 판매가 목록
-════════════════════════════════════════ */
-function buildAlchPriceList() {
-  const el = document.getElementById('alchPriceList'); if (!el) return;
-  const tierColors = {0:'#607090', 1:'#3d6fd4', 2:'#7c52c8', 3:'#d94f3d'};
-  let html = '';
-  for (const [key, item] of Object.entries(PRECISION_ALCHEMY)) {
-    const price = getAlchSellPrice(key);
-    const color = tierColors[item.tier] || '#607090';
-    const sk = getSK(); const bonus = item.tier === 0 ? 0 : sk.ab;
-    html += `<div class="rrow"><span class="rl" style="color:${color}">${item.name}</span><span class="rv" style="color:${color}">${f(price)}원${bonus > 0 ? ` <small>(+${Math.round(bonus*100)}%)</small>` : ''}</span></div>`;
-  }
-  el.innerHTML = html;
-}
-
 
 /* ════════════════════════════════════════
    ⑦ TAB0: 하루 수익 계산
@@ -207,6 +191,8 @@ window.calcDaily = () => {
   const p1=getSFPrice(1), p2=getSFPrice(2), p3=getSFPrice(3);
   const sfRev = total * (r1*p1 + r2*p2 + r3*p3);
 
+  const cnt1 = total * r1, cnt2 = total * r2, cnt3 = total * r3;
+
   const clamPct  = rod.clamPct + sk.clmPct + eng.csPct;
   const clamDrop = hc * (clamPct/100) * CLAM.dropPct / 100;
   const clamEV   = calcClamEV();
@@ -221,15 +207,6 @@ window.calcDaily = () => {
   const whaleRev = whaleCount * whaleEV;
   const totalRev = sfRev + clamRev + whaleRev;
 
-  const pearlNames = {yellow:'노란빛', blue:'푸른빛', cyan:'청록빛', pink:'분홍빛', purple:'보라빛', black:'흑'};
-  const craftNames = {yellow:'브로치', blue:'향수병', cyan:'손거울', pink:'헤어핀', purple:'부채', black:'시계'};
-  let pearlRows = '';
-  for (const [k, v] of Object.entries(CLAM.contents)) {
-    if (k === 'shell') continue;
-    const price=getPearlPrice(k), cnt=clamDrop*v.pct/100;
-    if (cnt < 0.001) continue;
-    pearlRows += `<div class="rrow"><span class="rl">└ ${pearlNames[k]} 진주 (${v.pct}%) → ${craftNames[k]} 기준</span><span class="rv g">${fd(cnt,1)}개 × ${f(price)}원 = ${f(Math.round(cnt*price))}원</span></div>`;
-  }
   const parts = [];
   if (rod.seafoodDrop) parts.push(`낚싯대 ${rod.seafoodDrop}`);
   if (deepX) parts.push(`심해 +${fd(deepX,2)}`);
@@ -240,7 +217,10 @@ window.calcDaily = () => {
   <div class="rsec"><div class="rsec-title" style="color:var(--acc)">🦀 어패류 획득</div>
     <div class="rrow"><span class="rl">수중 어획 횟수</span><span class="rv">${f(hc)}회 <small style="color:var(--muted)">(${f(stamina)}÷15)</small></span></div>
     <div class="rrow"><span class="rl">회당 기댓값</span><span class="rv">${fd(perH,2)}개 <small style="color:var(--muted)">${parts.join(' / ')}</small></span></div>
-    <div class="rrow"><span class="rl">총 어패류</span><span class="rv">${fmtQty(total)} <small style="color:var(--muted)">(1성 ${fd(r1*100,1)}%/2성 ${fd(r2*100,1)}%/3성 ${fd(r3*100,1)}%)</small></span></div>
+    <div class="rrow"><span class="rl">총 어패류</span><span class="rv">${fmtQty(total)}</span></div>
+    <div class="rrow"><span class="rl" style="padding-left:8px">└ 1성 ★</span><span class="rv" style="color:var(--muted)">${fmtQty(cnt1)} <small>(${fd(r1*100,1)}%)</small></span></div>
+    <div class="rrow"><span class="rl" style="padding-left:8px">└ 2성 ★★</span><span class="rv" style="color:var(--muted)">${fmtQty(cnt2)} <small>(${fd(r2*100,1)}%)</small></span></div>
+    <div class="rrow"><span class="rl" style="padding-left:8px">└ 3성 ★★★</span><span class="rv" style="color:var(--acc)">${fmtQty(cnt3)} <small>(${fd(r3*100,1)}%)</small></span></div>
     <div class="rrow rrow-strong"><span class="rl">어패류 수익</span><span class="rv g">${f(sfRev)}원</span></div>
   </div>
   ${clamDrop>0.01 ? `<div class="rsec"><div class="rsec-title" style="color:var(--acc)">🐚 알쏭달쏭 조개</div>

@@ -63,21 +63,6 @@ const bdg = (cls, txt) => `<span class="bdg ${cls}">${txt}</span>`;
 const row = (l, v, vc = '') =>
   `<div class="rrow"><span class="rl">${l}</span><span class="rv ${vc}">${v}</span></div>`;
 
-function getIngotPrices(ib) {
-  const userC = gi('oCo') || gi('ingotPriceC');
-  const userR = gi('oRi') || gi('ingotPriceR');
-  const userS = gi('oSe') || gi('ingotPriceS');
-  const rawC = userC > 0 ? userC : (DEFAULT_PRICES.ingot?.corum  ?? 0);
-  const rawR = userR > 0 ? userR : (DEFAULT_PRICES.ingot?.rifton ?? 0);
-  const rawS = userS > 0 ? userS : (DEFAULT_PRICES.ingot?.serent ?? 0);
-  return {
-    sellC: userC > 0 ? userC : rawC,
-    sellR: userR > 0 ? userR : rawR,
-    sellS: userS > 0 ? userS : rawS,
-    costC: rawC, costR: rawR, costS: rawS,
-  };
-}
-
 const MAT_META = {
   cobblestone:           { name:'조약돌 묶음',        color:'#8a7060' },
   deepslate_cobblestone: { name:'심층암 조약돌 묶음',  color:'#5a5570' },

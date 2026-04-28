@@ -72,7 +72,7 @@ export const ENGRAVING = {
 
 /* ── 세이지 낚싯대 강화별 스펙 ── */
 export const ROD = [
-  {seafoodDrop:0, clamPct:0 },{seafoodDrop:2, clamPct:1 },{seafoodDrop:2, clamPct:1 },
+  {seafoodDrop:2, clamPct:0 },{seafoodDrop:2, clamPct:1 },{seafoodDrop:2, clamPct:1 },
   {seafoodDrop:3, clamPct:2 },{seafoodDrop:3, clamPct:2 },{seafoodDrop:3, clamPct:2 },
   {seafoodDrop:4, clamPct:3 },{seafoodDrop:4, clamPct:3 },{seafoodDrop:4, clamPct:3 },
   {seafoodDrop:5, clamPct:5 },{seafoodDrop:5, clamPct:5 },{seafoodDrop:5, clamPct:7 },

@@ -241,7 +241,7 @@ window.calcDaily=()=>{
     <div class="rrow rrow-strong"><span class="rl" style="font-weight:900">총 씨앗</span><span class="rv g" style="font-size:15px">${fmtQty(totalSeeds)}</span></div>
     ${avgSeedUnit>0?`<div class="rrow"><span class="rl" style="font-size:11px;color:var(--muted)">씨앗 전량 판매 추정</span><span class="rv" style="font-size:11px;color:var(--muted)">${f(seedRev)}원</span></div>`:''}
   </div>
-  ${totalHarvestBase>0.01?`<div class="rsec"><div class="rsec-title">🫙 베이스 (불붙은 괭이) — 거래 불가</div><div class="rrow rrow-strong"><span class="rl" style="font-weight:900">총 베이스</span><span class="rv" style="font-size:15px">${fd(totalHarvestBase)}개</span></div></div>`:''}
+  ${totalHarvestBase>0.01?`<div class="rsec"><div class="rsec-title">🫙 베이스 (불붙은 괭이)</div><div class="rrow rrow-strong"><span class="rl" style="font-weight:900">총 베이스</span><span class="rv" style="font-size:15px">${fd(totalHarvestBase)}개</span></div></div>`:''}
   <div class="result-box"><div style="display:flex;gap:0;align-items:stretch">
     <div style="flex:1;text-align:center;padding:4px 8px"><div class="rb-label">총 획득 씨앗</div><div class="rb-value">${fmtQty(totalSeeds)}</div></div>
     ${seedRev>0?`<div style="width:1px;background:var(--bdr2);margin:4px 0;flex:none"></div><div style="flex:1;text-align:center;padding:4px 8px"><div class="rb-label">씨앗 전량 판매</div><div class="rb-value" style="font-size:18px">${f(seedRev)}원</div></div>`:''}
@@ -523,8 +523,8 @@ window.calcMats=()=>{
         for(const[mat,qty]of Object.entries(rec.ingredients)){
           const totalQty=qty*q;
           if(mat==='wheat'){
-            const hayNeeded=totalQty/9;
-            subParts.push(`밀 ${fmtQty(totalQty)} (건초더미 ${fd(hayNeeded,1)}개)`);
+            const hayNeeded = Math.ceil(totalQty / 9); 
+            subParts.push(`밀 ${fmtQty(totalQty)} (건초더미 ${fmtQty(hayNeeded)})`);
           } else {
             subParts.push(`${milkyNames[mat]||mat} ${fmtQty(totalQty)}`);
           }
@@ -700,6 +700,8 @@ window.resetAll=()=>{
   if(!confirm('초기화할까요?'))return;
   localStorage.removeItem(KEY);
   STATIC_IDS.forEach(id=>{const e=document.getElementById(id);if(!e)return;if(e.tagName==='SELECT')e.selectedIndex=0;else e.value='';});
+  const cb=document.getElementById('includBaseCoast');
+  if(cb) cb.checked=false;
   BASE_TYPES.forEach(t=>{
     const p=document.getElementById(BASE_ID_PREFIX+t.charAt(0).toUpperCase()+t.slice(1)+'_p');
     if(p)p.textContent='';
