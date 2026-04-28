@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
-<title>🌊 해양 계산기</title>
+<title>해양 계산기</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Jua&family=Noto+Sans+KR:wght@500;700;900&display=swap" rel="stylesheet">
@@ -317,8 +317,8 @@ html,body{min-height:100vh;background:var(--bg) radial-gradient(circle at 10% 15
           <select id="skillStarBonus" onchange="onSkillChange()">
             <option value="0">0레벨</option><option value="1">1레벨 +1%</option><option value="2">2레벨 +3%</option>
             <option value="3">3레벨 +5%</option><option value="4">4레벨 +7%</option><option value="5">5레벨 +10%</option>
-          </select>
             <option value="6">6레벨 +15%</option>
+          </select>
         </div>
         <div class="skrow"><span class="skname">🐚 조개 무한리필</span>
           <select id="skillClamBonus" onchange="onSkillChange()">
@@ -400,7 +400,7 @@ html,body{min-height:100vh;background:var(--bg) radial-gradient(circle at 10% 15
   <!-- TAB 1 -->
   <div id="t1" class="panel" style="display:none">
     <div class="card">
-      <div class="card-title">🦀 어패류 단가 (원 / 개)</div>
+      <div class="card-title">🦀 어패류 단가 (원/개)</div>
       <div class="g3">
         <div class="field"><label>1성 어패류 ★</label><input id="price_sf_1" type="number" inputmode="numeric" placeholder="0" oninput="onPriceChange()"></div>
         <div class="field"><label>2성 어패류 ★★</label><input id="price_sf_2" type="number" inputmode="numeric" placeholder="0" oninput="onPriceChange()"></div>
@@ -410,7 +410,6 @@ html,body{min-height:100vh;background:var(--bg) radial-gradient(circle at 10% 15
     </div>
     <div class="card">
       <div class="card-title">🧪 바닐라 재료 시세</div>
-      <div class="fnote" style="margin-bottom:8px">📌 금, 철, 다이아는 블럭 세트당 가격입니다</div>
       <div id="vanillaPriceGrid"></div>
     </div>
   </div>
@@ -419,6 +418,7 @@ html,body{min-height:100vh;background:var(--bg) radial-gradient(circle at 10% 15
   <div id="t2" class="panel" style="display:none">
     <div class="card">
       <div class="card-title">📦 보유 재고 입력</div>
+      <div class="fnote" style="margin-bottom:10px">어패류, 연금품 보유량을 입력하세요</div>
       <div id="haveSeafoodGrid"></div>
     </div>
     <div class="card">

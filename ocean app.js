@@ -250,8 +250,8 @@ window.calcDaily = () => {
     <div class="rrow rrow-strong"><span class="rl">오늘 예상 수익</span><span class="rv g">${f(clamRev)}원</span></div>
   </div>` : ''}
   ${whaleCount>0.001 ? `<div class="rsec"><div class="rsec-title" style="color:var(--acc)">🐋 정령 고래</div>
-    <div class="rrow"><span class="rl">등장 횟수</span><span class="rv">${fd(whaleCount,2)}마리 <small style="color:var(--muted)">(${eng.swPct}% × ${f(hc)}회)</small></span></div>
-    <div class="rrow"><span class="rl">개당 기댓값</span><span class="rv"><b>${f(Math.round(whaleEV))}원</b> <small style="color:var(--muted)">(공예품 드롭 확률 가중 평균 × 95%)</small></span></div>
+    <div class="rrow"><span class="rl">등장 횟수</span><span class="rv">${fd(whaleCount,2)}번</span></div>
+    <div class="rrow"><span class="rl">개당 기댓값</span><span class="rv"><b>${f(Math.round(whaleEV))}원</b> </span></div>
     <div class="rrow rrow-strong"><span class="rl">오늘 예상 수익</span><span class="rv g">${f(whaleRev)}원</span></div>
   </div>` : ''}
   <div class="result-box"><div style="display:flex;gap:0;flex-wrap:wrap">
@@ -562,7 +562,7 @@ function calcOpt() {
     // STEP1: 1차 연금
     const s2 = Object.entries(fa.step2).filter(([,v]) => v > 0);
     if (s2.length) {
-      html += '<div class="step-block"><div class="step-block-label">⚗️ 1단계 — 1차 연금 제작</div>';
+      html += '<div class="step-block"><div class="step-block-label">⚗️ 1차 연금품 제작</div>';
       for (const [mk2, mq2] of s2) {
         const rec2 = ALCHEMY[mk2]; if (!rec2) continue;
         const need2 = mq2*cnt, b2 = Math.ceil(need2/(rec2.output||1));
@@ -576,7 +576,7 @@ function calcOpt() {
     // STEP2: 2차 가공
     const s3 = Object.entries(fa.step3).filter(([,v]) => v > 0);
     if (s3.length) {
-      html += '<div class="step-block"><div class="step-block-label">🔮 2단계 — 2차 가공 제작</div>';
+      html += '<div class="step-block"><div class="step-block-label">🔮 2차 연금품 제작</div>';
       for (const [mk, mq] of s3) {
         const rec = ALCHEMY[mk]; if (!rec) continue;
         html += '<div class="step-row">';
@@ -587,7 +587,7 @@ function calcOpt() {
     }
 
     // STEP3: 최종 조합
-    html += '<div class="step-block" style="border-color:'+color+'"><div class="step-block-label" style="color:'+color+'">🏆 최종 조합</div>';
+    html += '<div class="step-block" style="border-color:'+color+'"><div class="step-block-label" style="color:'+color+'">최종 연금품</div>';
     html += '<div class="step-row" style="border-color:'+color+'">';
     Object.entries(PRECISION_ALCHEMY[fKey].materials).forEach(([mk,mq],idx,arr) => { html+=chip(mk,mq*cnt); if(idx<arr.length-1)html+=plus; });
     html += arrow + '<div class="final-chip" style="--tier-color:'+color+'"><span class="fc-name">'+fa.name+'</span><span class="fc-qty">'+fmtQty(cnt)+'</span></div>';
@@ -751,10 +751,11 @@ window.onSFQtyInput = (id) => {
 function buildVanillaPriceGrid() {
   const el = document.getElementById('vanillaPriceGrid'); if (!el) return;
   const groups = [
-    {label:'🐟 커스텀 물고기', keys:['shrimp','sea_bream','herring','goldfish','bass']},
-    {label:'🌊 해양 채집',     keys:['firn','seaweed_item','kelp','glass_bottle','glowberry']},
+    {label:'🐟 물고기 회',     keys:['shrimp','sea_bream','herring','goldfish','bass']},
+    {label:'토양',              keys:['clay','sand','dirt','gravel','granite']},
     {label:'🍃 나뭇잎',        keys:['oak_leaf','spruce_leaf','birch_leaf','cherry_leaf','dark_oak_leaf']},
-    {label:'⛏️ 광물',          keys:['clay','sand','dirt','gravel','granite','lapis_block','redstone_block','iron_ingot','gold_ingot','diamond']},
+    {label:'⛏️ 광물',          keys:['lapis_block','redstone_block','iron_ingot','gold_ingot','diamond']},
+    {label:'🌊 해조류',        keys:['firn','seaweed_item','kelp','glass_bottle','glowberry']},
     {label:'🔥 네더',           keys:['netherrack','magma','soul_soil','crimson_stem','warped_stem']},
     {label:'🪸 죽은 산호',     keys:['coral_dead_tube','coral_dead_brain','coral_dead_bubble','coral_dead_fire','coral_dead_horn']},
   ];
