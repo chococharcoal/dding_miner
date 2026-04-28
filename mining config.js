@@ -73,8 +73,8 @@ export const ARTIFACT = {
 
 export const INGOT_RECIPES = {
   CORUM:  { ores_per_ingot: 16, torch_per_ingot: 2, craft_time_sec: 20 },
-  RIFTON: { ores_per_ingot: 16, torch_per_ingot: 3, craft_time_sec: 25 },
-  SERENT: { ores_per_ingot: 16, torch_per_ingot: 4, craft_time_sec: 30 },
+  RIFTON: { ores_per_ingot: 16, torch_per_ingot: 4, craft_time_sec: 25 },
+  SERENT: { ores_per_ingot: 16, torch_per_ingot: 8, craft_time_sec: 30 },
 };
 
 export const RECIPES = {
