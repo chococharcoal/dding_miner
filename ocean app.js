@@ -291,17 +291,29 @@ function showOptLoading(pct, msg) {
     </div>`;
 }
 
+/* ── 계산 결과 캐시 (토글 변경 시 재렌더링에 사용) ── */
+let _cachedOptResult = null; // { planEntries, finalAnalysis, workInv, totalRev, totalVan, inv }
+
 /* calcOpt 버튼 핸들러 (비동기) */
 window.runCalcOpt = async () => {
   const btn = document.getElementById('calcOptBtn');
   if (btn) { btn.disabled=true; btn.textContent='계산 중…'; }
   showOptLoading(0, '준비 중');
-  await new Promise(r => setTimeout(r, 30)); // 렌더 기다림
-
+  await new Promise(r => setTimeout(r, 30));
   try { await calcOpt(); }
   finally {
     if (btn) { btn.disabled=false; btn.textContent='🔍 최적화 계산'; }
   }
+};
+
+/* 토글 변경 시: 캐시된 결과로 즉시 재렌더링 */
+window.onSFCostToggle = () => {
+  saveAll();
+  if (_cachedOptResult) renderOptResult(_cachedOptResult);
+};
+window.onViewToggle = () => {
+  saveAll();
+  if (_cachedOptResult) renderOptResult(_cachedOptResult);
 };
 
 async function calcOpt() {
@@ -567,13 +579,37 @@ async function calcOpt() {
     .sort((a,b)=>finalAnalysis[b[0]].tier-finalAnalysis[a[0]].tier||finalAnalysis[b[0]].sellPrice-finalAnalysis[a[0]].sellPrice);
 
   if(!planEntries.length){
+    _cachedOptResult = null;
     document.getElementById('optRes').innerHTML='<div class="empty-msg">재료가 부족하여 만들 수 있는 연금품이 없습니다<br><small style="font-weight:500">어패류 보유량을 확인해주세요</small></div>';
     return;
   }
 
   const totalRev=planEntries.reduce((s,[k,cnt])=>s+finalAnalysis[k].sellPrice*cnt,0);
 
-  // 렌더링 헬퍼
+  const totalVan={};
+  function collectVan(key,qty,depth=0){if(depth>12)return;if(VANILLA_META[key]){totalVan[key]=(totalVan[key]||0)+qty;return;}const rec=ALCHEMY[key];if(!rec)return;const b=Math.ceil(qty/(rec.output||1));for(const[mk,mq]of Object.entries(rec.materials))collectVan(mk,mq*b,depth+1);}
+  for(const[fKey,cnt]of planEntries)for(const[mk,mq]of Object.entries(PRECISION_ALCHEMY[fKey].materials))collectVan(mk,mq*cnt);
+
+  // 결과 캐시 저장
+  _cachedOptResult = { planEntries, finalAnalysis, workInv, totalRev, totalVan, SF_KEYS };
+
+  renderOptResult(_cachedOptResult);
+}
+
+/* ════════════════════════════════════════
+   renderOptResult — 캐시된 결과를 토글 상태에 맞게 렌더링
+   calcOpt 완료 후 호출, 토글 변경 시에도 재호출
+════════════════════════════════════════ */
+function renderOptResult({ planEntries, finalAnalysis, workInv, totalRev, totalVan, SF_KEYS }) {
+  const includeSFCost = document.getElementById('sfCostToggle')?.checked      ?? false;
+  const viewByStage   = document.getElementById('viewByStageToggle')?.checked  ?? false;
+
+  // 순이익 재계산 (토글에 따라 달라짐)
+  for (const fKey of Object.keys(finalAnalysis)) {
+    const fa = finalAnalysis[fKey];
+    fa.netPerUnit = fa.sellPrice - fa.vanCost - (includeSFCost ? fa.sfCost : 0);
+  }
+
   const sfColors={oyster:'#3d6fd4',conch:'#c89c00',octopus:'#7c52c8',seaweed:'#d94f3d',urchin:'#3a9e68'};
   const tierColors={0:'#607090',1:'#3d6fd4',2:'#7c52c8',3:'#d94f3d'};
   const tierLabels=['0성','★ 1성','★★ 2성','★★★ 3성'];
@@ -586,10 +622,6 @@ async function calcOpt() {
   function chip(key,qty,qtyStr){const color=getMatColor(key),name=getMatName(key),qs=qtyStr||(qty!=null?fmtQty(qty):'');return `<span class="mat-chip-flow" style="--chip-color:${color}"><span class="chip-name">${name}</span><span class="chip-qty">${qs}</span></span>`;}
   const plus='<span class="flow-plus">+</span>';
   const arrow='<span class="flow-arrow">→</span>';
-
-  const totalVan={};
-  function collectVan(key,qty,depth=0){if(depth>12)return;if(VANILLA_META[key]){totalVan[key]=(totalVan[key]||0)+qty;return;}const rec=ALCHEMY[key];if(!rec)return;const b=Math.ceil(qty/(rec.output||1));for(const[mk,mq]of Object.entries(rec.materials))collectVan(mk,mq*b,depth+1);}
-  for(const[fKey,cnt]of planEntries)for(const[mk,mq]of Object.entries(PRECISION_ALCHEMY[fKey].materials))collectVan(mk,mq*cnt);
 
   const netLabel=includeSFCost
     ?'순이익 <small style="font-weight:500;font-size:9px">(어패류+바닐라)</small>'
@@ -780,9 +812,9 @@ async function calcOpt() {
   html+=`</div></div>`;
 
   document.getElementById('optRes').innerHTML=html;
-}
+} // renderOptResult 끝
 
-window.calcOpt=calcOpt; // async 함수 — runCalcOpt 버튼에서 호출
+window.calcOpt=calcOpt;
 
 window.toggleGuide=(id)=>{
   const el=document.getElementById(id),arrowEl=document.getElementById(id+'_arrow');
