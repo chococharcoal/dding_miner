@@ -933,7 +933,11 @@ document.addEventListener('click', e => { if (!e.target.closest('.cdd')) documen
 /* ════════════════════════════════════════
    ⑭ DOMContentLoaded
 ════════════════════════════════════════ */
-document.addEventListener('DOMContentLoaded', () => {
+function domReady(fn) {
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', fn);
+  else fn();
+}
+domReady(() => {
   buildVanillaPriceGrid();
   buildHaveSeafoodGrid();
   loadAll();
