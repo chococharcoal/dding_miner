@@ -117,6 +117,9 @@ html,body{min-height:100vh;background:var(--bg) radial-gradient(circle at 10% 15
 .opt-tab small{font-size:10px;font-weight:700}
 .opt-tab.active{background:var(--tab-color,var(--acc));border-color:var(--tab-color,var(--acc));color:#fff}
 .opt-tab:not(.active):hover{border-color:var(--tab-color,var(--acc));color:var(--tab-color,var(--acc))}
+input[type=number]::-webkit-inner-spin-button,
+input[type=number]::-webkit-outer-spin-button{-webkit-appearance:none;appearance:none;margin:0}
+input[type=number]{-moz-appearance:textfield;appearance:textfield}
 
 /* 최종산물 카드 */
 .craft-flow-card{
@@ -423,13 +426,21 @@ html,body{min-height:100vh;background:var(--bg) radial-gradient(circle at 10% 15
     </div>
     <div class="card">
       <div class="card-title">📋 연금 최적화 결과</div>
-      <div id="optRes"><div class="empty-msg">보유 어패류를 입력하면 계산됩니다</div></div>
+      <button id="calcOptBtn"
+      onclick="runCalcOpt()"
+      style="width:100%;padding:12px;margin-bottom:12px;font-family:'Jua',sans-serif;font-size:16px;
+      background:var(--acc);color:#fff;border:none;border-radius:var(--rs);cursor:pointer;
+      transition:opacity .15s;box-shadow:0 3px 12px rgba(61,111,212,.3)"
+      onmouseover="this.style.opacity='.85'" onmouseout="this.style.opacity='1'">
+      🔍 최적화 계산
+    </button>
+    <div id="optRes"><div class="empty-msg">보유 어패류 갯수를 입력한 뒤 계산하기 버튼을 눌러주세요</div></div>
     </div>
   </div>
 
 </div>
 </div>
-</div>
+</div> 
 
 
 <script type="module" src="./ocean%20app.js"></script>

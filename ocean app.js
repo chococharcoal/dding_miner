@@ -44,7 +44,7 @@ window.sw = (i, el) => {
   document.getElementById('t'+i).style.display = 'block';
   const t = document.getElementById('pageTabTitle'); if (t) t.textContent = TAB_TITLES[i];
   document.title = `해양 계산기 — ${TAB_TITLES[i]}`;
-  if (i === 2) calcOpt();
+  // 탭2 전환 시 자동 계산 안 함 — 버튼으로만 실행
 };
 
 
@@ -129,7 +129,7 @@ window.onSkillChange = () => {
   st('infoStarBonus',   sk.sb === 0    ? '기본' : `Lv${sk.sb} — +${sk.sbPct}%`);
   st('infoClamBonus',   sk.clm === 0   ? '기본' : `Lv${sk.clm} — +${sk.clmPct}%`);
   calcDaily();
-  const el = document.getElementById('t2'); if (el && el.style.display !== 'none') calcOpt();
+  // 스킬 변경은 하루수익만 즉시 반영, 연금은 버튼으로 재계산
 };
 window.onEngChange = () => {
   const st = (id, txt) => { const e = document.getElementById(id); if (e) e.textContent = txt; };
@@ -141,9 +141,9 @@ window.onEngChange = () => {
   st('infoSpiritWhale',    eng.sw === 0 ? '없음' : `${eng.swPct}% 등장`);
   calcDaily();
 };
-window.onPriceChange  = () => { calcDaily(); const el=document.getElementById('t2'); if(el&&el.style.display!=='none')calcOpt(); };
-window.onSFCostToggle = () => { const el=document.getElementById('t2'); if(el&&el.style.display!=='none')calcOpt(); saveAll(); };
-window.onViewToggle   = () => { const el=document.getElementById('t2'); if(el&&el.style.display!=='none')calcOpt(); saveAll(); };
+window.onPriceChange  = () => { calcDaily(); };
+window.onSFCostToggle = () => { saveAll(); };
+window.onViewToggle   = () => { saveAll(); };
 
 
 /* ════════════════════════════════════════
@@ -276,7 +276,35 @@ function calcSFNeedForFinal(fKey) {
   return sfNeed;
 }
 
-function calcOpt() {
+/* 로딩 UI 헬퍼 */
+function showOptLoading(pct, msg) {
+  const el = document.getElementById('optRes'); if (!el) return;
+  const bar = Math.round(pct);
+  el.innerHTML = `
+    <div style="padding:24px 12px;text-align:center">
+      <div style="font-family:'Jua',sans-serif;font-size:15px;color:var(--acc);margin-bottom:14px">⚗️ ${msg}</div>
+      <div style="background:var(--bdr);border-radius:20px;height:16px;overflow:hidden;margin:0 auto;max-width:280px">
+        <div style="height:100%;width:${bar}%;background:linear-gradient(90deg,var(--acc),var(--acc2));border-radius:20px;transition:width .15s ease"></div>
+      </div>
+      <div style="font-family:'Jua',sans-serif;font-size:22px;color:var(--acc);margin-top:10px">${bar}%</div>
+      <div style="font-size:10px;color:var(--muted);margin-top:4px;font-weight:500">탐색 중…</div>
+    </div>`;
+}
+
+/* calcOpt 버튼 핸들러 (비동기) */
+window.runCalcOpt = async () => {
+  const btn = document.getElementById('calcOptBtn');
+  if (btn) { btn.disabled=true; btn.textContent='계산 중…'; }
+  showOptLoading(0, '준비 중');
+  await new Promise(r => setTimeout(r, 30)); // 렌더 기다림
+
+  try { await calcOpt(); }
+  finally {
+    if (btn) { btn.disabled=false; btn.textContent='🔍 최적화 계산'; }
+  }
+};
+
+async function calcOpt() {
   const inv = {};
   for (const sf of SF_TYPES) for (const t of SF_TIERS) {
     const v = readSplitQty(`have_${sf}_${t}`);
@@ -297,8 +325,8 @@ function calcOpt() {
     return;
   }
 
-  const includeSFCost  = document.getElementById('sfCostToggle')?.checked      ?? false;
-  const viewByStage    = document.getElementById('viewByStageToggle')?.checked  ?? false;
+  const includeSFCost = document.getElementById('sfCostToggle')?.checked      ?? false;
+  const viewByStage   = document.getElementById('viewByStageToggle')?.checked  ?? false;
 
   // 재고 소비 (정수 단위, 소수 need는 ceil)
   function consumeSF(sfKey, need, curInv) {
@@ -321,6 +349,9 @@ function calcOpt() {
     return cost;
   }
 
+  showOptLoading(5, '아이템 분석 중');
+  await new Promise(r => setTimeout(r, 20));
+
   // 최종산물 분석
   const finalAnalysis = {};
   for (const [fKey, fRec] of Object.entries(PRECISION_ALCHEMY)) {
@@ -341,22 +372,30 @@ function calcOpt() {
     finalAnalysis[fKey]={name:fRec.name,tier:fRec.tier,sfNeed,vanCost,sfCost,sellPrice,netPerUnit,step2,step3,craftTimeSec:fRec.craftTimeSec||0};
   }
 
-  /* 전체 통합 완전탐색
-     0성 버그 원인: 성급별로 나눠 탐색하면 1/2/3성이 재고를 먼저 소진 →
-     0성에 유리한 재고가 남지 않아 0성이 최적 대안임에도 안 뽑힘.
-     해결: 모든 성급을 한 번의 bruteForce에 넣어 전역 최적 탐색. */
+  /* ──────────────────────────────────────
+     비동기 완전탐색
+     - 루트 레벨(idx=0) 각 n값마다 yield 포인트를 넣어 UI 블로킹 방지
+     - 진행률: 루트의 maxN+1 경우 중 몇 개 완료했는지로 계산
+  ────────────────────────────────────── */
   const allFKeys = Object.keys(finalAnalysis);
 
   function maxMake(sfNeed, curInv) {
     let m=Infinity;
-    for(const[sf,need]of Object.entries(sfNeed)){if(need<=0)continue;const needInt=Math.ceil(need);const tier=parseInt(sf.slice(-1));let avail=curInv[sf]||0;if(tier===2)avail+=Math.floor((curInv[sf.replace('2','1')]||0)/3);m=Math.min(m,Math.floor(avail/needInt));}
+    for(const[sf,need]of Object.entries(sfNeed)){
+      if(need<=0)continue;
+      const needInt=Math.ceil(need), tier=parseInt(sf.slice(-1));
+      let avail=curInv[sf]||0;
+      if(tier===2)avail+=Math.floor((curInv[sf.replace('2','1')]||0)/3);
+      m=Math.min(m,Math.floor(avail/needInt));
+    }
     return m===Infinity?0:m;
   }
 
   let bestRev=0;
   const bestPlan=Object.fromEntries(allFKeys.map(k=>[k,0]));
 
-  function search(idx,curInv,curPlan,curRev){
+  // 동기 내부 탐색 (idx>=1 은 동기로, idx=0 은 비동기 루프에서 호출)
+  function searchSync(idx, curInv, curPlan, curRev) {
     if(idx===allFKeys.length){if(curRev>bestRev){bestRev=curRev;Object.assign(bestPlan,curPlan);}return;}
     const fKey=allFKeys[idx],fa=finalAnalysis[fKey],maxN=maxMake(fa.sfNeed,curInv);
     let ub=curRev;
@@ -366,12 +405,38 @@ function calcOpt() {
       const tmpInv={...curInv};let ok=true;
       for(let i=0;i<n;i++){if(!canAffordSF(fa.sfNeed,tmpInv)){ok=false;break;}doConsumeSF(fa.sfNeed,tmpInv);}
       if(!ok)break;
-      curPlan[fKey]=n;search(idx+1,tmpInv,curPlan,curRev+fa.sellPrice*n);
+      curPlan[fKey]=n;searchSync(idx+1,tmpInv,curPlan,curRev+fa.sellPrice*n);
     }
     curPlan[fKey]=0;
   }
 
-  search(0,{...inv},Object.fromEntries(allFKeys.map(k=>[k,0])),0);
+  // 루트 아이템(idx=0)의 각 n값을 비동기 루프로 처리해 퍼센트 표시
+  const rootFKey = allFKeys[0];
+  const rootFA   = finalAnalysis[rootFKey];
+  const rootMax  = maxMake(rootFA.sfNeed, {...inv});
+  const rootTotal = rootMax + 1; // n = rootMax, rootMax-1, ..., 0
+
+  showOptLoading(10, `최적 조합 탐색 (${f(rootTotal)}가지)`);
+  await new Promise(r => setTimeout(r, 20));
+
+  for (let n = rootMax; n >= 0; n--) {
+    // 진행률: rootMax+1개 중 (rootMax-n+1)번째
+    const done   = rootMax - n + 1;
+    const pct    = 10 + Math.round((done / rootTotal) * 85); // 10~95%
+    showOptLoading(pct, `최적 조합 탐색 중 (${done}/${rootTotal})`);
+    await new Promise(r => setTimeout(r, 0)); // UI 업데이트 양보
+
+    const tmpInv={...inv};let ok=true;
+    for(let i=0;i<n;i++){if(!canAffordSF(rootFA.sfNeed,tmpInv)){ok=false;break;}doConsumeSF(rootFA.sfNeed,tmpInv);}
+    if(!ok)break; // n 이상은 불가
+
+    const curPlan=Object.fromEntries(allFKeys.map(k=>[k,0]));
+    curPlan[rootFKey]=n;
+    searchSync(1, tmpInv, curPlan, rootFA.sellPrice*n);
+  }
+
+  showOptLoading(98, '결과 정리 중');
+  await new Promise(r => setTimeout(r, 20));
 
   // 소비 후 남은 재고
   const workInv={...inv};
@@ -596,7 +661,7 @@ function calcOpt() {
   document.getElementById('optRes').innerHTML=html;
 }
 
-window.calcOpt=calcOpt;
+window.calcOpt=calcOpt; // async 함수 — runCalcOpt 버튼에서 호출
 
 window.toggleGuide=(id)=>{
   const el=document.getElementById(id),arrowEl=document.getElementById(id+'_arrow');
@@ -640,9 +705,9 @@ window.addIntermRow=()=>{
   const list=document.getElementById('intermList');if(!list)return;
   const rid=++intermRowId,row=document.createElement('div');
   row.className='interm-row';row.id='irow_'+rid;
-  row.innerHTML='<div class="interm-sel-wrap"><select class="interm-sel" id="isel_'+rid+'" onchange="calcOpt();saveAll()">'+makeIntermOptions()+'</select></div>'
-    +'<div class="interm-qty-wrap"><input class="interm-qty" id="iqty_'+rid+'" type="number" inputmode="numeric" placeholder="개수" min="0" oninput="calcOpt();saveAll()"></div>'
-    +'<button class="del-btn" onclick="document.getElementById(\'irow_'+rid+'\').remove();calcOpt();saveAll()">✕</button>';
+  row.innerHTML='<div class="interm-sel-wrap"><select class="interm-sel" id="isel_'+rid+'" onchange="saveAll()">'+makeIntermOptions()+'</select></div>'
+    +'<div class="interm-qty-wrap"><input class="interm-qty" id="iqty_'+rid+'" type="number" inputmode="numeric" placeholder="개수" min="0" oninput="saveAll()"></div>'
+    +'<button class="del-btn" onclick="document.getElementById(\'irow_'+rid+'\').remove();saveAll()">✕</button>';
   list.appendChild(row);initOneCdd(row.querySelector('select'));saveAll();
 };
 function buildHaveSeafoodGrid(){
@@ -654,7 +719,7 @@ function buildHaveSeafoodGrid(){
   html+='<div class="slabel" style="margin-top:8px">⚗️ 보유 중간재료 <small style="font-weight:500;font-size:9px">(선택)</small></div><div id="intermList"></div><button class="add-interm-btn" onclick="addIntermRow()">+ 중간재료 추가</button>';
   el.innerHTML=html;
 }
-window.onSFQtyInput=(id)=>{const n=readSplitQty(id);const p=document.getElementById(id+'_p');if(p)p.textContent=n>0?'총 '+f(n)+'개':'';calcOpt();saveAll();};
+window.onSFQtyInput=(id)=>{const n=readSplitQty(id);const p=document.getElementById(id+'_p');if(p)p.textContent=n>0?'총 '+f(n)+'개':'';saveAll();};
 function buildVanillaPriceGrid(){
   const el=document.getElementById('vanillaPriceGrid');if(!el)return;
   const groups=[
@@ -764,6 +829,9 @@ domReady(()=>{
   syncDropdownLabels();onSkillChange();
   const titleEl=document.getElementById('pageTabTitle');if(titleEl)titleEl.textContent=TAB_TITLES[0];
   document.title='해양 계산기 — '+TAB_TITLES[0];
+  // optRes 초기 메시지
+  const optRes=document.getElementById('optRes');
+  if(optRes&&optRes.innerHTML.trim()==='')optRes.innerHTML='<div class="empty-msg">보유 어패류를 입력한 뒤 계산하기 버튼을 눌러주세요</div>';
   getStaticIds().forEach(id=>{const e=document.getElementById(id);if(!e)return;e.addEventListener(e.tagName==='SELECT'?'change':'input',saveAll);});
   const sfTog=document.getElementById('sfCostToggle');     if(sfTog)sfTog.addEventListener('change',window.onSFCostToggle);
   const stTog=document.getElementById('viewByStageToggle');if(stTog)stTog.addEventListener('change',window.onViewToggle);
