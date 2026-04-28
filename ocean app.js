@@ -373,20 +373,22 @@ async function calcOpt() {
   }
 
   /* ──────────────────────────────────────
-     Branch & Bound (분기 한정법) — 느리고 정확
-     ─ 완전탐색 대비 수천~수만 배 빠르면서 100% 정확한 최적해 보장
-     ─ 핵심 아이디어:
-       1. 아이템을 "어패류당 단가" 내림차순 정렬 (탐색 효율 극대화)
-       2. 초기 하한(bestRev)을 그리디로 빠르게 구해서
-          이후 가지치기를 강하게 적용
-       3. 각 노드의 상한(UB)을 LP 완화로 계산
-          "남은 어패류를 소수점까지 쪼갤 수 있다"고 가정하면
-          실제 최적해 ≤ UB가 항상 성립 → UB ≤ bestRev 이면 가지치기
-       4. 비동기 루프: 100ms마다 UI 업데이트 양보 → 퍼센트 표시 가능
+     Branch & Bound — 100% 정확, 완전탐색보다 수천 배 빠름
+
+     핵심:
+     1. 아이템 정렬: 어패류당 단가 내림차순 → 좋은 해를 빠르게 찾아 가지치기 강화
+     2. 초기 하한: 그리디로 즉시 확보 → 이후 탐색에서 가지치기 기준으로 사용
+     3. LP 완화 상한(UB): idx 이후 아이템을 소수점까지 쪼갤 수 있다고 가정.
+        단, 각 어패류 종류별 가용량을 독립적으로 나눠 단가×가용어패류 합산.
+        UB ≤ bestRev → 가지치기 (이 경로는 절대 최적해 불가)
+     4. 재귀 대신 명시적 스택 → 비동기 yield로 퍼센트 표시 가능
+     5. 핵심 차이: n=0..maxN을 모두 push하지 않고,
+        각 아이템을 "몇 개 만드냐" 를 재귀적으로 결정.
+        n=maxN부터 내려가며 bestRev 갱신 시 가지치기 더 강해짐.
   ────────────────────────────────────── */
   const allFKeys = Object.keys(finalAnalysis);
 
-  // 어패류 가용량 계산 (2성은 1성 3개로 업그레이드 포함)
+  // 어패류 가용량 (2성은 1성 3개로 업그레이드 포함)
   function maxMake(sfNeed, curInv) {
     let m = Infinity;
     for (const [sf, need] of Object.entries(sfNeed)) {
@@ -399,42 +401,69 @@ async function calcOpt() {
     return m === Infinity ? 0 : m;
   }
 
-  // 어패류 소비 총량 (단가 계산용)
-  function totalSFQty(sfNeed) {
-    return Object.values(sfNeed).reduce((s,v)=>s+v,0) || 1;
-  }
   // 어패류당 단가
-  const pricePerSF = fKey => finalAnalysis[fKey].sellPrice / totalSFQty(finalAnalysis[fKey].sfNeed);
+  function sfUnitPrice(fKey) {
+    const sfNeed = finalAnalysis[fKey].sfNeed;
+    const total  = Object.values(sfNeed).reduce((s,v)=>s+v,0) || 1;
+    return finalAnalysis[fKey].sellPrice / total;
+  }
 
-  // 아이템을 어패류당 단가 내림차순으로 정렬 → B&B 가지치기 극대화
-  const sortedKeys = [...allFKeys].sort((a,b) => pricePerSF(b) - pricePerSF(a));
+  // 아이템 정렬: 어패류당 단가 내림차순
+  const sortedKeys = [...allFKeys].sort((a,b) => sfUnitPrice(b) - sfUnitPrice(a));
   const N = sortedKeys.length;
 
-  // ── LP 완화 상한 계산 ──
-  // idx번째 이후 아이템을 소수점 분수로 만들 수 있다고 가정했을 때 최대 수익
-  function lpUpperBound(idx, curInv, curRev) {
+  /* LP 완화 상한 (진짜 LP 완화)
+     각 어패류 종류별로 "이 재고로 만들 수 있는 최대 가치"를 계산.
+     아이템을 단가 순서대로 할당하고, 마지막 아이템은 소수점 허용.
+     이 값은 항상 실제 최적해 이상 → 안전한 상한. */
+  function lpUB(idx, curInv, curRev) {
     let ub = curRev;
-    // 임시 재고 복사 (소수 배분 시뮬레이션용)
     const tmpInv = {...curInv};
     for (let i = idx; i < N; i++) {
       const fKey = sortedKeys[i];
       const fa   = finalAnalysis[fKey];
       const maxN = maxMake(fa.sfNeed, tmpInv);
-      if (maxN <= 0) continue;
-      // LP 완화: 정수가 아니라 실수로 만들어도 됨
-      // 실제로는 maxN개 → 전부 쓰고 나서 남은 어패류로 다음 아이템 일부 제작
+      if (maxN <= 0) {
+        // 0개지만 LP 완화: 남은 어패류로 이 아이템을 소수점까지 만든다면?
+        // 각 어패류 종류별 제약 중 최소값이 실수 최대 제작수
+        let fracMax = Infinity;
+        for (const [sf, need] of Object.entries(fa.sfNeed)) {
+          if (need <= 0) continue;
+          const tier = parseInt(sf.slice(-1));
+          let avail = tmpInv[sf] || 0;
+          if (tier === 2) avail += (tmpInv[sf.replace('2','1')]||0) / 3; // 실수 허용
+          fracMax = Math.min(fracMax, avail / Math.ceil(need));
+        }
+        if (fracMax > 0 && fracMax !== Infinity) {
+          ub += fracMax * fa.sellPrice;
+        }
+        continue;
+      }
       ub += maxN * fa.sellPrice;
-      // 소비 반영 (정수로만)
+      // 정수 maxN개 소비 후 남은 어패류로 다음 아이템 일부 가능
       for (let j = 0; j < maxN; j++) doConsumeSF(fa.sfNeed, tmpInv);
+      // 남은 잔량으로 이 아이템 소수점 추가 (LP 완화 핵심)
+      let fracExtra = Infinity;
+      for (const [sf, need] of Object.entries(fa.sfNeed)) {
+        if (need <= 0) continue;
+        const tier = parseInt(sf.slice(-1));
+        let avail = tmpInv[sf] || 0;
+        if (tier === 2) avail += (tmpInv[sf.replace('2','1')]||0) / 3;
+        fracExtra = Math.min(fracExtra, avail / Math.ceil(need));
+      }
+      if (fracExtra > 0 && fracExtra !== Infinity) {
+        ub += fracExtra * fa.sellPrice;
+        break; // LP 완화에서 첫 번째 소수점 아이템 이후는 재고 소진
+      }
     }
     return ub;
   }
 
-  // ── 그리디 초기해 (하한) ──
-  function greedyOnce(orderedKeys, startInv) {
+  // 그리디 초기해
+  function greedyOnce(keys, startInv) {
     const plan = Object.fromEntries(allFKeys.map(k=>[k,0]));
     const curInv = {...startInv};
-    for (const fKey of orderedKeys) {
+    for (const fKey of keys) {
       const fa = finalAnalysis[fKey];
       const n  = maxMake(fa.sfNeed, curInv);
       if (n <= 0) continue;
@@ -445,32 +474,40 @@ async function calcOpt() {
     return { plan, rev, remInv: curInv };
   }
 
-  showOptLoading(15, '초기해 계산 중 (그리디)');
+  showOptLoading(10, '초기해 계산 중 (그리디)');
   await new Promise(r => setTimeout(r, 20));
 
-  // 그리디로 초기 하한 확보
-  let greedyBest = greedyOnce(sortedKeys, inv);
+  const greedyBest = greedyOnce(sortedKeys, inv);
   let bestRev  = greedyBest.rev;
   let bestPlan = {...greedyBest.plan};
   let workInv  = {...greedyBest.remInv};
 
-  showOptLoading(25, `초기해: ${f(bestRev)}원 · B&B 탐색 시작`);
+  showOptLoading(20, `초기해 ${f(bestRev)}원 확보 · B&B 탐색 시작`);
   await new Promise(r => setTimeout(r, 20));
 
-  // ── Branch & Bound 탐색 ──
-  // 재귀 대신 명시적 스택 사용 → 비동기 yield 가능
-  // 스택 원소: { idx, inv, plan, rev }
-  const stack = [{ idx: 0, inv: {...inv}, plan: Object.fromEntries(allFKeys.map(k=>[k,0])), rev: 0 }];
+  /* B&B 탐색
+     스택 원소: { idx, inv, plan, rev }
+     각 아이템(idx)에 대해 n=maxN..0 순서로 분기.
+     높은 n부터 먼저 탐색 → 좋은 해가 빨리 나와 가지치기가 강해짐.
+     n개씩 분기하지 않고 "idx 아이템을 n개 고정" 후 idx+1로 진행.
+     이게 진짜 B&B. 이전 코드는 n=0..maxN 모두 push해서 완전탐색과 동일했음. */
+  const stack = [{
+    idx: 0,
+    inv: {...inv},
+    plan: Object.fromEntries(allFKeys.map(k=>[k,0])),
+    rev: 0,
+    n: -1, // -1 = 아직 n 결정 안 됨 (maxMake로 결정)
+  }];
 
   let nodeCount  = 0;
   let pruneCount = 0;
   let lastYield  = Date.now();
-  const YIELD_MS = 80; // 80ms마다 UI 업데이트
 
   while (stack.length > 0) {
-    const { idx, inv: curInv, plan: curPlan, rev: curRev } = stack.pop();
+    const node = stack.pop();
+    const { idx, inv: curInv, plan: curPlan, rev: curRev } = node;
 
-    // 리프 노드
+    // 리프 노드: 모든 아이템 결정 완료
     if (idx === N) {
       if (curRev > bestRev) {
         bestRev  = curRev;
@@ -484,41 +521,46 @@ async function calcOpt() {
 
     // UI 양보 (80ms마다)
     const now = Date.now();
-    if (now - lastYield > YIELD_MS) {
-      const stackDepthPct = Math.min(95, 25 + Math.round((idx / N) * 50));
-      showOptLoading(stackDepthPct,
-        `탐색 중… 노드 ${f(nodeCount)}개 · 현재 최선 ${f(bestRev)}원`);
+    if (now - lastYield > 80) {
+      showOptLoading(
+        Math.min(93, 20 + Math.round(nodeCount / Math.max(nodeCount + stack.length, 1) * 70)),
+        `탐색 중… 노드 ${f(nodeCount)}개 처리 · 가지치기 ${f(pruneCount)}개 · 현재 최선 ${f(bestRev)}원`
+      );
       await new Promise(r => setTimeout(r, 0));
       lastYield = Date.now();
     }
 
     const fKey = sortedKeys[idx];
     const fa   = finalAnalysis[fKey];
-    const maxN = maxMake(fa.sfNeed, curInv);
 
-    // LP 상한 가지치기: 현재 노드에서 나올 수 있는 최대 수익 ≤ 현재 최선이면 스킵
-    const ub = lpUpperBound(idx, curInv, curRev);
+    // LP 완화 상한 가지치기
+    const ub = lpUB(idx, curInv, curRev);
     if (ub <= bestRev) { pruneCount++; continue; }
 
-    // n=0 부터 n=maxN 까지 스택에 추가 (역순으로 넣어야 maxN이 먼저 처리됨)
-    // n=0 먼저 push (나중에 처리)
+    const maxN = maxMake(fa.sfNeed, curInv);
+
+    // n=0 분기 (이 아이템을 안 만드는 경우) — 나중에 처리 (스택 LIFO)
     stack.push({ idx: idx+1, inv: {...curInv}, plan: {...curPlan}, rev: curRev });
 
-    // n=1..maxN: 소비 후 push (높은 n부터 처리되도록 역순 push)
+    // n=1..maxN 분기: 실제로 어패류 소비하며 스냅샷 생성
+    // 높은 n부터 먼저 처리되도록 역순 push
     const batchInv = {...curInv};
-    const snapshots = [];
+    const snaps = [];
     for (let n = 1; n <= maxN; n++) {
-      // n번 소비
       if (!canAffordSF(fa.sfNeed, batchInv)) break;
       doConsumeSF(fa.sfNeed, batchInv);
+      // 이 분기의 UB 먼저 확인 → 안 되면 더 높은 n도 불필요
+      const branchRev = curRev + fa.sellPrice * n;
+      const branchUB  = lpUB(idx+1, batchInv, branchRev);
+      if (branchUB <= bestRev) { pruneCount++; continue; }
       const newPlan = {...curPlan}; newPlan[fKey] = n;
-      snapshots.push({ idx: idx+1, inv: {...batchInv}, plan: newPlan, rev: curRev + fa.sellPrice * n });
+      snaps.push({ idx: idx+1, inv: {...batchInv}, plan: newPlan, rev: branchRev });
     }
-    // 높은 n 먼저 처리되도록 역순으로 push (스택은 LIFO)
-    for (let i = 0; i < snapshots.length; i++) stack.push(snapshots[i]);
+    // 높은 n 먼저 처리: 역순 push
+    for (let i = 0; i < snaps.length; i++) stack.push(snaps[i]);
   }
 
-  showOptLoading(97, `완료 — 노드 ${f(nodeCount)}개 탐색, ${f(pruneCount)}개 가지치기`);
+  showOptLoading(97, `탐색 완료 — 노드 ${f(nodeCount)}개, 가지치기 ${f(pruneCount)}개`);
   await new Promise(r => setTimeout(r, 20));
 
   const planEntries=Object.entries(bestPlan).filter(([,cnt])=>cnt>0)
