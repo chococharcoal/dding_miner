@@ -754,10 +754,6 @@ function renderOptResult({ planEntries, finalAnalysis, workInv, totalRev, totalV
       html+=`<div class="guide-toggle" onclick="toggleGuide('${guideId}')"><span class="guide-toggle-arrow" id="${guideId}_arrow">▶</span> 제작 가이드 &amp; 시간 보기</div>`;
       html+=`<div class="guide-body" id="${guideId}" style="padding:10px 14px">`;
 
-      // 중간재료명 표시 (별 없이)
-      function midName(k) {
-        const r = ALCHEMY[k]; if (!r) return k;
-        return r.name || ALCHEMY[k]?.name || k;
       // matStr: 어패류는 별 유지, 중간재료는 별 제거
       function isSF(k){ return /^(oyster|conch|octopus|seaweed|urchin)\d$/.test(k); }
       function dispName(k){ return isSF(k) ? getMatName(k) : getMatName(k).replace(/\s*★+/g,''); }
