@@ -754,23 +754,28 @@ function renderOptResult({ planEntries, finalAnalysis, workInv, totalRev, totalV
       html+=`<div class="guide-toggle" onclick="toggleGuide('${guideId}')"><span class="guide-toggle-arrow" id="${guideId}_arrow">▶</span> 제작 가이드 &amp; 시간 보기</div>`;
       html+=`<div class="guide-body" id="${guideId}" style="padding:10px 14px">`;
 
-      // matStr: 어패류는 별 유지, 중간재료는 별 제거
+      // 어패류는 별 유지, 중간재료는 별 제거
       function isSF(k){ return /^(oyster|conch|octopus|seaweed|urchin)\d$/.test(k); }
       function dispName(k){ return isSF(k) ? getMatName(k) : getMatName(k).replace(/\s*★+/g,''); }
+
+      // 공통 칩 스타일 (크기 동일)
+      const chipBase = 'display:inline-flex;align-items:center;gap:3px;border-radius:6px;padding:2px 7px;font-size:11px;white-space:nowrap;font-weight:700';
+
       function matChips(matObj, batchMul) {
         return Object.entries(matObj).filter(([,v])=>v>0)
           .map(([mk,mq])=>{
-            const qty=fmtQty(Math.ceil(mq*batchMul));
-            const col=getMatColor(mk);
-            return `<span style="display:inline-flex;align-items:center;gap:3px;background:var(--bg);border:1.5px solid ${col}33;border-radius:6px;padding:2px 7px;font-size:11px;white-space:nowrap"><span style="color:${col};font-weight:700">${dispName(mk)}</span><b style="color:var(--txt)">${qty}</b></span>`;
+            const qty = fmtQty(Math.ceil(mq*batchMul));
+            const col = getMatColor(mk);
+            return `<span style="${chipBase};background:var(--bg);border:1.5px solid ${col}44"><span style="color:${col}">${dispName(mk)}</span> <span style="color:var(--txt)">${qty}개</span></span>`;
           })
           .join(' ');
       }
       function resultChip(name, qty, col) {
-        return `<span style="display:inline-flex;align-items:center;gap:4px;background:${col}18;border:2px solid ${col};border-radius:7px;padding:3px 10px;font-size:12px;font-weight:900;color:${col};white-space:nowrap">${name} <b style="font-size:13px">${qty}</b></span>`;
+        return `<span style="${chipBase};background:${col}15;border:1.5px solid ${col}"><span style="color:${col}">${name}</span> <span style="color:${col}">${qty}개</span></span>`;
       }
+      const dot = `<span style="color:var(--bdr2);font-size:13px;font-weight:900;flex-shrink:0">·</span>`;
 
-      const rowStyle = 'display:flex;align-items:center;flex-wrap:wrap;gap:6px;padding:5px 0;border-bottom:1px dashed var(--bdr)';
+      const rowStyle = 'display:flex;align-items:center;flex-wrap:wrap;gap:5px;padding:5px 0;border-bottom:1px dashed var(--bdr)';
 
       const s2=Object.entries(fa.step2).filter(([,v])=>v>0);
       if(s2.length){
@@ -780,7 +785,7 @@ function renderOptResult({ planEntries, finalAnalysis, workInv, totalRev, totalV
           const need2=mq2*cnt, b2=Math.ceil(need2/(rec2.output||1));
           html+=`<div style="${rowStyle}">`;
           html+=resultChip(dispName(mk2), need2, getMatColor(mk2));
-          html+=`<span style="color:var(--muted);font-size:11px">←</span>`;
+          html+=dot;
           html+=matChips(rec2.materials, b2);
           html+=`</div>`;
         }
@@ -792,15 +797,15 @@ function renderOptResult({ planEntries, finalAnalysis, workInv, totalRev, totalV
           const rec=ALCHEMY[mk];if(!rec)continue;
           html+=`<div style="${rowStyle}">`;
           html+=resultChip(dispName(mk), mq*cnt, getMatColor(mk));
-          html+=`<span style="color:var(--muted);font-size:11px">←</span>`;
+          html+=dot;
           html+=matChips(rec.materials, mq*cnt);
           html+=`</div>`;
         }
       }
       html+=`<div style="font-family:'Jua',sans-serif;font-size:11px;color:${color};margin:8px 0 4px">🏆 최종 — ${fmtTime(t3sec*(1-fr))}</div>`;
       html+=`<div style="${rowStyle};border-bottom:none">`;
-      html+=resultChip(fa.name, `${fmtQty(cnt)}개`, color);
-      html+=`<span style="color:var(--muted);font-size:11px">←</span>`;
+      html+=resultChip(fa.name, fmtQty(cnt), color);
+      html+=dot;
       html+=matChips(PRECISION_ALCHEMY[fKey].materials, cnt);
       html+=`</div>`;
       html+=`<div style="text-align:right;font-size:11px;color:${color};font-weight:700;margin-top:6px;padding-top:6px;border-top:1px solid var(--bdr)">⏱️ 합계 ${fmtTime(totalSecCard)}</div>`;
@@ -880,15 +885,16 @@ function renderOptResult({ planEntries, finalAnalysis, workInv, totalRev, totalV
           s+=`</div>`;
         } else if(rec){
           const batchNeeded=Math.ceil(qty/(rec.output||1));
+          const chipB='display:inline-flex;align-items:center;gap:3px;border-radius:6px;padding:2px 7px;font-size:11px;white-space:nowrap;font-weight:700';
           const matParts=Object.entries(rec.materials).filter(([,v])=>v>0)
             .map(([mk,mq])=>{
               const q=fmtQty(Math.ceil(mq*batchNeeded)), col=getMatColor(mk);
               const nm=(/^(oyster|conch|octopus|seaweed|urchin)\d$/.test(mk))?getMatName(mk):getMatName(mk).replace(/\s*★+/g,'');
-              return `<span style="display:inline-flex;align-items:center;gap:3px;background:var(--bg);border:1.5px solid ${col}33;border-radius:6px;padding:2px 7px;font-size:11px;white-space:nowrap"><span style="color:${col};font-weight:700">${nm}</span><b style="color:var(--txt)">${q}</b></span>`;
+              return `<span style="${chipB};background:var(--bg);border:1.5px solid ${col}44"><span style="color:${col}">${nm}</span> <span style="color:var(--txt)">${q}개</span></span>`;
             }).join(' ');
-          s+=`<div style="display:flex;align-items:center;flex-wrap:wrap;gap:6px;padding:5px 0;border-bottom:1px dashed var(--bdr)">`;
-          s+=`<span style="display:inline-flex;align-items:center;gap:4px;background:${color2}18;border:2px solid ${color2};border-radius:7px;padding:3px 10px;font-size:12px;font-weight:900;color:${color2};white-space:nowrap">${name} <b style="font-size:13px">${fmtQty(qty)}</b></span>`;
-          s+=`<span style="color:var(--muted);font-size:11px">←</span>`;
+          s+=`<div style="display:flex;align-items:center;flex-wrap:wrap;gap:5px;padding:5px 0;border-bottom:1px dashed var(--bdr)">`;
+          s+=`<span style="${chipB};background:${color2}15;border:1.5px solid ${color2}"><span style="color:${color2}">${name}</span> <span style="color:${color2}">${fmtQty(qty)}개</span></span>`;
+          s+=`<span style="color:var(--bdr2);font-size:13px;font-weight:900;flex-shrink:0">·</span>`;
           s+=matParts;
           s+=`</div>`;
         }
