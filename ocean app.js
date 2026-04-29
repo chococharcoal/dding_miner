@@ -493,26 +493,73 @@ async function calcOpt() {
   const nonZeroKeys   = allFKeys.filter(k => finalAnalysis[k].tier !== 0);
   const zeroKeys      = allFKeys.filter(k => finalAnalysis[k].tier === 0);
   const sortedNonZero = [...nonZeroKeys].sort((a,b) => finalAnalysis[b].sellPrice - finalAnalysis[a].sellPrice);
+  const byNonZeroUnit = [...nonZeroKeys].sort((a,b) => {
+    const ua = finalAnalysis[a].sellPrice / (Object.values(finalAnalysis[a].sfNeed).reduce((s,v)=>s+v,0)||1);
+    const ub = finalAnalysis[b].sellPrice / (Object.values(finalAnalysis[b].sfNeed).reduce((s,v)=>s+v,0)||1);
+    return ub - ua;
+  });
+
+  // 초기해: d=0..maxD × 여러 정렬 × 업그레이드 있/없
+  // → 최대 d일 때 최적을 그리디로 빠르게 찾아 bestRev를 높게 잡음
+  const maxDilutedForInit = zeroKeys.length > 0
+    ? zeroKeys.reduce((mn,k) => Math.min(mn, maxMake(finalAnalysis[k].sfNeed, {...inv})), Infinity)
+    : 0;
 
   showOptLoading(10, '초기해 계산 중');
   await new Promise(r => setTimeout(r, 20));
 
-  const greedyCandidates = [
-    greedyOnce(byPrice,                  inv, true),
-    greedyOnce(byUnit,                   inv, true),
-    greedyOnce([...byPrice].reverse(),   inv, true),
-    greedyOnce([...byUnit].reverse(),    inv, true),
-    greedyOnce(byPrice,                  inv, false),
-    greedyOnce(byUnit,                   inv, false),
-    greedyOnce([...byPrice].reverse(),   inv, false),
-    greedyOnce([...byUnit].reverse(),    inv, false),
-    greedyOnce(byPriceWithDiluted,       inv, true),   // 0성 우선
-    greedyOnce(byPriceWithDiluted,       inv, false),  // 0성 우선 + 업그레이드 없음
-  ];
-  let bestResult = greedyCandidates.reduce((a,b) => b.rev > a.rev ? b : a);
-  let bestRev  = bestResult.rev;
-  let bestPlan = {...bestResult.plan};
-  let workInv  = {...bestResult.remInv};
+  let bestRev  = 0;
+  let bestPlan = Object.fromEntries(allFKeys.map(k=>[k,0]));
+  let workInv  = {...inv};
+
+  for (let d = 0; d <= (maxDilutedForInit === Infinity ? 0 : maxDilutedForInit); d++) {
+    const startInv = {...inv};
+    let zeroRev = 0;
+    const zeroPlan = Object.fromEntries(allFKeys.map(k=>[k,0]));
+    let ok = true;
+    for (const zk of zeroKeys) {
+      for (let i = 0; i < d; i++) {
+        if (!canAffordSF(finalAnalysis[zk].sfNeed, startInv)) { ok = false; break; }
+        doConsumeSF(finalAnalysis[zk].sfNeed, startInv);
+      }
+      if (!ok) break;
+      zeroPlan[zk] = d;
+      zeroRev += d * finalAnalysis[zk].sellPrice;
+    }
+    if (!ok) break;
+
+    // 나머지 그리디
+    for (const keys of [sortedNonZero, byNonZeroUnit, [...sortedNonZero].reverse(), [...byNonZeroUnit].reverse()]) {
+      for (const allowUp of [true, false]) {
+        const curInv = {...startInv};
+        const curPlan = {...zeroPlan};
+        let rev = zeroRev;
+        for (const k of keys) {
+          const fa = finalAnalysis[k];
+          let n;
+          if (!allowUp) {
+            n = Infinity;
+            for (const [sf, need] of Object.entries(fa.sfNeed)) {
+              if (need <= 0) continue;
+              n = Math.min(n, Math.floor((curInv[sf]||0) / Math.ceil(need)));
+            }
+            n = n === Infinity ? 0 : n;
+          } else {
+            n = maxMake(fa.sfNeed, curInv);
+          }
+          if (n <= 0) continue;
+          curPlan[k] = n;
+          rev += n * fa.sellPrice;
+          for (let i = 0; i < n; i++) doConsumeSF(fa.sfNeed, curInv);
+        }
+        if (rev > bestRev) {
+          bestRev  = rev;
+          bestPlan = {...curPlan};
+          workInv  = {...curInv};
+        }
+      }
+    }
+  }
 
   showOptLoading(20, `초기해 ${f(bestRev)}원 확보 · B&B 탐색 시작`);
   await new Promise(r => setTimeout(r, 20));
@@ -522,9 +569,7 @@ async function calcOpt() {
   // → UB 계산이 부정확해도 0성이 가지치기되는 문제 완전 해소
   const N = sortedNonZero.length;
 
-  const maxDiluted = zeroKeys.length > 0
-    ? zeroKeys.reduce((mn, k) => Math.min(mn, maxMake(finalAnalysis[k].sfNeed, {...inv})), Infinity)
-    : 0;
+  const maxDiluted = maxDilutedForInit;
 
   let nodeCount  = 0;
   let pruneCount = 0;
@@ -705,51 +750,67 @@ function renderOptResult({ planEntries, finalAnalysis, workInv, totalRev, totalV
         html+=`</div></div>`;
       }
 
-      // 제작 시간 (단계별, 카드 안)
-      html+=`<div class="cfc-section"><div class="cfc-section-label">⏱️ 제작 시간</div><div style="display:flex;flex-wrap:wrap;gap:6px">`;
-      if(t1sec>0)html+=`<div style="background:var(--bg);border:1px solid var(--bdr);border-radius:6px;padding:4px 9px;font-size:11px"><span style="color:var(--muted)">⚗️ 1차 연금</span> <b>${fmtTime(t1sec*(1-fr))}</b></div>`;
-      if(t2sec>0)html+=`<div style="background:var(--bg);border:1px solid var(--bdr);border-radius:6px;padding:4px 9px;font-size:11px"><span style="color:var(--muted)">🔮 2차 가공</span> <b>${fmtTime(t2sec*(1-fr))}</b></div>`;
-      if(t3sec>0)html+=`<div style="background:var(--bg);border:1px solid var(--bdr);border-radius:6px;padding:4px 9px;font-size:11px"><span style="color:var(--muted)">🏆 최종 조합</span> <b>${fmtTime(t3sec*(1-fr))}</b></div>`;
-      html+=`<div style="background:var(--surf);border:1.5px solid ${color};border-radius:6px;padding:4px 9px;font-size:11px;color:${color};font-weight:700">합계 ${fmtTime(totalSecCard)}</div>`;
-      html+=`</div></div>`;
+      // 제작 가이드 토글 — 결과물 / 재료 분리 한줄 형식 + 시간 포함
+      html+=`<div class="guide-toggle" onclick="toggleGuide('${guideId}')"><span class="guide-toggle-arrow" id="${guideId}_arrow">▶</span> 제작 가이드 &amp; 시간 보기</div>`;
+      html+=`<div class="guide-body" id="${guideId}" style="padding:10px 14px">`;
 
-      // 제작 가이드 토글 — 결과물 N개  재료 + 재료 형식
-      html+=`<div class="guide-toggle" onclick="toggleGuide('${guideId}')"><span class="guide-toggle-arrow" id="${guideId}_arrow">▶</span> 제작 가이드 보기</div>`;
-      html+=`<div class="guide-body" id="${guideId}" style="padding:8px 14px">`;
+      // 중간재료명 표시 (별 없이)
+      function midName(k) {
+        const r = ALCHEMY[k]; if (!r) return k;
+        return r.name || ALCHEMY[k]?.name || k;
+      }
+      function matStr(matObj, batchMul) {
+        return Object.entries(matObj).filter(([,v])=>v>0)
+          .map(([mk,mq])=>`<span style="color:${getMatColor(mk)};font-weight:700">${getMatName(mk).replace(/★+\s*/,'')}</span> <b>${fmtQty(Math.ceil(mq*batchMul))}</b>`)
+          .join(' <span style="color:var(--muted)">+</span> ');
+      }
+
+      const lineStyle = 'display:flex;align-items:baseline;gap:8px;padding:4px 0;border-bottom:1px dashed var(--bdr);font-size:12px;line-height:1.5';
+      const labelStyle = 'flex:0 0 auto;min-width:130px;font-weight:900;white-space:nowrap;overflow:hidden;text-overflow:ellipsis';
+      const sepStyle = 'flex:0 0 auto;color:var(--bdr2);font-size:14px;font-weight:900';
+      const matStyle = 'flex:1;min-width:0;color:var(--txt)';
 
       const s2=Object.entries(fa.step2).filter(([,v])=>v>0);
       if(s2.length){
-        html+=`<div style="font-family:'Jua',sans-serif;font-size:11px;color:var(--muted);margin:4px 0 4px">⚗️ 1차 연금품 제작</div>`;
+        html+=`<div style="font-family:'Jua',sans-serif;font-size:11px;color:var(--muted);margin:2px 0 4px">⚗️ 1차 연금품 — ${fmtTime(t1sec*(1-fr))}</div>`;
         for(const[mk2,mq2]of s2){
           const rec2=ALCHEMY[mk2];if(!rec2)continue;
           const need2=mq2*cnt, b2=Math.ceil(need2/(rec2.output||1));
-          const matParts=Object.entries(rec2.materials).filter(([,v])=>v>0)
-            .map(([mk3,mq3])=>`<span style="color:${getMatColor(mk3)};font-weight:700">${getMatName(mk3)}</span> ${fmtQty(Math.ceil(mq3*b2))}`)
-            .join(' + ');
-          html+=`<div style="font-size:12px;padding:3px 0;border-bottom:1px dashed var(--bdr)">`;
-          html+=`<span style="color:${getMatColor(mk2)};font-weight:900">${getMatName(mk2)}</span> <b>${need2}개</b> &nbsp; ${matParts}`;
+          html+=`<div style="${lineStyle}">`;
+          html+=`<span style="${labelStyle};color:${getMatColor(mk2)}">${getMatName(mk2).replace(/★+\s*/,'')}</span>`;
+          html+=`<span style="${sepStyle}">·</span>`;
+          html+=`<span style="flex:0 0 auto;font-weight:900">${need2}개</span>`;
+          html+=`<span style="${sepStyle}">/</span>`;
+          html+=`<span style="${matStyle}">${matStr(rec2.materials, b2)}</span>`;
           html+=`</div>`;
         }
       }
       const s3=Object.entries(fa.step3).filter(([,v])=>v>0);
       if(s3.length){
-        html+=`<div style="font-family:'Jua',sans-serif;font-size:11px;color:var(--muted);margin:8px 0 4px">🔮 2차 연금품 제작</div>`;
+        html+=`<div style="font-family:'Jua',sans-serif;font-size:11px;color:var(--muted);margin:8px 0 4px">🔮 2차 연금품 — ${fmtTime(t2sec*(1-fr))}</div>`;
         for(const[mk,mq]of s3){
           const rec=ALCHEMY[mk];if(!rec)continue;
-          const matParts=Object.entries(rec.materials).filter(([,v])=>v>0)
-            .map(([mk2,mq2])=>`<span style="color:${getMatColor(mk2)};font-weight:700">${getMatName(mk2)}</span> ${fmtQty(Math.ceil(mq2*mq*cnt))}`)
-            .join(' + ');
-          html+=`<div style="font-size:12px;padding:3px 0;border-bottom:1px dashed var(--bdr)">`;
-          html+=`<span style="color:${getMatColor(mk)};font-weight:900">${getMatName(mk)}</span> <b>${mq*cnt}개</b> &nbsp; ${matParts}`;
+          html+=`<div style="${lineStyle}">`;
+          html+=`<span style="${labelStyle};color:${getMatColor(mk)}">${getMatName(mk).replace(/★+\s*/,'')}</span>`;
+          html+=`<span style="${sepStyle}">·</span>`;
+          html+=`<span style="flex:0 0 auto;font-weight:900">${mq*cnt}개</span>`;
+          html+=`<span style="${sepStyle}">/</span>`;
+          html+=`<span style="${matStyle}">${matStr(rec.materials, mq*cnt)}</span>`;
           html+=`</div>`;
         }
       }
-      // 최종 조합
-      html+=`<div style="font-family:'Jua',sans-serif;font-size:11px;color:${color};margin:8px 0 4px">🏆 최종 연금품</div>`;
-      const finalMatParts=Object.entries(PRECISION_ALCHEMY[fKey].materials).filter(([,v])=>v>0)
-        .map(([mk,mq])=>`<span style="color:${getMatColor(mk)};font-weight:700">${getMatName(mk)}</span> ${mq*cnt}개`)
-        .join(' + ');
-      html+=`<div style="font-size:12px;padding:3px 0"><span style="color:${color};font-weight:900">${fa.name}</span> <b>${fmtQty(cnt)}</b> &nbsp; ${finalMatParts}</div>`;
+      html+=`<div style="font-family:'Jua',sans-serif;font-size:11px;color:${color};margin:8px 0 4px">🏆 최종 — ${fmtTime(t3sec*(1-fr))}</div>`;
+      const finalMat = Object.entries(PRECISION_ALCHEMY[fKey].materials).filter(([,v])=>v>0)
+        .map(([mk,mq])=>`<span style="color:${getMatColor(mk)};font-weight:700">${getMatName(mk).replace(/★+\s*/,'')}</span> <b>${mq*cnt}개</b>`)
+        .join(' <span style="color:var(--muted)">+</span> ');
+      html+=`<div style="${lineStyle};border-bottom:none">`;
+      html+=`<span style="${labelStyle};color:${color}">${fa.name}</span>`;
+      html+=`<span style="${sepStyle}">·</span>`;
+      html+=`<span style="flex:0 0 auto;font-weight:900">${fmtQty(cnt)}개</span>`;
+      html+=`<span style="${sepStyle}">/</span>`;
+      html+=`<span style="${matStyle}">${finalMat}</span>`;
+      html+=`</div>`;
+      html+=`<div style="text-align:right;font-size:11px;color:${color};font-weight:700;margin-top:6px;padding-top:6px;border-top:1px solid var(--bdr)">⏱️ 합계 ${fmtTime(totalSecCard)}</div>`;
 
       html+=`</div></div></div>`;
     }
