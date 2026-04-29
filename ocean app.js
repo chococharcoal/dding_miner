@@ -419,12 +419,11 @@ async function calcOpt() {
     return m === Infinity ? 0 : m;
   }
 
-  // ── UB: 현재 재고에서 다양한 그리디 실행 결과 + 현재 수익 ──
-  // 0성(희석액)처럼 여러 성급 어패류를 동시에 쓰는 아이템이 있으므로
-  // 희석액 우선 순서도 별도로 시도
+  // ── UB: 현재 재고에서 그리디 실행 (비0성 아이템만) ──
+  // 0성은 외부 루프에서 고정되므로 UB 계산에서 제외
   function computeUB(curInv, curRev) {
     let best = curRev;
-    for (const keys of [byPrice, byUnit, byPriceWithDiluted]) {
+    for (const keys of [sortedNonZero, [...sortedNonZero].reverse()]) {
       for (const allowUpgrade of [true, false]) {
         const tmp = {...curInv}; let extra = 0;
         for (const k of keys) {
@@ -490,6 +489,11 @@ async function calcOpt() {
     return finalAnalysis[b].sellPrice - finalAnalysis[a].sellPrice;
   });
 
+  // B&B용 분리 (0성 외부루프이므로 비0성만 정렬)
+  const nonZeroKeys   = allFKeys.filter(k => finalAnalysis[k].tier !== 0);
+  const zeroKeys      = allFKeys.filter(k => finalAnalysis[k].tier === 0);
+  const sortedNonZero = [...nonZeroKeys].sort((a,b) => finalAnalysis[b].sellPrice - finalAnalysis[a].sellPrice);
+
   showOptLoading(10, '초기해 계산 중');
   await new Promise(r => setTimeout(r, 20));
 
@@ -514,69 +518,96 @@ async function calcOpt() {
   await new Promise(r => setTimeout(r, 20));
 
   // ── B&B 탐색 ──
-  // 0성(희석액)을 앞에 배치 → 초반에 0성 포함 해를 확보 → 이후 가지치기 강화
-  const sortedKeys = byPriceWithDiluted;
-  const N = sortedKeys.length;
+  // 0성(희석액)은 외부 루프로 분리: d=0~maxD개 각각 시도
+  // → UB 계산이 부정확해도 0성이 가지치기되는 문제 완전 해소
+  const N = sortedNonZero.length;
 
-  const stack = [{
-    idx: 0,
-    inv: {...inv},
-    plan: Object.fromEntries(allFKeys.map(k=>[k,0])),
-    rev: 0,
-  }];
+  const maxDiluted = zeroKeys.length > 0
+    ? zeroKeys.reduce((mn, k) => Math.min(mn, maxMake(finalAnalysis[k].sfNeed, {...inv})), Infinity)
+    : 0;
 
   let nodeCount  = 0;
   let pruneCount = 0;
   let lastYield  = Date.now();
 
-  while (stack.length > 0) {
-    const { idx, inv: curInv, plan: curPlan, rev: curRev } = stack.pop();
-
-    if (idx === N) {
-      if (curRev > bestRev) {
-        bestRev  = curRev;
-        bestPlan = {...curPlan};
-        workInv  = {...curInv};
+  for (let d = 0; d <= (maxDiluted === Infinity ? 0 : maxDiluted); d++) {
+    // 0성 d개 소비 후 재고
+    const invAfterZero = {...inv};
+    let zeroRev = 0;
+    const zeroPlan = Object.fromEntries(allFKeys.map(k=>[k,0]));
+    let ok = true;
+    for (const zk of zeroKeys) {
+      for (let i = 0; i < d; i++) {
+        if (!canAffordSF(finalAnalysis[zk].sfNeed, invAfterZero)) { ok = false; break; }
+        doConsumeSF(finalAnalysis[zk].sfNeed, invAfterZero);
       }
-      continue;
+      if (!ok) break;
+      zeroPlan[zk] = d;
+      zeroRev += d * finalAnalysis[zk].sellPrice;
     }
+    if (!ok) break;
 
-    nodeCount++;
+    showOptLoading(
+      Math.min(90, 20 + Math.round((d / Math.max(maxDiluted, 1)) * 70)),
+      `0성 ${d}개 시도 (최대 ${maxDiluted}개) · 최선 ${f(bestRev)}원`
+    );
+    await new Promise(r => setTimeout(r, 0));
+    lastYield = Date.now();
 
-    const now = Date.now();
-    if (now - lastYield > 80) {
-      showOptLoading(
-        Math.min(93, 20 + Math.round(nodeCount / Math.max(nodeCount + stack.length, 1) * 70)),
-        `탐색 중… 노드 ${f(nodeCount)}개 · 가지치기 ${f(pruneCount)}개 · 최선 ${f(bestRev)}원`
-      );
-      await new Promise(r => setTimeout(r, 0));
-      lastYield = Date.now();
+    // 나머지 아이템 B&B
+    const innerStack = [{
+      idx: 0,
+      inv: {...invAfterZero},
+      plan: Object.fromEntries(nonZeroKeys.map(k=>[k,0])),
+      rev: zeroRev,
+    }];
+
+    while (innerStack.length > 0) {
+      const { idx, inv: curInv, plan: curPlan, rev: curRev } = innerStack.pop();
+
+      if (idx === N) {
+        if (curRev > bestRev) {
+          bestRev  = curRev;
+          bestPlan = {...zeroPlan, ...curPlan};
+          workInv  = {...curInv};
+        }
+        continue;
+      }
+
+      nodeCount++;
+
+      const now = Date.now();
+      if (now - lastYield > 80) {
+        showOptLoading(
+          Math.min(90, 20 + Math.round((d / Math.max(maxDiluted,1)) * 70)),
+          `0성 ${d}개 · 노드 ${f(nodeCount)}개 · 가지치기 ${f(pruneCount)}개 · 최선 ${f(bestRev)}원`
+        );
+        await new Promise(r => setTimeout(r, 0));
+        lastYield = Date.now();
+      }
+
+      const ub = computeUB(curInv, curRev);
+      if (ub <= bestRev) { pruneCount++; continue; }
+
+      const fKey = sortedNonZero[idx];
+      const fa   = finalAnalysis[fKey];
+      const maxN = maxMake(fa.sfNeed, curInv);
+
+      innerStack.push({ idx: idx+1, inv: {...curInv}, plan: {...curPlan}, rev: curRev });
+
+      const batchInv = {...curInv};
+      const snaps = [];
+      for (let n = 1; n <= maxN; n++) {
+        if (!canAffordSF(fa.sfNeed, batchInv)) break;
+        doConsumeSF(fa.sfNeed, batchInv);
+        const branchRev = curRev + fa.sellPrice * n;
+        const branchUB  = computeUB(batchInv, branchRev);
+        if (branchUB <= bestRev) { pruneCount++; continue; }
+        const newPlan = {...curPlan}; newPlan[fKey] = n;
+        snaps.push({ idx: idx+1, inv: {...batchInv}, plan: newPlan, rev: branchRev });
+      }
+      for (const s of snaps) innerStack.push(s);
     }
-
-    // UB 가지치기: 현재 재고로 나올 수 있는 최대 수익 ≤ 현재 최선이면 스킵
-    const ub = computeUB(curInv, curRev);
-    if (ub <= bestRev) { pruneCount++; continue; }
-
-    const fKey = sortedKeys[idx];
-    const fa   = finalAnalysis[fKey];
-    const maxN = maxMake(fa.sfNeed, curInv);
-
-    // n=0 분기
-    stack.push({ idx: idx+1, inv: {...curInv}, plan: {...curPlan}, rev: curRev });
-
-    // n=1..maxN 분기 (높은 n 먼저 처리)
-    const batchInv = {...curInv};
-    const snaps = [];
-    for (let n = 1; n <= maxN; n++) {
-      if (!canAffordSF(fa.sfNeed, batchInv)) break;
-      doConsumeSF(fa.sfNeed, batchInv);
-      const branchRev = curRev + fa.sellPrice * n;
-      const branchUB  = computeUB(batchInv, branchRev);
-      if (branchUB <= bestRev) { pruneCount++; continue; }
-      const newPlan = {...curPlan}; newPlan[fKey] = n;
-      snaps.push({ idx: idx+1, inv: {...batchInv}, plan: newPlan, rev: branchRev });
-    }
-    for (const s of snaps) stack.push(s);
   }
 
   showOptLoading(97, `탐색 완료 — 노드 ${f(nodeCount)}개, 가지치기 ${f(pruneCount)}개`);
