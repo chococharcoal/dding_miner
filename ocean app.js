@@ -758,30 +758,34 @@ function renderOptResult({ planEntries, finalAnalysis, workInv, totalRev, totalV
       function midName(k) {
         const r = ALCHEMY[k]; if (!r) return k;
         return r.name || ALCHEMY[k]?.name || k;
-      }
-      function matStr(matObj, batchMul) {
+      // matStr: 어패류는 별 유지, 중간재료는 별 제거
+      function isSF(k){ return /^(oyster|conch|octopus|seaweed|urchin)\d$/.test(k); }
+      function dispName(k){ return isSF(k) ? getMatName(k) : getMatName(k).replace(/\s*★+/g,''); }
+      function matChips(matObj, batchMul) {
         return Object.entries(matObj).filter(([,v])=>v>0)
-          .map(([mk,mq])=>`<span style="color:${getMatColor(mk)};font-weight:700">${getMatName(mk).replace(/★+\s*/,'')}</span> <b>${fmtQty(Math.ceil(mq*batchMul))}</b>`)
-          .join(' <span style="color:var(--muted)">+</span> ');
+          .map(([mk,mq])=>{
+            const qty=fmtQty(Math.ceil(mq*batchMul));
+            const col=getMatColor(mk);
+            return `<span style="display:inline-flex;align-items:center;gap:3px;background:var(--bg);border:1.5px solid ${col}33;border-radius:6px;padding:2px 7px;font-size:11px;white-space:nowrap"><span style="color:${col};font-weight:700">${dispName(mk)}</span><b style="color:var(--txt)">${qty}</b></span>`;
+          })
+          .join(' ');
+      }
+      function resultChip(name, qty, col) {
+        return `<span style="display:inline-flex;align-items:center;gap:4px;background:${col}18;border:2px solid ${col};border-radius:7px;padding:3px 10px;font-size:12px;font-weight:900;color:${col};white-space:nowrap">${name} <b style="font-size:13px">${qty}</b></span>`;
       }
 
-      const lineStyle = 'display:flex;align-items:baseline;gap:8px;padding:4px 0;border-bottom:1px dashed var(--bdr);font-size:12px;line-height:1.5';
-      const labelStyle = 'flex:0 0 auto;min-width:130px;font-weight:900;white-space:nowrap;overflow:hidden;text-overflow:ellipsis';
-      const sepStyle = 'flex:0 0 auto;color:var(--bdr2);font-size:14px;font-weight:900';
-      const matStyle = 'flex:1;min-width:0;color:var(--txt)';
+      const rowStyle = 'display:flex;align-items:center;flex-wrap:wrap;gap:6px;padding:5px 0;border-bottom:1px dashed var(--bdr)';
 
       const s2=Object.entries(fa.step2).filter(([,v])=>v>0);
       if(s2.length){
-        html+=`<div style="font-family:'Jua',sans-serif;font-size:11px;color:var(--muted);margin:2px 0 4px">⚗️ 1차 연금품 — ${fmtTime(t1sec*(1-fr))}</div>`;
+        html+=`<div style="font-family:'Jua',sans-serif;font-size:11px;color:var(--muted);margin:4px 0 4px">⚗️ 1차 연금품 — ${fmtTime(t1sec*(1-fr))}</div>`;
         for(const[mk2,mq2]of s2){
           const rec2=ALCHEMY[mk2];if(!rec2)continue;
           const need2=mq2*cnt, b2=Math.ceil(need2/(rec2.output||1));
-          html+=`<div style="${lineStyle}">`;
-          html+=`<span style="${labelStyle};color:${getMatColor(mk2)}">${getMatName(mk2).replace(/★+\s*/,'')}</span>`;
-          html+=`<span style="${sepStyle}">·</span>`;
-          html+=`<span style="flex:0 0 auto;font-weight:900">${need2}개</span>`;
-          html+=`<span style="${sepStyle}">/</span>`;
-          html+=`<span style="${matStyle}">${matStr(rec2.materials, b2)}</span>`;
+          html+=`<div style="${rowStyle}">`;
+          html+=resultChip(dispName(mk2), need2, getMatColor(mk2));
+          html+=`<span style="color:var(--muted);font-size:11px">←</span>`;
+          html+=matChips(rec2.materials, b2);
           html+=`</div>`;
         }
       }
@@ -790,25 +794,18 @@ function renderOptResult({ planEntries, finalAnalysis, workInv, totalRev, totalV
         html+=`<div style="font-family:'Jua',sans-serif;font-size:11px;color:var(--muted);margin:8px 0 4px">🔮 2차 연금품 — ${fmtTime(t2sec*(1-fr))}</div>`;
         for(const[mk,mq]of s3){
           const rec=ALCHEMY[mk];if(!rec)continue;
-          html+=`<div style="${lineStyle}">`;
-          html+=`<span style="${labelStyle};color:${getMatColor(mk)}">${getMatName(mk).replace(/★+\s*/,'')}</span>`;
-          html+=`<span style="${sepStyle}">·</span>`;
-          html+=`<span style="flex:0 0 auto;font-weight:900">${mq*cnt}개</span>`;
-          html+=`<span style="${sepStyle}">/</span>`;
-          html+=`<span style="${matStyle}">${matStr(rec.materials, mq*cnt)}</span>`;
+          html+=`<div style="${rowStyle}">`;
+          html+=resultChip(dispName(mk), mq*cnt, getMatColor(mk));
+          html+=`<span style="color:var(--muted);font-size:11px">←</span>`;
+          html+=matChips(rec.materials, mq*cnt);
           html+=`</div>`;
         }
       }
       html+=`<div style="font-family:'Jua',sans-serif;font-size:11px;color:${color};margin:8px 0 4px">🏆 최종 — ${fmtTime(t3sec*(1-fr))}</div>`;
-      const finalMat = Object.entries(PRECISION_ALCHEMY[fKey].materials).filter(([,v])=>v>0)
-        .map(([mk,mq])=>`<span style="color:${getMatColor(mk)};font-weight:700">${getMatName(mk).replace(/★+\s*/,'')}</span> <b>${mq*cnt}개</b>`)
-        .join(' <span style="color:var(--muted)">+</span> ');
-      html+=`<div style="${lineStyle};border-bottom:none">`;
-      html+=`<span style="${labelStyle};color:${color}">${fa.name}</span>`;
-      html+=`<span style="${sepStyle}">·</span>`;
-      html+=`<span style="flex:0 0 auto;font-weight:900">${fmtQty(cnt)}개</span>`;
-      html+=`<span style="${sepStyle}">/</span>`;
-      html+=`<span style="${matStyle}">${finalMat}</span>`;
+      html+=`<div style="${rowStyle};border-bottom:none">`;
+      html+=resultChip(fa.name, `${fmtQty(cnt)}개`, color);
+      html+=`<span style="color:var(--muted);font-size:11px">←</span>`;
+      html+=matChips(PRECISION_ALCHEMY[fKey].materials, cnt);
       html+=`</div>`;
       html+=`<div style="text-align:right;font-size:11px;color:${color};font-weight:700;margin-top:6px;padding-top:6px;border-top:1px solid var(--bdr)">⏱️ 합계 ${fmtTime(totalSecCard)}</div>`;
 
@@ -859,27 +856,44 @@ function renderOptResult({ planEntries, finalAnalysis, workInv, totalRev, totalV
       const tSec=timeSec[secKey]*(1-fr);
       let s=`<div class="craft-flow-card" style="--tier-color:${accentColor};margin-bottom:10px">`;
       s+=`<div class="cfc-header" style="border-left-color:${accentColor}">`;
-      s+=`<div class="cfc-header-left"><div class="cfc-name" style="font-size:15px">${emoji} ${label}</div></div>`;
+      s+=`<div class="cfc-header-left"><div class="cfc-name" style="font-size:14px">${emoji} ${label}</div></div>`;
       s+=`<div class="cfc-header-right"><div style="font-size:12px;color:${accentColor};font-weight:700">⏱️ ${fmtTime(tSec)}</div></div>`;
-      s+=`</div><div class="cfc-section">`;
+      s+=`</div><div class="cfc-section" style="padding:8px 14px">`;
+
+      const lStyle='display:flex;align-items:baseline;gap:8px;padding:4px 0;border-bottom:1px dashed var(--bdr);font-size:12px';
+      const lLbl='flex:0 0 auto;min-width:120px;font-weight:900;white-space:nowrap;overflow:hidden;text-overflow:ellipsis';
+      const lSep='flex:0 0 auto;color:var(--bdr2);font-weight:900';
+      const lMat='flex:1;min-width:0;color:var(--txt)';
+
       for(const[key,qty]of entries){
         const rec=ALCHEMY[key]||PRECISION_ALCHEMY[key];
         const fa2=finalAnalysis[key];
         const isPA=!!PRECISION_ALCHEMY[key];
-        const name=fa2?.name||rec?.name||key;
+        const name=(fa2?.name||rec?.name||key).replace(/★+\s*/g,'');
         const color2=isPA?(tierColors[fa2.tier]||'#607090'):(rec?.color||'#607090');
+
         if(isPA){
-          const netColor2=fa2.netPerUnit>=0?'var(--grn)':'var(--red)',netSign2=fa2.netPerUnit>=0?'+':'';
-          s+=`<div class="rrow"><span class="rl" style="color:${color2};font-weight:900">${name}</span>`;
-          s+=`<span class="rv" style="display:flex;flex-direction:column;align-items:flex-end;gap:1px">`;
-          s+=`<b style="font-size:14px">${fmtQty(qty)}</b>`;
-          s+=`<small style="color:var(--muted)">판매 ${f(fa2.sellPrice*qty)}원 · 개당 ${netLabel} <span style="color:${netColor2}">${netSign2}${f(Math.round(fa2.netPerUnit))}원</span></small>`;
-          s+=`</span></div>`;
+          const netColor2=fa2.netPerUnit>=0?'var(--grn)':'var(--red)', netSign2=fa2.netPerUnit>=0?'+':'';
+          // 완성품: 이름 / 개수 / 판매수익 · 순이익
+          s+=`<div style="${lStyle}">`;
+          s+=`<span style="${lLbl};color:${color2}">${name}</span>`;
+          s+=`<span style="${lSep}">·</span>`;
+          s+=`<span style="flex:0 0 auto;font-weight:900">${fmtQty(qty)}개</span>`;
+          s+=`<span style="${lSep}">·</span>`;
+          s+=`<span style="flex:1;font-size:11px;color:var(--muted)">판매 ${f(fa2.sellPrice*qty)}원 &nbsp;<span style="color:${netColor2}">${netSign2}${f(Math.round(fa2.netPerUnit))}/개</span></span>`;
+          s+=`</div>`;
         } else if(rec){
           const batchNeeded=Math.ceil(qty/(rec.output||1));
-          s+=`<div class="step-row" style="margin-bottom:5px">`;
-          Object.entries(rec.materials).forEach(([mk,mq],idx,arr)=>{s+=chip(mk,mq*batchNeeded);if(idx<arr.length-1)s+=plus;});
-          s+=arrow+`<span class="mat-chip-flow" style="--chip-color:${color2};border-width:2px"><span class="chip-name">${name}</span><span class="chip-qty">${fmtQty(qty)}</span></span>`;
+          const matParts=Object.entries(rec.materials).filter(([,v])=>v>0)
+            .map(([mk,mq])=>{
+              const q=fmtQty(Math.ceil(mq*batchNeeded)), col=getMatColor(mk);
+              const nm=(/^(oyster|conch|octopus|seaweed|urchin)\d$/.test(mk))?getMatName(mk):getMatName(mk).replace(/\s*★+/g,'');
+              return `<span style="display:inline-flex;align-items:center;gap:3px;background:var(--bg);border:1.5px solid ${col}33;border-radius:6px;padding:2px 7px;font-size:11px;white-space:nowrap"><span style="color:${col};font-weight:700">${nm}</span><b style="color:var(--txt)">${q}</b></span>`;
+            }).join(' ');
+          s+=`<div style="display:flex;align-items:center;flex-wrap:wrap;gap:6px;padding:5px 0;border-bottom:1px dashed var(--bdr)">`;
+          s+=`<span style="display:inline-flex;align-items:center;gap:4px;background:${color2}18;border:2px solid ${color2};border-radius:7px;padding:3px 10px;font-size:12px;font-weight:900;color:${color2};white-space:nowrap">${name} <b style="font-size:13px">${fmtQty(qty)}</b></span>`;
+          s+=`<span style="color:var(--muted);font-size:11px">←</span>`;
+          s+=matParts;
           s+=`</div>`;
         }
       }
