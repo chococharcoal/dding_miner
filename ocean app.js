@@ -514,8 +514,8 @@ async function calcOpt() {
   await new Promise(r => setTimeout(r, 20));
 
   // ── B&B 탐색 ──
-  // 정렬: 판매가 내림차순 (높은 아이템부터 탐색 → 좋은 해 빠르게 확보)
-  const sortedKeys = byPrice;
+  // 0성(희석액)을 앞에 배치 → 초반에 0성 포함 해를 확보 → 이후 가지치기 강화
+  const sortedKeys = byPriceWithDiluted;
   const N = sortedKeys.length;
 
   const stack = [{
@@ -682,25 +682,45 @@ function renderOptResult({ planEntries, finalAnalysis, workInv, totalRev, totalV
       html+=`<div style="background:var(--surf);border:1.5px solid ${color};border-radius:6px;padding:4px 9px;font-size:11px;color:${color};font-weight:700">합계 ${fmtTime(totalSecCard)}</div>`;
       html+=`</div></div>`;
 
-      // 제작 가이드 토글
+      // 제작 가이드 토글 — 결과물 N개  재료 + 재료 형식
       html+=`<div class="guide-toggle" onclick="toggleGuide('${guideId}')"><span class="guide-toggle-arrow" id="${guideId}_arrow">▶</span> 제작 가이드 보기</div>`;
-      html+=`<div class="guide-body" id="${guideId}">`;
+      html+=`<div class="guide-body" id="${guideId}" style="padding:8px 14px">`;
+
       const s2=Object.entries(fa.step2).filter(([,v])=>v>0);
       if(s2.length){
-        html+=`<div class="step-block"><div class="step-block-label">⚗️ 1차 연금품 제작</div>`;
-        for(const[mk2,mq2]of s2){const rec2=ALCHEMY[mk2];if(!rec2)continue;const need2=mq2*cnt,b2=Math.ceil(need2/(rec2.output||1));html+=`<div class="step-row">`;Object.entries(rec2.materials).forEach(([mk3,mq3],idx,arr)=>{html+=chip(mk3,mq3*b2);if(idx<arr.length-1)html+=plus;});html+=arrow+chip(mk2,null,need2+'개')+`</div>`;}
-        html+=`</div>`;
+        html+=`<div style="font-family:'Jua',sans-serif;font-size:11px;color:var(--muted);margin:4px 0 4px">⚗️ 1차 연금품 제작</div>`;
+        for(const[mk2,mq2]of s2){
+          const rec2=ALCHEMY[mk2];if(!rec2)continue;
+          const need2=mq2*cnt, b2=Math.ceil(need2/(rec2.output||1));
+          const matParts=Object.entries(rec2.materials).filter(([,v])=>v>0)
+            .map(([mk3,mq3])=>`<span style="color:${getMatColor(mk3)};font-weight:700">${getMatName(mk3)}</span> ${fmtQty(Math.ceil(mq3*b2))}`)
+            .join(' + ');
+          html+=`<div style="font-size:12px;padding:3px 0;border-bottom:1px dashed var(--bdr)">`;
+          html+=`<span style="color:${getMatColor(mk2)};font-weight:900">${getMatName(mk2)}</span> <b>${need2}개</b> &nbsp; ${matParts}`;
+          html+=`</div>`;
+        }
       }
       const s3=Object.entries(fa.step3).filter(([,v])=>v>0);
       if(s3.length){
-        html+=`<div class="step-block"><div class="step-block-label">🔮 2차 연금품 제작</div>`;
-        for(const[mk,mq]of s3){const rec=ALCHEMY[mk];if(!rec)continue;html+=`<div class="step-row">`;Object.entries(rec.materials).forEach(([mk2,mq2],idx,arr)=>{html+=chip(mk2,mq2*mq*cnt);if(idx<arr.length-1)html+=plus;});html+=arrow+chip(mk,null,mq*cnt+'개')+`</div>`;}
-        html+=`</div>`;
+        html+=`<div style="font-family:'Jua',sans-serif;font-size:11px;color:var(--muted);margin:8px 0 4px">🔮 2차 연금품 제작</div>`;
+        for(const[mk,mq]of s3){
+          const rec=ALCHEMY[mk];if(!rec)continue;
+          const matParts=Object.entries(rec.materials).filter(([,v])=>v>0)
+            .map(([mk2,mq2])=>`<span style="color:${getMatColor(mk2)};font-weight:700">${getMatName(mk2)}</span> ${fmtQty(Math.ceil(mq2*mq*cnt))}`)
+            .join(' + ');
+          html+=`<div style="font-size:12px;padding:3px 0;border-bottom:1px dashed var(--bdr)">`;
+          html+=`<span style="color:${getMatColor(mk)};font-weight:900">${getMatName(mk)}</span> <b>${mq*cnt}개</b> &nbsp; ${matParts}`;
+          html+=`</div>`;
+        }
       }
-      html+=`<div class="step-block" style="border-color:${color}"><div class="step-block-label" style="color:${color}">최종 연금품</div><div class="step-row" style="border-color:${color}">`;
-      Object.entries(PRECISION_ALCHEMY[fKey].materials).forEach(([mk,mq],idx,arr)=>{html+=chip(mk,mq*cnt);if(idx<arr.length-1)html+=plus;});
-      html+=arrow+`<div class="final-chip" style="--tier-color:${color}"><span class="fc-name">${fa.name}</span><span class="fc-qty">${fmtQty(cnt)}</span></div>`;
-      html+=`</div></div></div></div>`;
+      // 최종 조합
+      html+=`<div style="font-family:'Jua',sans-serif;font-size:11px;color:${color};margin:8px 0 4px">🏆 최종 연금품</div>`;
+      const finalMatParts=Object.entries(PRECISION_ALCHEMY[fKey].materials).filter(([,v])=>v>0)
+        .map(([mk,mq])=>`<span style="color:${getMatColor(mk)};font-weight:700">${getMatName(mk)}</span> ${mq*cnt}개`)
+        .join(' + ');
+      html+=`<div style="font-size:12px;padding:3px 0"><span style="color:${color};font-weight:900">${fa.name}</span> <b>${fmtQty(cnt)}</b> &nbsp; ${finalMatParts}</div>`;
+
+      html+=`</div></div></div>`;
     }
 
   /* ──────────────────────────────────────
