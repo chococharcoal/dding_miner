@@ -44,6 +44,12 @@ window.sw = (i, el) => {
   document.getElementById('t'+i).style.display = 'block';
   const t = document.getElementById('pageTabTitle'); if (t) t.textContent = TAB_TITLES[i];
   document.title = `해양 계산기 — ${TAB_TITLES[i]}`;
+  if (typeof gtag === 'function') {
+    gtag('event', 'page_view', {
+      page_title: document.title,
+      page_location: window.location.href,
+    });
+  }
   // 탭2 전환 시 자동 계산 안 함 — 버튼으로만 실행
 };
 

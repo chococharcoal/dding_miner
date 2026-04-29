@@ -47,6 +47,12 @@ window.sw=(i,el)=>{
   document.getElementById('t'+i).style.display='block';
   const t=document.getElementById('pageTabTitle'); if(t) t.textContent=TAB_TITLES[i];
   document.title=`재배 계산기 — ${TAB_TITLES[i]}`;
+  if (typeof gtag === 'function') {
+    gtag('event', 'page_view', {
+      page_title: document.title,
+      page_location: window.location.href,
+    });
+  }
 };
 
 function getSK() {

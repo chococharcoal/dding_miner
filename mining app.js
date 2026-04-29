@@ -850,6 +850,14 @@ export function init() {
   const titleEl = document.getElementById('pageTabTitle');
   if (titleEl) titleEl.textContent = TAB_TITLES[0];
   document.title = `채광 계산기 — ${TAB_TITLES[0]}`;
+
+  if (typeof gtag === 'function') {
+    gtag('event', 'page_view', {
+      page_title: document.title,
+      page_location: window.location.href,
+    });
+  }
+  
   onSkillChange();
   onEngravingChange();
 }
