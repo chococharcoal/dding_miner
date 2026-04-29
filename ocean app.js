@@ -766,12 +766,12 @@ function renderOptResult({ planEntries, finalAnalysis, workInv, totalRev, totalV
           .map(([mk,mq])=>{
             const qty = fmtQty(Math.ceil(mq*batchMul));
             const col = getMatColor(mk);
-            return `<span style="${chipBase};background:var(--bg);border:1.5px solid ${col}44"><span style="color:${col}">${dispName(mk)}</span> <span style="color:var(--txt)">${qty}개</span></span>`;
+            return `<span style="${chipBase};background:var(--bg);border:1.5px solid ${col}44"><span style="color:${col}">${dispName(mk)}</span> <span style="color:var(--txt)">${qty}</span></span>`;
           })
           .join(' ');
       }
       function resultChip(name, qty, col) {
-        return `<span style="${chipBase};background:${col}15;border:1.5px solid ${col}"><span style="color:${col}">${name}</span> <span style="color:${col}">${qty}개</span></span>`;
+        return `<span style="${chipBase};background:${col}15;border:1.5px solid ${col}"><span style="color:${col}">${name}</span> <span style="color:${col}">${qty}</span></span>`;
       }
       const dot = `<span style="color:var(--bdr2);font-size:13px;font-weight:900;flex-shrink:0">·</span>`;
 
@@ -890,10 +890,10 @@ function renderOptResult({ planEntries, finalAnalysis, workInv, totalRev, totalV
             .map(([mk,mq])=>{
               const q=fmtQty(Math.ceil(mq*batchNeeded)), col=getMatColor(mk);
               const nm=(/^(oyster|conch|octopus|seaweed|urchin)\d$/.test(mk))?getMatName(mk):getMatName(mk).replace(/\s*★+/g,'');
-              return `<span style="${chipB};background:var(--bg);border:1.5px solid ${col}44"><span style="color:${col}">${nm}</span> <span style="color:var(--txt)">${q}개</span></span>`;
+              return `<span style="${chipB};background:var(--bg);border:1.5px solid ${col}44"><span style="color:${col}">${nm}</span> <span style="color:var(--txt)">${q}</span></span>`;
             }).join(' ');
           s+=`<div style="display:flex;align-items:center;flex-wrap:wrap;gap:5px;padding:5px 0;border-bottom:1px dashed var(--bdr)">`;
-          s+=`<span style="${chipB};background:${color2}15;border:1.5px solid ${color2}"><span style="color:${color2}">${name}</span> <span style="color:${color2}">${fmtQty(qty)}개</span></span>`;
+          s+=`<span style="${chipB};background:${color2}15;border:1.5px solid ${color2}"><span style="color:${color2}">${name}</span> <span style="color:${color2}">${fmtQty(qty)}</span></span>`;
           s+=`<span style="color:var(--bdr2);font-size:13px;font-weight:900;flex-shrink:0">·</span>`;
           s+=matParts;
           s+=`</div>`;
