@@ -784,7 +784,7 @@ function renderOptResult({ planEntries, finalAnalysis, workInv, totalRev, totalV
           const rec2=ALCHEMY[mk2];if(!rec2)continue;
           const need2=mq2*cnt, b2=Math.ceil(need2/(rec2.output||1));
           html+=`<div style="${rowStyle}">`;
-          html+=resultChip(dispName(mk2), need2, getMatColor(mk2));
+          html+=resultChip(dispName(mk2), fmtQty(need2), getMatColor(mk2));
           html+=dot;
           html+=matChips(rec2.materials, b2);
           html+=`</div>`;
@@ -796,7 +796,7 @@ function renderOptResult({ planEntries, finalAnalysis, workInv, totalRev, totalV
         for(const[mk,mq]of s3){
           const rec=ALCHEMY[mk];if(!rec)continue;
           html+=`<div style="${rowStyle}">`;
-          html+=resultChip(dispName(mk), mq*cnt, getMatColor(mk));
+          html+=resultChip(dispName(mk), fmtQty(mq*cnt), getMatColor(mk));
           html+=dot;
           html+=matChips(rec.materials, mq*cnt);
           html+=`</div>`;
@@ -879,7 +879,7 @@ function renderOptResult({ planEntries, finalAnalysis, workInv, totalRev, totalV
           s+=`<div style="${lStyle}">`;
           s+=`<span style="${lLbl};color:${color2}">${name}</span>`;
           s+=`<span style="${lSep}">·</span>`;
-          s+=`<span style="flex:0 0 auto;font-weight:900">${fmtQty(qty)}개</span>`;
+          s+=`<span style="flex:0 0 auto;font-weight:900">${fmtQty(qty)}</span>`;
           s+=`<span style="${lSep}">·</span>`;
           s+=`<span style="flex:1;font-size:11px;color:var(--muted)">판매 ${f(fa2.sellPrice*qty)}원 &nbsp;<span style="color:${netColor2}">${netSign2}${f(Math.round(fa2.netPerUnit))}/개</span></span>`;
           s+=`</div>`;
@@ -1002,7 +1002,7 @@ function buildHaveSeafoodGrid(){
   const el=document.getElementById('haveSeafoodGrid');if(!el)return;
   const sfColors={oyster:'#3d6fd4',conch:'#c89c00',octopus:'#7c52c8',seaweed:'#d94f3d',urchin:'#3a9e68'};
   const starLabels={1:'★ 1성',2:'★★ 2성',3:'★★★ 3성'};
-  let html='<div class="slabel">🦀 어패류</div>';
+  let html='<div class="slabel">어패류</div>';
   for(const sf of SF_TYPES){const meta=SEAFOOD_TYPES[sf],cl=sfColors[sf];html+='<div style="margin-bottom:8px"><div style="font-size:10px;font-weight:700;color:'+cl+';margin-bottom:4px">'+meta.name+'</div><div class="g3">';for(const t of SF_TIERS){const id='have_'+sf+'_'+t;html+='<div class="field"><label style="color:'+cl+'">'+starLabels[t]+'</label>'+splitQtyHtml(id,cl)+'</div>';}html+='</div></div>';}
   html+='<div class="slabel" style="margin-top:8px">⚗️ 보유 중간재료 <small style="font-weight:500;font-size:9px">(선택)</small></div><div id="intermList"></div><button class="add-interm-btn" onclick="addIntermRow()">+ 중간재료 추가</button>';
   el.innerHTML=html;
@@ -1012,7 +1012,7 @@ function buildVanillaPriceGrid(){
   const el=document.getElementById('vanillaPriceGrid');if(!el)return;
   const groups=[
     {label:'🐟 물고기 회',   keys:['shrimp','sea_bream','herring','goldfish','bass']},
-    {label:'토양',            keys:['clay','sand','dirt','gravel','granite']},
+    {label:'⛰️ 토양',            keys:['clay','sand','dirt','gravel','granite']},
     {label:'🍃 나뭇잎',      keys:['oak_leaf','spruce_leaf','birch_leaf','cherry_leaf','dark_oak_leaf']},
     {label:'⛏️ 광물',        keys:['lapis_block','redstone_block','iron_ingot','gold_ingot','diamond']},
     {label:'🌊 해조류',      keys:['firn','seaweed_item','kelp','glass_bottle','glowberry']},
