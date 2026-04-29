@@ -248,7 +248,7 @@ function calc80Ingots(m) {
   const luckyOre80    = floor80(n, sk.lp / 100) * sk.lc;
   const oreLuck80     = floor80(n, eng.op / 100) * 1;
   const diceCount80   = floor80(n, eng.dp / 100);
-  const golden80      = floor80(diceCount80, ENGRAVING.MINER_ROULETTE.goldenPct / 100);
+  const golden80      = diceCount80 * (ENGRAVING.MINER_ROULETTE.goldenPct / 100);
   const normal80      = diceCount80 - golden80;
   const rouletteOre80 = normal80 * 3.5 * ENGRAVING.MINER_ROULETTE.normalMult
                       + golden80 * 3.5 * ENGRAVING.MINER_ROULETTE.goldenMult;
@@ -273,8 +273,8 @@ function calc80Ingots(m) {
   const tS80 = iS80 + fpS80;
   const sparkle80      = floor80(n, sk.sp / 100) * sk.sc;
   const cobby80        = floor80(n, m.totalCobbyPct / 100);
-  const gemCobby80     = floor80(cobby80, eng.gp / 100) * COBBY_DROP_RATE;
-  const normalCobby80  = (cobby80 - floor80(cobby80, eng.gp / 100)) * COBBY_DROP_RATE;
+  const gemCobby80     = cobby80 * (eng.gp / 100) * COBBY_DROP_RATE;
+  const normalCobby80  = cobby80 * (1 - eng.gp / 100) * COBBY_DROP_RATE;
   const totalGems80    = sparkle80 + gemCobby80;
   const totalArtPct = m.px.artifactPct + eng.ap;
   const art80       = floor80(n, totalArtPct / 100);

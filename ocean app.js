@@ -450,32 +450,6 @@ async function calcOpt() {
   }
 
   // ── 그리디 초기해: 업그레이드 있/없 × 여러 정렬 → 가장 높은 값 선택 ──
-  // 초기해가 높을수록 이후 B&B 가지치기가 강해짐
-  function greedyOnce(keys, startInv, allowUpgrade) {
-    const plan = Object.fromEntries(allFKeys.map(k=>[k,0]));
-    const curInv = {...startInv};
-    for (const fKey of keys) {
-      const fa = finalAnalysis[fKey];
-      // 업그레이드 없음: 직보유만으로 maxMake
-      let n;
-      if (!allowUpgrade) {
-        n = Infinity;
-        for (const [sf, need] of Object.entries(fa.sfNeed)) {
-          if (need <= 0) continue;
-          n = Math.min(n, Math.floor((curInv[sf]||0) / Math.ceil(need)));
-        }
-        n = n === Infinity ? 0 : n;
-      } else {
-        n = maxMake(fa.sfNeed, curInv);
-      }
-      if (n <= 0) continue;
-      plan[fKey] = n;
-      for (let i = 0; i < n; i++) doConsumeSF(fa.sfNeed, curInv);
-    }
-    const rev = allFKeys.reduce((s,k) => s + finalAnalysis[k].sellPrice * plan[k], 0);
-    return { plan, rev, remInv: curInv };
-  }
-
   // 판매가 내림차순 / 어패류당 단가 내림차순 / 0성 우선
   const byPrice = [...allFKeys].sort((a,b) => finalAnalysis[b].sellPrice - finalAnalysis[a].sellPrice);
   const byUnit  = [...allFKeys].sort((a,b) => {
@@ -484,8 +458,8 @@ async function calcOpt() {
     return ub - ua;
   });
   const byPriceWithDiluted = [...allFKeys].sort((a,b) => {
-    if (finalAnalysis[a].tier === 0) return -1;
-    if (finalAnalysis[b].tier === 0) return 1;
+    if (finalAnalysis[a].tier === 0 && finalAnalysis[b].tier !== 0) return -1;
+    if (finalAnalysis[b].tier === 0 && finalAnalysis[a].tier !== 0) return 1;
     return finalAnalysis[b].sellPrice - finalAnalysis[a].sellPrice;
   });
 

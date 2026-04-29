@@ -154,7 +154,7 @@ function calcProcessedCost(key, prices) {
 // ── 베이스 1개 원가 계산 (씨앗은덤 재순환 반영) ──
 function calcBaseUnitCost(seedType, prices, sk) {
   const hr   = FARMING.HARVEST_RANGE[seedType];
-  const kpct = ((sk?.kingCropPct ?? sk) ?? FARMING.KING_CROP_BASE_PCT) / 100;
+  const kpct = (sk?.kingCropPct ?? FARMING.KING_CROP_BASE_PCT) / 100;
 
   // 씨앗 1개 심기당 평균 작물 (대왕작물 포함)
   const baseAvg = (hr.min + hr.max) / 2;
@@ -356,7 +356,7 @@ function calcSeedsNeeded(targetBase, seedType, sk) {
   if (targetBase <= 0) return { avg: 0, safe80: 0, multiplier: 1 };
 
   const hr   = FARMING.HARVEST_RANGE[seedType];
-  const kpct = (sk.kingCropPct ?? FARMING.KING_CROP_BASE_PCT) / 100; // 대왕작물 확률 적용
+  const kpct = (sk?.kingCropPct ?? FARMING.KING_CROP_BASE_PCT) / 100;
 
   // 씨앗 1개 심기당 평균 작물 (대왕작물 포함)
   const baseAvgCrops   = (hr.min + hr.max) / 2;
@@ -384,7 +384,7 @@ function calcSeedsNeeded(targetBase, seedType, sk) {
   // 80% 보정: 수확 분산 반영
   // 1회 심기당 작물 분산 (균등분포 + 풍년이다 이항분포)
   const varPerPlant = Math.pow(hr.max - hr.min, 2) / 12
-    + harvestBonus * (1 - harvestBonus / totalCropsPerPlant); // 근사
+    + sk.hbCnt * (sk.hbPct / 100) * (1 - sk.hbPct / 100); // 이항분포 분산 (정확)
   // 총 심기횟수 n×multiplier에 대한 총 분산
   // std_total ≈ sqrt(n × multiplier) × sqrt(varPerPlant)
   // 필요 씨앗 std: std_seeds ≈ avgSeeds × sqrt(varPerPlant) / (totalCropsPerPlant × sqrt(n×multiplier))
