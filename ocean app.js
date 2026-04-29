@@ -419,22 +419,33 @@ async function calcOpt() {
     return m === Infinity ? 0 : m;
   }
 
-  // ── UB: 현재 재고에서 그리디 실행 결과 + 현재 수익 ──
-  // 그리디 UB는 안전한 상한이 아니지만,
-  // 초기해(bestRev)를 충분히 높게 잡으면 실질적으로 최적해를 놓치지 않음
-  // 업그레이드 있/없 두 방향 그리디 중 최대값 사용
+  // ── UB: 현재 재고에서 다양한 그리디 실행 결과 + 현재 수익 ──
+  // 0성(희석액)처럼 여러 성급 어패류를 동시에 쓰는 아이템이 있으므로
+  // 희석액 우선 순서도 별도로 시도
   function computeUB(curInv, curRev) {
     let best = curRev;
-    for (const keys of [byPrice, byUnit]) {
-      const tmp = {...curInv}; let extra = 0;
-      for (const k of keys) {
-        const fa = finalAnalysis[k];
-        const n  = maxMake(fa.sfNeed, tmp);
-        if (n <= 0) continue;
-        extra += n * fa.sellPrice;
-        for (let i = 0; i < n; i++) doConsumeSF(fa.sfNeed, tmp);
+    for (const keys of [byPrice, byUnit, byPriceWithDiluted]) {
+      for (const allowUpgrade of [true, false]) {
+        const tmp = {...curInv}; let extra = 0;
+        for (const k of keys) {
+          const fa = finalAnalysis[k];
+          let n;
+          if (!allowUpgrade) {
+            n = Infinity;
+            for (const [sf, need] of Object.entries(fa.sfNeed)) {
+              if (need <= 0) continue;
+              n = Math.min(n, Math.floor((tmp[sf]||0) / Math.ceil(need)));
+            }
+            n = n === Infinity ? 0 : n;
+          } else {
+            n = maxMake(fa.sfNeed, tmp);
+          }
+          if (n <= 0) continue;
+          extra += n * fa.sellPrice;
+          for (let i = 0; i < n; i++) doConsumeSF(fa.sfNeed, tmp);
+        }
+        best = Math.max(best, curRev + extra);
       }
-      best = Math.max(best, curRev + extra);
     }
     return best;
   }
@@ -466,26 +477,33 @@ async function calcOpt() {
     return { plan, rev, remInv: curInv };
   }
 
-  // 판매가 내림차순 / 어패류당 단가 내림차순 / 각 역순 × 업그레이드 있/없
+  // 판매가 내림차순 / 어패류당 단가 내림차순 / 0성 우선
   const byPrice = [...allFKeys].sort((a,b) => finalAnalysis[b].sellPrice - finalAnalysis[a].sellPrice);
   const byUnit  = [...allFKeys].sort((a,b) => {
     const ua = finalAnalysis[a].sellPrice / (Object.values(finalAnalysis[a].sfNeed).reduce((s,v)=>s+v,0)||1);
     const ub = finalAnalysis[b].sellPrice / (Object.values(finalAnalysis[b].sfNeed).reduce((s,v)=>s+v,0)||1);
     return ub - ua;
   });
+  const byPriceWithDiluted = [...allFKeys].sort((a,b) => {
+    if (finalAnalysis[a].tier === 0) return -1;
+    if (finalAnalysis[b].tier === 0) return 1;
+    return finalAnalysis[b].sellPrice - finalAnalysis[a].sellPrice;
+  });
 
   showOptLoading(10, '초기해 계산 중');
   await new Promise(r => setTimeout(r, 20));
 
   const greedyCandidates = [
-    greedyOnce(byPrice,               inv, true),
-    greedyOnce(byUnit,                inv, true),
-    greedyOnce([...byPrice].reverse(),inv, true),
-    greedyOnce([...byUnit].reverse(), inv, true),
-    greedyOnce(byPrice,               inv, false),
-    greedyOnce(byUnit,                inv, false),
-    greedyOnce([...byPrice].reverse(),inv, false),
-    greedyOnce([...byUnit].reverse(), inv, false),
+    greedyOnce(byPrice,                  inv, true),
+    greedyOnce(byUnit,                   inv, true),
+    greedyOnce([...byPrice].reverse(),   inv, true),
+    greedyOnce([...byUnit].reverse(),    inv, true),
+    greedyOnce(byPrice,                  inv, false),
+    greedyOnce(byUnit,                   inv, false),
+    greedyOnce([...byPrice].reverse(),   inv, false),
+    greedyOnce([...byUnit].reverse(),    inv, false),
+    greedyOnce(byPriceWithDiluted,       inv, true),   // 0성 우선
+    greedyOnce(byPriceWithDiluted,       inv, false),  // 0성 우선 + 업그레이드 없음
   ];
   let bestResult = greedyCandidates.reduce((a,b) => b.rev > a.rev ? b : a);
   let bestRev  = bestResult.rev;
