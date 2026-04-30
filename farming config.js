@@ -258,19 +258,19 @@ export const RECIPES = {
   /* ── 커먼 요리 ── */
   TOMATO_SPAGHETTI: {
     name: '토마토 스파게티', grade: 'common',
-    currentPrice: 718,
+    currentPrice: 354,
     priceMin: 259, priceMax: 864, craftTimeSec: 60,
     materials: { base:{tomato:1}, crops:{pumpkin:1}, milky:{}, other:{} },
   },
   ONION_RING: {
     name: '어니언 링', grade: 'common',
-    currentPrice: 616,
+    currentPrice: 737,
     priceMin: 307, priceMax: 1026, craftTimeSec: 60,
     materials: { base:{onion:1}, crops:{potato:1}, milky:{}, other:{} },
   },
   GARLIC_CAKE: {
     name: '갈릭 케이크', grade: 'common',
-    currentPrice: 459,
+    currentPrice: 597,
     priceMin: 226, priceMax: 756, craftTimeSec: 60,
     materials: { base:{garlic:1}, crops:{carrot:1}, milky:{}, other:{} },
   },
@@ -278,32 +278,32 @@ export const RECIPES = {
   /* ── 노멀 요리 ── */
   PORK_TOMATO_STEW: {
     name: '삼겹살 토마토 찌개', grade: 'normal',
-    currentPrice: 1052,
+    currentPrice: 1129,
     priceMin: 611, priceMax: 2039, craftTimeSec: 120,
     // 요리용 소금 1개 사용
     materials: { base:{tomato:2}, crops:{beet:1}, milky:{}, other:{cooking_salt:1, pork:1, pork_belly:1} },
   },
   TRI_ICECREAM: {
     name: '삼색 아이스크림', grade: 'normal',
-    currentPrice: 1853,
+    currentPrice: 970,
     priceMin: 906, priceMax: 3022, craftTimeSec: 120,
     materials: { base:{onion:2}, crops:{watermelon:1,sugar:1}, milky:{milk:1}, other:{coconut:1} },
   },
   GARLIC_LAMB_HOTDOG: {
     name: '마늘 양갈비 핫도그', grade: 'normal',
-    currentPrice: 725,
+    currentPrice: 1158,
     priceMin: 513, priceMax: 1713, craftTimeSec: 120,
     materials: { base:{garlic:2}, crops:{potato:1}, milky:{oil:1}, other:{lamb:1, lamb_rib:1} },
   },
   SWEET_CEREAL: {
     name: '달콤 시리얼', grade: 'normal',
-    currentPrice: 806,
+    currentPrice: 2478,
     priceMin: 773, priceMax: 2578, craftTimeSec: 120,
     materials: { base:{tomato:2}, crops:{sweetfruit:1}, milky:{oil:1}, other:{pineapple:1, flour:1} },
   },
   ROAST_CHICKEN_PIE: {
     name: '로스트 치킨 파이', grade: 'normal',
-    currentPrice: 2049,
+    currentPrice: 1339,
     priceMin: 640, priceMax: 2134, craftTimeSec: 120,
     // 버터 조각 1개 사용
     materials: { base:{garlic:2}, crops:{carrot:1}, milky:{}, other:{butter:1, chicken:1, chicken_leg:1} },
@@ -312,27 +312,27 @@ export const RECIPES = {
   /* ── 레어 요리 ── */
   SWEET_CHICKEN_BURGER: {
     name: '스윗 치킨 햄버거', grade: 'rare',
-    currentPrice: 3013,
+    currentPrice: 2876,
     priceMin: 970, priceMax: 3234, craftTimeSec: 180,
     materials: { base:{tomato:1,onion:1}, crops:{beet:1,sweetfruit:1}, milky:{}, other:{chicken_breast:1, chicken_leg:1} },
   },
   TOMATO_PINEAPPLE_PIZZA: {
     name: '토마토 파인애플 피자', grade: 'rare',
-    currentPrice: 3072,
+    currentPrice: 1393,
     priceMin: 922, priceMax: 3077, craftTimeSec: 180,
     // 치즈 조각 1개 사용
     materials: { base:{tomato:2,garlic:1}, crops:{}, milky:{}, other:{pineapple:1, cheese:1, steak:1, beef_sirloin:1} },
   },
   ONION_SOUP: {
     name: '양파 수프', grade: 'rare',
-    currentPrice: 3334,
+    currentPrice: 3421,
     priceMin: 1139, priceMax: 3797, craftTimeSec: 180,
     // 버터 조각 1개 사용
     materials: { base:{onion:2,garlic:1}, crops:{potato:1}, milky:{}, other:{coconut:1, butter:1, pork_front:1} },
   },
   HERB_PORK_BELLY_STEAM: {
     name: '허브 삼겹살 찜', grade: 'rare',
-    currentPrice: 1972,
+    currentPrice: 2283,
     priceMin: 894, priceMax: 2982, craftTimeSec: 180,
     materials: { base:{garlic:2,onion:1}, crops:{pumpkin:1,potato:1}, milky:{}, other:{pork:1, pork_belly:1} },
   },
@@ -340,21 +340,21 @@ export const RECIPES = {
   /* ── 에픽 요리 ── */
   TOMATO_LASAGNA: {
     name: '토마토 라자냐', grade: 'epic',
-    currentPrice: 2886,
+    currentPrice: 2065,
     priceMin: 1253, priceMax: 4177, craftTimeSec: 300,
     // 밀가루 반죽 1개 사용
     materials: { base:{tomato:1,onion:1,garlic:1}, crops:{carrot:1,pumpkin:1}, milky:{}, other:{flour:1, lamb_leg:1} },
   },
   DEEP_CREAM_PANE: {
     name: '딥 크림 빠네', grade: 'epic',
-    currentPrice: 1760,
+    currentPrice: 1516,
     priceMin: 1151, priceMax: 3837, craftTimeSec: 300,
     // 치즈 조각 1개 사용, 우유 1개 사용
     materials: { base:{tomato:1,onion:1,garlic:1}, crops:{watermelon:1,potato:1}, milky:{milk:1}, other:{cheese:1} },
   },
   TRIPLE_BEEF_RIB_SKEWER: {
     name: '트리플 소갈비 꼬치', grade: 'epic',
-    currentPrice: 2879,
+    currentPrice: 1748,
     priceMin: 1291, priceMax: 4307, craftTimeSec: 300,
     materials: { base:{tomato:1,onion:1,garlic:1}, crops:{carrot:1,beet:1,sugar:1}, milky:{}, other:{beef_rib:1} },
   },
