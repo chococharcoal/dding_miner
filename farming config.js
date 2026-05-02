@@ -375,18 +375,18 @@ export const GRADE_COLOR = {
    ★ hay: 건초더미 원/개 → 내부에서 밀 1개 가격으로 환산 (건초더미 1개 = 밀 9개)
 ════════════════════════════════════════ */
 export const DEFAULT_PRICES = {
-  seeds: { tomato: 238, onion: 239, garlic: 233 },  // 원/개 → autoFill 시 ×64
+  seeds: { tomato: 230, onion: 233, garlic: 232 },  // 원/개 → autoFill 시 ×64
   crops: {                                      // 원/개 → autoFill 시 ×64
-    pumpkin: 521, potato: 358, carrot: 380,
-    beet: 693, watermelon: 606, sweetfruit: 465,
-    sugar: 742, // 설탕 큐브 묶음 원/개
-    hay: 238,   // 건초더미 원/개 → autoFill 시 ×64 → 내부에서 밀 환산
+    pumpkin: 509, potato: 366, carrot: 321,
+    beet: 684, watermelon: 603, sweetfruit: 662,
+    sugar: 710, // 설탕 큐브 묶음 원/개
+    hay: 269,   // 건초더미 원/개 → autoFill 시 ×64 → 내부에서 밀 환산
   },
   other: {   // 원/개 → autoFill 시 ×64 하여 세트당 필드에 채움
-    coconut: 540, pineapple: 540, steak: 75,
-    pork: 134, pork_belly: 147, pork_front: 149,
-    lamb: 175, lamb_rib: 79, lamb_leg: 385,
-    chicken: 45, chicken_leg: 413, chicken_breast: 79,
-    beef_sirloin: 66, beef_rib: 681,
+    coconut: 540, pineapple: 540, steak: 138,
+    pork: 131, pork_belly: 132, pork_front: 143,
+    lamb: 145, lamb_rib: 76, lamb_leg: 432,
+    chicken: 65, chicken_leg: 474, chicken_breast: 201,
+    beef_sirloin: 121, beef_rib: 574,
   },
 };
