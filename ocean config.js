@@ -132,75 +132,75 @@ export const CRAFTS = {
 export const ALCHEMY = {
 
   /* ── 1차: 정수 (어패류 2개 + 바닐라) → 2개 생산 ── */
-  essence_guardian1: { name:'수호의 정수 ★',   tier:1, type:'essence', seafood:'oyster',  output:2, craftTimeSec:60, color:'#3d6fd4',
+  essence_guardian1: { name:'수호의 정수 ★',   tier:1, type:'essence', seafood:'oyster',  output:2, craftTimeSec:5, color:'#3d6fd4',
     materials:{ oyster1:2, clay:2 } },
-  essence_wave1:     { name:'파동의 정수 ★',   tier:1, type:'essence', seafood:'conch',   output:2, craftTimeSec:60, color:'#c89c00',
+  essence_wave1:     { name:'파동의 정수 ★',   tier:1, type:'essence', seafood:'conch',   output:2, craftTimeSec:5, color:'#c89c00',
     materials:{ conch1:2, sand:4 } },
-  essence_chaos1:    { name:'혼란의 정수 ★',   tier:1, type:'essence', seafood:'octopus', output:2, craftTimeSec:60, color:'#7c52c8',
+  essence_chaos1:    { name:'혼란의 정수 ★',   tier:1, type:'essence', seafood:'octopus', output:2, craftTimeSec:5, color:'#7c52c8',
     materials:{ octopus1:2, dirt:8 } },
-  essence_life1:     { name:'생명의 정수 ★',   tier:1, type:'essence', seafood:'seaweed', output:2, craftTimeSec:60, color:'#d94f3d',
+  essence_life1:     { name:'생명의 정수 ★',   tier:1, type:'essence', seafood:'seaweed', output:2, craftTimeSec:5, color:'#d94f3d',
     materials:{ seaweed1:2, gravel:4 } },
-  essence_corrosion1:{ name:'부식의 정수 ★',   tier:1, type:'essence', seafood:'urchin',  output:2, craftTimeSec:60, color:'#3a9e68',
+  essence_corrosion1:{ name:'부식의 정수 ★',   tier:1, type:'essence', seafood:'urchin',  output:2, craftTimeSec:5, color:'#3a9e68',
     materials:{ urchin1:2, granite:2 } },
 
   /* ── 1차: 핵 (정수 2종 + 회) → 1개 생산 ── */
-  core_guard:     { name:'물결 수호의 핵 ★',  tier:1, type:'compound', output:1, craftTimeSec:120, color:'#3d6fd4',
+  core_guard:     { name:'물결 수호의 핵 ★',  tier:1, type:'compound', output:1, craftTimeSec:10, color:'#3d6fd4',
     materials:{ essence_guardian1:1, essence_wave1:1, shrimp:1 } },
-  core_wave:      { name:'파동 오염의 핵 ★',  tier:1, type:'compound', output:1, craftTimeSec:120, color:'#c89c00',
+  core_wave:      { name:'파동 오염의 핵 ★',  tier:1, type:'compound', output:1, craftTimeSec:10, color:'#c89c00',
     materials:{ essence_wave1:1, essence_chaos1:1, sea_bream:1 } },
-  core_chaos:     { name:'질서 파괴의 핵 ★',  tier:1, type:'compound', output:1, craftTimeSec:120, color:'#7c52c8',
+  core_chaos:     { name:'질서 파괴의 핵 ★',  tier:1, type:'compound', output:1, craftTimeSec:10, color:'#7c52c8',
     materials:{ essence_chaos1:1, essence_life1:1, herring:1 } },
-  core_life:      { name:'활력 붕괴의 핵 ★',  tier:1, type:'compound', output:1, craftTimeSec:120, color:'#d94f3d',
+  core_life:      { name:'활력 붕괴의 핵 ★',  tier:1, type:'compound', output:1, craftTimeSec:10, color:'#d94f3d',
     materials:{ essence_life1:1, essence_corrosion1:1, goldfish:1 } },
-  core_corrosion: { name:'침식 방어의 핵 ★',  tier:1, type:'compound', output:1, craftTimeSec:120, color:'#3a9e68',
+  core_corrosion: { name:'침식 방어의 핵 ★',  tier:1, type:'compound', output:1, craftTimeSec:10, color:'#3a9e68',
     materials:{ essence_corrosion1:1, essence_guardian1:1, bass:1 } },
 
   /* ── 2차: 에센스 (어패류 2개 + 해초6 + 잎6) → 2개 생산 ── */
-  essence_guardian2: { name:'수호 에센스 ★★',  tier:2, type:'essence', seafood:'oyster',  output:2, craftTimeSec:120, color:'#3d6fd4',
+  essence_guardian2: { name:'수호 에센스 ★★',  tier:2, type:'essence', seafood:'oyster',  output:2, craftTimeSec:5, color:'#3d6fd4',
     materials:{ oyster2:2, kelp:6, oak_leaf:6 } },
-  essence_wave2:     { name:'파동 에센스 ★★',  tier:2, type:'essence', seafood:'conch',   output:2, craftTimeSec:120, color:'#c89c00',
+  essence_wave2:     { name:'파동 에센스 ★★',  tier:2, type:'essence', seafood:'conch',   output:2, craftTimeSec:5, color:'#c89c00',
     materials:{ conch2:2, kelp:6, spruce_leaf:6 } },
-  essence_chaos2:    { name:'혼란 에센스 ★★',  tier:2, type:'essence', seafood:'octopus', output:2, craftTimeSec:120, color:'#7c52c8',
+  essence_chaos2:    { name:'혼란 에센스 ★★',  tier:2, type:'essence', seafood:'octopus', output:2, craftTimeSec:5, color:'#7c52c8',
     materials:{ octopus2:2, kelp:6, birch_leaf:6 } },
-  essence_life2:     { name:'생명 에센스 ★★',  tier:2, type:'essence', seafood:'seaweed', output:2, craftTimeSec:120, color:'#d94f3d',
+  essence_life2:     { name:'생명 에센스 ★★',  tier:2, type:'essence', seafood:'seaweed', output:2, craftTimeSec:5, color:'#d94f3d',
     materials:{ seaweed2:2, kelp:6, cherry_leaf:6 } },
-  essence_corrosion2:{ name:'부식 에센스 ★★',  tier:2, type:'essence', seafood:'urchin',  output:2, craftTimeSec:120, color:'#3a9e68',
+  essence_corrosion2:{ name:'부식 에센스 ★★',  tier:2, type:'essence', seafood:'urchin',  output:2, craftTimeSec:5, color:'#3a9e68',
     materials:{ urchin2:2, kelp:6, dark_oak_leaf:6 } },
 
   /* ── 2차: 결정 (에센스 2종 + 켈프8 + 바닐라) → 1개 생산 ── */
-  crystal_vitality: { name:'활기 보존의 결정 ★★', tier:2, type:'compound', output:1, craftTimeSec:180, color:'#3d6fd4',
+  crystal_vitality: { name:'활기 보존의 결정 ★★', tier:2, type:'compound', output:1, craftTimeSec:10, color:'#3d6fd4',
     materials:{ essence_guardian2:1, essence_life2:1, kelp:8, lapis_block:1 } },
-  crystal_erosion:  { name:'파도 침식의 결정 ★★', tier:2, type:'compound', output:1, craftTimeSec:180, color:'#c89c00',
+  crystal_erosion:  { name:'파도 침식의 결정 ★★', tier:2, type:'compound', output:1, craftTimeSec:10, color:'#c89c00',
     materials:{ essence_wave2:1, essence_corrosion2:1, kelp:8, redstone_block:1 } },
-  crystal_defense:  { name:'방어 오염의 결정 ★★', tier:2, type:'compound', output:1, craftTimeSec:180, color:'#7c52c8',
+  crystal_defense:  { name:'방어 오염의 결정 ★★', tier:2, type:'compound', output:1, craftTimeSec:10, color:'#7c52c8',
     materials:{ essence_chaos2:1, essence_guardian2:1, kelp:8, iron_ingot:3 } },
-  crystal_torrent:  { name:'격류 재생의 결정 ★★', tier:2, type:'compound', output:1, craftTimeSec:180, color:'#d94f3d',
+  crystal_torrent:  { name:'격류 재생의 결정 ★★', tier:2, type:'compound', output:1, craftTimeSec:10, color:'#d94f3d',
     materials:{ essence_life2:1, essence_wave2:1, kelp:8, gold_ingot:2 } },
-  crystal_poison:   { name:'맹독 혼란의 결정 ★★', tier:2, type:'compound', output:1, craftTimeSec:180, color:'#3a9e68',
+  crystal_poison:   { name:'맹독 혼란의 결정 ★★', tier:2, type:'compound', output:1, craftTimeSec:10, color:'#3a9e68',
     materials:{ essence_corrosion2:1, essence_chaos2:1, kelp:8, diamond:1 } },
 
   /* ── 3차: 엘릭서 (어패류 1개 + 불우렁쉥이2 + 유리병3 + 바닐라) → 1개 생산 ── */
-  elixir_guardian: { name:'수호의 엘릭서 ★★★', tier:3, type:'essence', seafood:'oyster',  output:1, craftTimeSec:180, color:'#3d6fd4',
+  elixir_guardian: { name:'수호의 엘릭서 ★★★', tier:3, type:'essence', seafood:'oyster',  output:1, craftTimeSec:10, color:'#3d6fd4',
     materials:{ oyster3:1, firn:2, glass_bottle:3, netherrack:8 } },
-  elixir_wave:     { name:'파동의 엘릭서 ★★★', tier:3, type:'essence', seafood:'conch',   output:1, craftTimeSec:180, color:'#c89c00',
+  elixir_wave:     { name:'파동의 엘릭서 ★★★', tier:3, type:'essence', seafood:'conch',   output:1, craftTimeSec:10, color:'#c89c00',
     materials:{ conch3:1, firn:2, glass_bottle:3, magma:4 } },
-  elixir_chaos:    { name:'혼란의 엘릭서 ★★★', tier:3, type:'essence', seafood:'octopus', output:1, craftTimeSec:180, color:'#7c52c8',
+  elixir_chaos:    { name:'혼란의 엘릭서 ★★★', tier:3, type:'essence', seafood:'octopus', output:1, craftTimeSec:10, color:'#7c52c8',
     materials:{ octopus3:1, firn:2, glass_bottle:3, soul_soil:4 } },
-  elixir_life:     { name:'생명의 엘릭서 ★★★', tier:3, type:'essence', seafood:'seaweed', output:1, craftTimeSec:180, color:'#d94f3d',
+  elixir_life:     { name:'생명의 엘릭서 ★★★', tier:3, type:'essence', seafood:'seaweed', output:1, craftTimeSec:10, color:'#d94f3d',
     materials:{ seaweed3:1, firn:2, glass_bottle:3, crimson_stem:4 } },
-  elixir_corrosion:{ name:'부식의 엘릭서 ★★★', tier:3, type:'essence', seafood:'urchin',  output:1, craftTimeSec:180, color:'#3a9e68',
+  elixir_corrosion:{ name:'부식의 엘릭서 ★★★', tier:3, type:'essence', seafood:'urchin',  output:1, craftTimeSec:10, color:'#3a9e68',
     materials:{ urchin3:1, firn:2, glass_bottle:3, warped_stem:4 } },
 
   /* ── 3차: 영약 (엘릭서 2종 + 켈프12 + 발광열매4 + 죽은산호2) → 1개 생산 ── */
-  potion_immortal: { name:'불멸 재생의 영약 ★★★', tier:3, type:'compound', output:1, craftTimeSec:300, color:'#3d6fd4',
+  potion_immortal: { name:'불멸 재생의 영약 ★★★', tier:3, type:'compound', output:1, craftTimeSec:20, color:'#3d6fd4',
     materials:{ elixir_guardian:1, elixir_life:1, kelp:12, glowberry:4, coral_dead_tube:2 } },
-  potion_barrier:  { name:'파동 장벽의 영약 ★★★', tier:3, type:'compound', output:1, craftTimeSec:300, color:'#c89c00',
+  potion_barrier:  { name:'파동 장벽의 영약 ★★★', tier:3, type:'compound', output:1, craftTimeSec:20, color:'#c89c00',
     materials:{ elixir_wave:1, elixir_guardian:1, kelp:12, glowberry:4, coral_dead_brain:2 } },
-  potion_corrupt:  { name:'타락 침식의 영약 ★★★', tier:3, type:'compound', output:1, craftTimeSec:300, color:'#7c52c8',
+  potion_corrupt:  { name:'타락 침식의 영약 ★★★', tier:3, type:'compound', output:1, craftTimeSec:20, color:'#7c52c8',
     materials:{ elixir_chaos:1, elixir_corrosion:1, kelp:12, glowberry:4, coral_dead_bubble:2 } },
-  potion_frenzy:   { name:'생명 광란의 영약 ★★★', tier:3, type:'compound', output:1, craftTimeSec:300, color:'#d94f3d',
+  potion_frenzy:   { name:'생명 광란의 영약 ★★★', tier:3, type:'compound', output:1, craftTimeSec:20, color:'#d94f3d',
     materials:{ elixir_life:1, elixir_chaos:1, kelp:12, glowberry:4, coral_dead_fire:2 } },
-  potion_venom:    { name:'맹독 파동의 영약 ★★★', tier:3, type:'compound', output:1, craftTimeSec:300, color:'#3a9e68',
+  potion_venom:    { name:'맹독 파동의 영약 ★★★', tier:3, type:'compound', output:1, craftTimeSec:20, color:'#3a9e68',
     materials:{ elixir_corrosion:1, elixir_wave:1, kelp:12, glowberry:4, coral_dead_horn:2 } },
 };
 
@@ -210,28 +210,28 @@ export const ALCHEMY = {
 ════════════════════════════════════════ */
 export const PRECISION_ALCHEMY = {
   /* 0성 — 스킬 보너스 미적용 */
-  DILUTED_EXTRACT: { name:'추출된 희석액',         tier:0, price:18444, craftTimeSec:600,
+  DILUTED_EXTRACT: { name:'추출된 희석액',         tier:0, price:18444, craftTimeSec:60,
     materials:{ core_corrosion:3, crystal_defense:2, potion_corrupt:1 } },
   /* 1성 */
-  AQUTIS:    { name:'영생의 아쿠티스 ★',    tier:1, price:5159,  craftTimeSec:300,
+  AQUTIS:    { name:'영생의 아쿠티스 ★',    tier:1, price:5159,  craftTimeSec:30,
     materials:{ core_guard:1, core_chaos:1, core_life:1 } },
-  KRAKEN:    { name:'크라켄의 광란체 ★',    tier:1, price:5234,  craftTimeSec:300,
+  KRAKEN:    { name:'크라켄의 광란체 ★',    tier:1, price:5234,  craftTimeSec:30,
     materials:{ core_chaos:1, core_life:1, core_wave:1 } },
-  LEVIATHAN: { name:'리바이던의 깃털 ★',    tier:1, price:5393,  craftTimeSec:300,
+  LEVIATHAN: { name:'리바이던의 깃털 ★',    tier:1, price:5393,  craftTimeSec:30,
     materials:{ core_corrosion:1, core_wave:1, core_guard:1 } },
   /* 2성 */
-  WAVE_CORE: { name:'해구 파동의 코어 ★★',  tier:2, price:11131, craftTimeSec:600,
+  WAVE_CORE: { name:'해구 파동의 코어 ★★',  tier:2, price:11131, craftTimeSec:30,
     materials:{ crystal_vitality:1, crystal_erosion:1, crystal_torrent:1 } },
-  DEEP_VIAL: { name:'침묵의 심해 비약 ★★',  tier:2, price:11242, craftTimeSec:600,
+  DEEP_VIAL: { name:'침묵의 심해 비약 ★★',  tier:2, price:11242, craftTimeSec:30,
     materials:{ crystal_erosion:1, crystal_torrent:1, crystal_poison:1 } },
-  SEA_WING:  { name:'청해룡의 날개 ★★',     tier:2, price:11399, craftTimeSec:600,
+  SEA_WING:  { name:'청해룡의 날개 ★★',     tier:2, price:11399, craftTimeSec:30,
     materials:{ crystal_defense:1, crystal_poison:1, crystal_vitality:1 } },
   /* 3성 */
-  AQUA_PULSE:  { name:'아쿠아 펄스 파편 ★★★', tier:3, price:21833, craftTimeSec:1200,
+  AQUA_PULSE:  { name:'아쿠아 펄스 파편 ★★★', tier:3, price:21833, craftTimeSec:60,
     materials:{ potion_immortal:1, potion_barrier:1, potion_venom:1 } },
-  NAUTILUS:    { name:'나우틸러스의 손 ★★★',  tier:3, price:22088, craftTimeSec:1200,
+  NAUTILUS:    { name:'나우틸러스의 손 ★★★',  tier:3, price:22088, craftTimeSec:60,
     materials:{ potion_barrier:1, potion_frenzy:1, potion_immortal:1 } },
-  ABYSS_SPINE: { name:'무저의 척추 ★★★',      tier:3, price:22227, craftTimeSec:1200,
+  ABYSS_SPINE: { name:'무저의 척추 ★★★',      tier:3, price:22227, craftTimeSec:60,
     materials:{ potion_corrupt:1, potion_venom:1, potion_frenzy:1 } },
 };
 
@@ -290,22 +290,22 @@ export const VANILLA_META = {
               (단, blockToCraft 항목(철/금/다이아)은 ×64로 블록 세트당 필드에 채움)
 ════════════════════════════════════════ */
 export const DEFAULT_PRICES = {
-  seafood: { tier1: 0, tier2: 0, tier3: 0 }, // 어패류 원/개
+  seafood: { tier1: 500, tier2: 1600, tier3: 2700 }, // 어패류 원/개
   vanilla: {                                   // 모두 원/개 → autoFill 시 ×64
     /* 커스텀 물고기 (원/개) */
-    shrimp:0, sea_bream:0, herring:0, goldfish:0, bass:0,
+    shrimp:159, sea_bream:258, herring:154, goldfish:149, bass:85,
     /* 해양 채집 (원/개) */
-    firn:0, seaweed_item:0, kelp:0, glass_bottle:0, glowberry:0,
+    firn:81, seaweed_item:21, kelp:0, glass_bottle:39, glowberry:21,
     /* 나뭇잎 (원/개) */
-    oak_leaf:0, spruce_leaf:0, birch_leaf:0, cherry_leaf:0, dark_oak_leaf:0,
+    oak_leaf:55, spruce_leaf:55, birch_leaf:55, cherry_leaf:55, dark_oak_leaf:55,
     /* 광물 (원/개, 철/금/다이아는 블록 기준 원/개) */
-    clay:0, sand:0, dirt:0, gravel:0, granite:0,
-    lapis_block:0, redstone_block:0,
-    iron_ingot:0, gold_ingot:0, diamond:0,
+    clay:69, sand:62, dirt:12, gravel:39, granite:55,
+    lapis_block:1001, redstone_block:498,
+    iron_ingot:1347, gold_ingot:1989, diamond:3090,
     /* 네더 (원/개) */
-    netherrack:0, magma:0, soul_soil:0, crimson_stem:0, warped_stem:0,
+    netherrack:12, magma:70, soul_soil:83, crimson_stem:102, warped_stem:102,
     /* 죽은 산호 (원/개) */
-    coral_dead_tube:0, coral_dead_brain:0, coral_dead_bubble:0,
-    coral_dead_fire:0, coral_dead_horn:0,
+    coral_dead_tube:157, coral_dead_brain:157, coral_dead_bubble:157,
+    coral_dead_fire:157, coral_dead_horn:157,
   },
 };
