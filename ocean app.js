@@ -419,35 +419,151 @@ async function calcOpt() {
     return m === Infinity ? 0 : m;
   }
 
-  // ── UB: 현재 재고에서 그리디 실행 (비0성 아이템만) ──
-  // 0성은 외부 루프에서 고정되므로 UB 계산에서 제외
-  // 여러 정렬 방식 시도하여 최대값 반환 → 가지치기가 실제 최적을 날리지 않도록
-  function computeUB(curInv, curRev) {
-    let best = curRev;
-    for (const keys of [sortedNonZero, [...sortedNonZero].reverse(), byTier2First]) {
-      for (const allowUpgrade of [true, false]) {
-        const tmp = {...curInv}; let extra = 0;
+  // ── UB: 그리디 상한 (여러 정렬 중 최대) ──
+  // 그리디는 항상 실제 최적 이하이므로 UB로 쓰면 좋은 해를 날릴 수 있음
+  // 하지만 초기해가 실제 최적에 가까우면 그리디 UB도 충분히 타이트해짐
+  function computeUBgreedy(ci, cr) {
+    let best = cr;
+    for (const keys of [sortedNonZero, [...sortedNonZero].reverse(), byNonZeroUnit, byTier2First]) {
+      for (const au of [true, false]) {
+        const tmp = {...ci}; let extra = 0;
         for (const k of keys) {
           const fa = finalAnalysis[k];
-          let n;
-          if (!allowUpgrade) {
-            n = Infinity;
-            for (const [sf, need] of Object.entries(fa.sfNeed)) {
-              if (need <= 0) continue;
-              n = Math.min(n, Math.floor((tmp[sf]||0) / Math.ceil(need)));
+          let n = au ? maxMake(fa.sfNeed, tmp) : (() => {
+            let m = Infinity;
+            for (const [sf, nd] of Object.entries(fa.sfNeed)) {
+              if (nd <= 0) continue;
+              m = Math.min(m, Math.floor((tmp[sf]||0) / Math.ceil(nd)));
             }
-            n = n === Infinity ? 0 : n;
-          } else {
-            n = maxMake(fa.sfNeed, tmp);
-          }
+            return m === Infinity ? 0 : m;
+          })();
           if (n <= 0) continue;
           extra += n * fa.sellPrice;
           for (let i = 0; i < n; i++) doConsumeSF(fa.sfNeed, tmp);
         }
-        best = Math.max(best, curRev + extra);
+        best = Math.max(best, cr + extra);
       }
     }
     return best;
+  }
+
+  // ── 연립방정식으로 tier별 최적 개수 계산 ──
+  // 각 tier의 어패류를 남김없이 소진하는 조합을 역산
+  // 이를 초기해로 쓰면 그리디 UB가 충분히 타이트해짐
+  function solveLinearPlan(startInv, zeroRev, zeroPlan) {
+    const SF_TYPES_LOCAL = ['oyster','conch','octopus','seaweed','urchin'];
+    const tier2K = nonZeroKeys.filter(k => finalAnalysis[k].tier === 2);
+    const tier3K = nonZeroKeys.filter(k => finalAnalysis[k].tier === 3);
+    const tier1K = nonZeroKeys.filter(k => finalAnalysis[k].tier === 1);
+
+    // 각 tier의 어패류 보유량 수집 (직보유만)
+    function getTier2Stock(inv2) {
+      const s = {};
+      for (const sf of SF_TYPES_LOCAL) s[sf] = inv2[`${sf}2`] || 0;
+      return s;
+    }
+    function getTier3Stock(inv2) {
+      const s = {};
+      for (const sf of SF_TYPES_LOCAL) s[sf] = inv2[`${sf}3`] || 0;
+      return s;
+    }
+    function getTier1Stock(inv2) {
+      const s = {};
+      for (const sf of SF_TYPES_LOCAL) s[sf] = inv2[`${sf}1`] || 0;
+      return s;
+    }
+
+    // 각 어패류에 대해 이 tier 아이템들의 소비 계수 행렬 구성
+    // 연립방정식: A * x = b (x: 각 아이템 개수, b: 보유량)
+    // 과결정계 → 최소제곱법으로 근사
+    function leastSquares(items, stockFn, inv2) {
+      const stock = stockFn(inv2);
+      const sfList = SF_TYPES_LOCAL.filter(sf => stock[sf] > 0);
+      if (!sfList.length || !items.length) return null;
+
+      // 단순히 2×2 또는 3×3 연립방정식 → Cramer's rule / 반복법
+      // 가장 병목이 되는 sf들만 선택
+      // 각 아이템별 소비량 행렬
+      const A = items.map(k => {
+        return SF_TYPES_LOCAL.map(sf => {
+          const need = finalAnalysis[k].sfNeed[`${sf}${finalAnalysis[k].tier}`] || 0;
+          return Math.ceil(need);
+        });
+      }); // items.length × 5 행렬
+
+      // 최소제곱: x = (A^T A)^{-1} A^T b
+      // b = stock 벡터 (5개)
+      const b = SF_TYPES_LOCAL.map(sf => stock[sf]);
+
+      // A^T A (items×items)
+      const n = items.length;
+      const ATA = Array.from({length:n}, (_,i) => Array.from({length:n}, (_,j) =>
+        SF_TYPES_LOCAL.reduce((s,_,si) => s + A[i][si]*A[j][si], 0)
+      ));
+      // A^T b (items 벡터)
+      const ATb = Array.from({length:n}, (_,i) =>
+        SF_TYPES_LOCAL.reduce((s,_,si) => s + A[i][si]*b[si], 0)
+      );
+
+      // n=1,2,3만 처리 (게임 내 tier별 아이템 3개)
+      if (n === 1) {
+        const x = ATA[0][0] > 0 ? ATb[0]/ATA[0][0] : 0;
+        return [Math.max(0, Math.round(x))];
+      }
+      if (n === 2) {
+        const det = ATA[0][0]*ATA[1][1] - ATA[0][1]*ATA[1][0];
+        if (Math.abs(det) < 0.001) return null;
+        return [
+          Math.max(0, Math.round((ATb[0]*ATA[1][1] - ATb[1]*ATA[0][1])/det)),
+          Math.max(0, Math.round((ATA[0][0]*ATb[1] - ATA[1][0]*ATb[0])/det)),
+        ];
+      }
+      if (n === 3) {
+        // 3×3 역행렬
+        const [[a,b2,c],[d,e,f_],[g,h,ii]] = ATA;
+        const det = a*(e*ii-f_*h) - b2*(d*ii-f_*g) + c*(d*h-e*g);
+        if (Math.abs(det) < 0.001) return null;
+        return [
+          Math.max(0, Math.round(((e*ii-f_*h)*ATb[0] - (b2*ii-c*h)*ATb[1] + (b2*f_-c*e)*ATb[2])/det)),
+          Math.max(0, Math.round((-(d*ii-f_*g)*ATb[0] + (a*ii-c*g)*ATb[1] - (a*f_-c*d)*ATb[2])/det)),
+          Math.max(0, Math.round(((d*h-e*g)*ATb[0] - (a*h-b2*g)*ATb[1] + (a*e-b2*d)*ATb[2])/det)),
+        ];
+      }
+      return null;
+    }
+
+    // tier 순서로 풀기: 3성 → 2성 → 1성
+    const curInv = {...startInv};
+    const curPlan = {...zeroPlan};
+    let rev = zeroRev;
+
+    for (const [tierK, stockFn] of [[tier3K, getTier3Stock], [tier2K, getTier2Stock], [tier1K, getTier1Stock]]) {
+      if (!tierK.length) continue;
+      const sortedTK = [...tierK].sort((a,b) => finalAnalysis[b].sellPrice - finalAnalysis[a].sellPrice);
+      const sol = leastSquares(sortedTK, stockFn, curInv);
+      if (!sol) continue;
+
+      // 연립해를 적용하되 실현 가능한지 확인
+      const tmpInv = {...curInv};
+      const made = [];
+      let feasible = true;
+      for (let i = 0; i < sortedTK.length; i++) {
+        const k = sortedTK[i];
+        const n = Math.min(sol[i] || 0, maxMake(finalAnalysis[k].sfNeed, tmpInv));
+        if (n < 0) { feasible = false; break; }
+        made.push([k, n]);
+        for (let j = 0; j < n; j++) doConsumeSF(finalAnalysis[k].sfNeed, tmpInv);
+      }
+      if (!feasible) continue;
+
+      // 적용
+      for (const [k, n] of made) {
+        curPlan[k] = n;
+        rev += n * finalAnalysis[k].sellPrice;
+        for (let j = 0; j < n; j++) doConsumeSF(finalAnalysis[k].sfNeed, curInv);
+      }
+    }
+    return { plan: curPlan, rev, remInv: curInv };
   }
 
   // ── 그리디 초기해: 업그레이드 있/없 × 여러 정렬 → 가장 높은 값 선택 ──
@@ -536,7 +652,12 @@ async function calcOpt() {
     }
     if (!ok) break;
 
-    // 나머지 그리디
+    // 나머지 그리디 + 연립방정식 해
+    const tier2Keys = nonZeroKeys.filter(k => finalAnalysis[k].tier === 2);
+    const tier3Keys = nonZeroKeys.filter(k => finalAnalysis[k].tier === 3);
+    const tier1Keys = nonZeroKeys.filter(k => finalAnalysis[k].tier === 1);
+    const tier2ByPrice = [...tier2Keys].sort((a,b) => finalAnalysis[b].sellPrice - finalAnalysis[a].sellPrice);
+
     for (const keys of [sortedNonZero, byNonZeroUnit, byTier2First, [...sortedNonZero].reverse(), [...byNonZeroUnit].reverse()]) {
       for (const allowUp of [true, false]) {
         const curInv = {...startInv};
@@ -560,11 +681,54 @@ async function calcOpt() {
           rev += n * fa.sellPrice;
           for (let i = 0; i < n; i++) doConsumeSF(fa.sfNeed, curInv);
         }
-        if (rev > bestRev) {
-          bestRev  = rev;
-          bestPlan = {...curPlan};
-          workInv  = {...curInv};
+        if (rev > bestRev) { bestRev = rev; bestPlan = {...curPlan}; workInv = {...curInv}; }
+      }
+    }
+
+    // 추가: 2성 개수를 단계적으로 제한하며 시도 (SEA_WING 등 octopus2 공유 문제 해결)
+    // 2성 전체 maxMake → 순차로 줄이며 나머지(3성→1성) 최적화
+    {
+      const maxT2Total = tier2Keys.reduce((s,k) => s + maxMake(finalAnalysis[k].sfNeed, {...startInv}), 0);
+      // 0%, 25%, 50%, 75%, 100% 5단계 + 완전 없음
+      for (const ratio of [0, 0.25, 0.5, 0.75, 1.0]) {
+        // 3성 먼저 최대, 2성은 ratio 비율로, 1성은 나머지
+        const curInv = {...startInv};
+        const curPlan = {...zeroPlan};
+        let rev = zeroRev;
+        // 3성
+        for (const k of [...tier3Keys].sort((a,b)=>finalAnalysis[b].sellPrice-finalAnalysis[a].sellPrice)) {
+          const n = maxMake(finalAnalysis[k].sfNeed, curInv);
+          if (!n) continue;
+          curPlan[k] = n; rev += n * finalAnalysis[k].sellPrice;
+          for (let i = 0; i < n; i++) doConsumeSF(finalAnalysis[k].sfNeed, curInv);
         }
+        // 2성 (ratio 비율로 제한)
+        const t2Budget = Math.round(maxT2Total * ratio);
+        let t2Used = 0;
+        for (const k of tier2ByPrice) {
+          const maxN = maxMake(finalAnalysis[k].sfNeed, curInv);
+          const n = Math.min(maxN, Math.max(0, t2Budget - t2Used));
+          if (!n) continue;
+          curPlan[k] = n; rev += n * finalAnalysis[k].sellPrice; t2Used += n;
+          for (let i = 0; i < n; i++) doConsumeSF(finalAnalysis[k].sfNeed, curInv);
+        }
+        // 1성
+        for (const k of [...tier1Keys].sort((a,b)=>finalAnalysis[b].sellPrice-finalAnalysis[a].sellPrice)) {
+          const n = maxMake(finalAnalysis[k].sfNeed, curInv);
+          if (!n) continue;
+          curPlan[k] = n; rev += n * finalAnalysis[k].sellPrice;
+          for (let i = 0; i < n; i++) doConsumeSF(finalAnalysis[k].sfNeed, curInv);
+        }
+        if (rev > bestRev) { bestRev = rev; bestPlan = {...curPlan}; workInv = {...curInv}; }
+      }
+    }
+
+    // ── 연립방정식 해를 초기해로 추가 ──
+    // 각 tier의 어패류를 남김없이 소진하는 개수 조합을 역산
+    {
+      const lsSol = solveLinearPlan(startInv, zeroRev, zeroPlan);
+      if (lsSol && lsSol.rev > bestRev) {
+        bestRev = lsSol.rev; bestPlan = {...lsSol.plan}; workInv = {...lsSol.remInv};
       }
     }
   }
@@ -573,10 +737,8 @@ async function calcOpt() {
   await new Promise(r => setTimeout(r, 20));
 
   // ── B&B 탐색 ──
-  // 0성(희석액)은 외부 루프로 분리: d=0~maxD개 각각 시도
-  // → UB 계산이 부정확해도 0성이 가지치기되는 문제 완전 해소
+  // 0성 외부루프 + 나머지 B&B (LP 완화 UB + 높은 초기해로 가지치기)
   const N = sortedNonZero.length;
-
   const maxDiluted = maxDilutedForInit;
 
   let nodeCount  = 0;
@@ -584,7 +746,6 @@ async function calcOpt() {
   let lastYield  = Date.now();
 
   for (let d = 0; d <= (maxDiluted === Infinity ? 0 : maxDiluted); d++) {
-    // 0성 d개 소비 후 재고
     const invAfterZero = {...inv};
     let zeroRev = 0;
     const zeroPlan = Object.fromEntries(allFKeys.map(k=>[k,0]));
@@ -600,14 +761,14 @@ async function calcOpt() {
     }
     if (!ok) break;
 
-    showOptLoading(
-      Math.min(90, 20 + Math.round((d / Math.max(maxDiluted, 1)) * 70)),
-      `0성 ${d}개 시도 (최대 ${maxDiluted}개) · 최선 ${f(bestRev)}원`
-    );
-    await new Promise(r => setTimeout(r, 0));
-    lastYield = Date.now();
+    const pct = Math.min(90, 20 + Math.round((d / Math.max(maxDiluted, 1)) * 70));
+    const now2 = Date.now();
+    if (now2 - lastYield > 100) {
+      showOptLoading(pct, `0성 ${d}개 · B&B 탐색 중 · 최선 ${f(bestRev)}원`);
+      await new Promise(r => setTimeout(r, 0));
+      lastYield = now2;
+    }
 
-    // 나머지 아이템 B&B
     const innerStack = [{
       idx: 0,
       inv: {...invAfterZero},
@@ -639,7 +800,7 @@ async function calcOpt() {
         lastYield = Date.now();
       }
 
-      const ub = computeUB(curInv, curRev);
+      const ub = computeUBgreedy(curInv, curRev);
       if (ub <= bestRev) { pruneCount++; continue; }
 
       const fKey = sortedNonZero[idx];
@@ -654,7 +815,7 @@ async function calcOpt() {
         if (!canAffordSF(fa.sfNeed, batchInv)) break;
         doConsumeSF(fa.sfNeed, batchInv);
         const branchRev = curRev + fa.sellPrice * n;
-        const branchUB  = computeUB(batchInv, branchRev);
+        const branchUB  = computeUBgreedy(batchInv, branchRev);
         if (branchUB <= bestRev) { pruneCount++; continue; }
         const newPlan = {...curPlan}; newPlan[fKey] = n;
         snaps.push({ idx: idx+1, inv: {...batchInv}, plan: newPlan, rev: branchRev });
