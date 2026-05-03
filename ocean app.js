@@ -44,12 +44,6 @@ window.sw = (i, el) => {
   document.getElementById('t'+i).style.display = 'block';
   const t = document.getElementById('pageTabTitle'); if (t) t.textContent = TAB_TITLES[i];
   document.title = `해양 계산기 — ${TAB_TITLES[i]}`;
-  if (typeof gtag === 'function') {
-    gtag('event', 'page_view', {
-      page_title: document.title,
-      page_location: window.location.href,
-    });
-  }
   // 탭2 전환 시 자동 계산 안 함 — 버튼으로만 실행
 };
 
@@ -427,9 +421,10 @@ async function calcOpt() {
 
   // ── UB: 현재 재고에서 그리디 실행 (비0성 아이템만) ──
   // 0성은 외부 루프에서 고정되므로 UB 계산에서 제외
+  // 여러 정렬 방식 시도하여 최대값 반환 → 가지치기가 실제 최적을 날리지 않도록
   function computeUB(curInv, curRev) {
     let best = curRev;
-    for (const keys of [sortedNonZero, [...sortedNonZero].reverse()]) {
+    for (const keys of [sortedNonZero, [...sortedNonZero].reverse(), byTier2First]) {
       for (const allowUpgrade of [true, false]) {
         const tmp = {...curInv}; let extra = 0;
         for (const k of keys) {
@@ -456,6 +451,32 @@ async function calcOpt() {
   }
 
   // ── 그리디 초기해: 업그레이드 있/없 × 여러 정렬 → 가장 높은 값 선택 ──
+  // 초기해가 높을수록 이후 B&B 가지치기가 강해짐
+  function greedyOnce(keys, startInv, allowUpgrade) {
+    const plan = Object.fromEntries(allFKeys.map(k=>[k,0]));
+    const curInv = {...startInv};
+    for (const fKey of keys) {
+      const fa = finalAnalysis[fKey];
+      // 업그레이드 없음: 직보유만으로 maxMake
+      let n;
+      if (!allowUpgrade) {
+        n = Infinity;
+        for (const [sf, need] of Object.entries(fa.sfNeed)) {
+          if (need <= 0) continue;
+          n = Math.min(n, Math.floor((curInv[sf]||0) / Math.ceil(need)));
+        }
+        n = n === Infinity ? 0 : n;
+      } else {
+        n = maxMake(fa.sfNeed, curInv);
+      }
+      if (n <= 0) continue;
+      plan[fKey] = n;
+      for (let i = 0; i < n; i++) doConsumeSF(fa.sfNeed, curInv);
+    }
+    const rev = allFKeys.reduce((s,k) => s + finalAnalysis[k].sellPrice * plan[k], 0);
+    return { plan, rev, remInv: curInv };
+  }
+
   // 판매가 내림차순 / 어패류당 단가 내림차순 / 0성 우선
   const byPrice = [...allFKeys].sort((a,b) => finalAnalysis[b].sellPrice - finalAnalysis[a].sellPrice);
   const byUnit  = [...allFKeys].sort((a,b) => {
@@ -464,8 +485,8 @@ async function calcOpt() {
     return ub - ua;
   });
   const byPriceWithDiluted = [...allFKeys].sort((a,b) => {
-    if (finalAnalysis[a].tier === 0 && finalAnalysis[b].tier !== 0) return -1;
-    if (finalAnalysis[b].tier === 0 && finalAnalysis[a].tier !== 0) return 1;
+    if (finalAnalysis[a].tier === 0) return -1;
+    if (finalAnalysis[b].tier === 0) return 1;
     return finalAnalysis[b].sellPrice - finalAnalysis[a].sellPrice;
   });
 
@@ -477,6 +498,13 @@ async function calcOpt() {
     const ua = finalAnalysis[a].sellPrice / (Object.values(finalAnalysis[a].sfNeed).reduce((s,v)=>s+v,0)||1);
     const ub = finalAnalysis[b].sellPrice / (Object.values(finalAnalysis[b].sfNeed).reduce((s,v)=>s+v,0)||1);
     return ub - ua;
+  });
+  // 2성 우선 정렬: 2성 직보유+업그레이드 혼합 전략을 그리디가 발견할 수 있도록
+  const byTier2First = [...nonZeroKeys].sort((a,b) => {
+    const ta = finalAnalysis[a].tier, tb = finalAnalysis[b].tier;
+    if (ta === 2 && tb !== 2) return -1;
+    if (tb === 2 && ta !== 2) return 1;
+    return finalAnalysis[b].sellPrice - finalAnalysis[a].sellPrice;
   });
 
   // 초기해: d=0..maxD × 여러 정렬 × 업그레이드 있/없
@@ -509,7 +537,7 @@ async function calcOpt() {
     if (!ok) break;
 
     // 나머지 그리디
-    for (const keys of [sortedNonZero, byNonZeroUnit, [...sortedNonZero].reverse(), [...byNonZeroUnit].reverse()]) {
+    for (const keys of [sortedNonZero, byNonZeroUnit, byTier2First, [...sortedNonZero].reverse(), [...byNonZeroUnit].reverse()]) {
       for (const allowUp of [true, false]) {
         const curInv = {...startInv};
         const curPlan = {...zeroPlan};
@@ -654,7 +682,24 @@ async function calcOpt() {
   for(const[fKey,cnt]of planEntries)for(const[mk,mq]of Object.entries(PRECISION_ALCHEMY[fKey].materials))collectVan(mk,mq*cnt);
 
   // 결과 캐시 저장
-  _cachedOptResult = { planEntries, finalAnalysis, workInv, totalRev, totalVan, SF_KEYS };
+  // 업그레이드 수량 계산: 초기 재고 vs 최종 재고 비교
+  // 1성이 줄고 2성이 늘었으면 → 업그레이드 발생
+  const upgradeInfo = {}; // { sf: { from1: N, to2: M } }  1성 N개 → 2성 M개
+  for (const sf of SF_TYPES) {
+    const k1 = `${sf}1`, k2 = `${sf}2`;
+    const orig1 = inv[k1] || 0, final1 = workInv[k1] || 0;
+    const orig2 = inv[k2] || 0, final2 = workInv[k2] || 0;
+    const used1 = orig1 - final1; // 총 1성 소비량
+    const used2 = orig2 - final2; // 총 2성 소비량 (음수면 2성이 늘었다는 뜻 = 업그레이드)
+    // 2성이 늘었다면 업그레이드가 있었음
+    if (used2 < 0) {
+      const upgraded2 = -used2; // 업그레이드로 생긴 2성 개수
+      const upgraded1 = upgraded2 * 3; // 소비한 1성 개수
+      upgradeInfo[sf] = { from1: upgraded1, to2: upgraded2 };
+    }
+  }
+
+  _cachedOptResult = { planEntries, finalAnalysis, workInv, totalRev, totalVan, SF_KEYS, upgradeInfo, inv };
 
   renderOptResult(_cachedOptResult);
 }
@@ -663,7 +708,7 @@ async function calcOpt() {
    renderOptResult — 캐시된 결과를 토글 상태에 맞게 렌더링
    calcOpt 완료 후 호출, 토글 변경 시에도 재호출
 ════════════════════════════════════════ */
-function renderOptResult({ planEntries, finalAnalysis, workInv, totalRev, totalVan, SF_KEYS }) {
+function renderOptResult({ planEntries, finalAnalysis, workInv, totalRev, totalVan, SF_KEYS, upgradeInfo, inv }) {
   const includeSFCost = document.getElementById('sfCostToggle')?.checked      ?? false;
   const viewByStage   = document.getElementById('viewByStageToggle')?.checked  ?? false;
 
@@ -914,6 +959,25 @@ function renderOptResult({ planEntries, finalAnalysis, workInv, totalRev, totalV
     return s+t;
   },0)*(1-fr);
 
+  // 업그레이드 안내
+  const sfNames={oyster:'굴',conch:'소라',octopus:'문어',seaweed:'미역',urchin:'성게'};
+  if (upgradeInfo && Object.keys(upgradeInfo).length > 0) {
+    html+=`<div style="background:var(--ylw-bg);border:1.5px solid var(--ylw);border-radius:var(--rs);padding:10px 12px;margin-bottom:10px">`;
+    html+=`<div style="font-family:'Jua',sans-serif;font-size:12px;color:var(--ylw);margin-bottom:6px">🔄 어패류 업그레이드 필요</div>`;
+    for(const[sf,{from1,to2}]of Object.entries(upgradeInfo)){
+      const sfCol=sfColors[sf]||'#888';
+      html+=`<div style="font-size:12px;padding:2px 0;display:flex;align-items:center;gap:6px">`;
+      html+=`<span style="color:${sfCol};font-weight:700">${sfNames[sf]||sf} ★</span>`;
+      html+=`<span style="color:var(--txt)">${fmtQty(from1)}</span>`;
+      html+=`<span style="color:var(--muted)">→</span>`;
+      html+=`<span style="color:${sfCol};font-weight:700">${sfNames[sf]||sf} ★★</span>`;
+      html+=`<span style="color:var(--txt)">${fmtQty(to2)}</span>`;
+      html+=`<span style="color:var(--muted);font-size:10px">(3개→1개)</span>`;
+      html+=`</div>`;
+    }
+    html+=`</div>`;
+  }
+
   html+=`<div class="result-box" style="margin-top:12px">`;
   if(remEntries.length){
     html+=`<div style="margin-bottom:8px;padding-bottom:8px;border-bottom:1px dashed var(--bdr2);font-size:11px;color:var(--muted)">남은 어패류: `;
@@ -982,7 +1046,7 @@ function buildHaveSeafoodGrid(){
   const el=document.getElementById('haveSeafoodGrid');if(!el)return;
   const sfColors={oyster:'#3d6fd4',conch:'#c89c00',octopus:'#7c52c8',seaweed:'#d94f3d',urchin:'#3a9e68'};
   const starLabels={1:'★ 1성',2:'★★ 2성',3:'★★★ 3성'};
-  let html='<div class="slabel">어패류</div>';
+  let html='<div class="slabel">🦀 어패류</div>';
   for(const sf of SF_TYPES){const meta=SEAFOOD_TYPES[sf],cl=sfColors[sf];html+='<div style="margin-bottom:8px"><div style="font-size:10px;font-weight:700;color:'+cl+';margin-bottom:4px">'+meta.name+'</div><div class="g3">';for(const t of SF_TIERS){const id='have_'+sf+'_'+t;html+='<div class="field"><label style="color:'+cl+'">'+starLabels[t]+'</label>'+splitQtyHtml(id,cl)+'</div>';}html+='</div></div>';}
   html+='<div class="slabel" style="margin-top:8px">⚗️ 보유 중간재료 <small style="font-weight:500;font-size:9px">(선택)</small></div><div id="intermList"></div><button class="add-interm-btn" onclick="addIntermRow()">+ 중간재료 추가</button>';
   el.innerHTML=html;
@@ -992,7 +1056,7 @@ function buildVanillaPriceGrid(){
   const el=document.getElementById('vanillaPriceGrid');if(!el)return;
   const groups=[
     {label:'🐟 물고기 회',   keys:['shrimp','sea_bream','herring','goldfish','bass']},
-    {label:'⛰️ 토양',            keys:['clay','sand','dirt','gravel','granite']},
+    {label:'토양',            keys:['clay','sand','dirt','gravel','granite']},
     {label:'🍃 나뭇잎',      keys:['oak_leaf','spruce_leaf','birch_leaf','cherry_leaf','dark_oak_leaf']},
     {label:'⛏️ 광물',        keys:['lapis_block','redstone_block','iron_ingot','gold_ingot','diamond']},
     {label:'🌊 해조류',      keys:['firn','seaweed_item','kelp','glass_bottle','glowberry']},
