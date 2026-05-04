@@ -157,15 +157,15 @@ export const ALCHEMY = {
 
   /* ── 2차: 에센스 (어패류 2개 + 해초6 + 잎6) → 2개 생산 ── */
   essence_guardian2: { name:'수호 에센스 ★★',  tier:2, type:'essence', seafood:'oyster',  output:2, craftTimeSec:5, color:'#3d6fd4',
-    materials:{ oyster2:2, kelp:6, oak_leaf:6 } },
+    materials:{ oyster2:2, seaweed_item:6, oak_leaf:6 } },
   essence_wave2:     { name:'파동 에센스 ★★',  tier:2, type:'essence', seafood:'conch',   output:2, craftTimeSec:5, color:'#c89c00',
-    materials:{ conch2:2, kelp:6, spruce_leaf:6 } },
+    materials:{ conch2:2, seaweed_item:6, spruce_leaf:6 } },
   essence_chaos2:    { name:'혼란 에센스 ★★',  tier:2, type:'essence', seafood:'octopus', output:2, craftTimeSec:5, color:'#7c52c8',
     materials:{ octopus2:2, kelp:6, birch_leaf:6 } },
   essence_life2:     { name:'생명 에센스 ★★',  tier:2, type:'essence', seafood:'seaweed', output:2, craftTimeSec:5, color:'#d94f3d',
-    materials:{ seaweed2:2, kelp:6, cherry_leaf:6 } },
+    materials:{ seaweed2:2, seaweed_item:6, cherry_leaf:6 } },
   essence_corrosion2:{ name:'부식 에센스 ★★',  tier:2, type:'essence', seafood:'urchin',  output:2, craftTimeSec:5, color:'#3a9e68',
-    materials:{ urchin2:2, kelp:6, dark_oak_leaf:6 } },
+    materials:{ urchin2:2, seaweed_item:6, dark_oak_leaf:6 } },
 
   /* ── 2차: 결정 (에센스 2종 + 켈프8 + 바닐라) → 1개 생산 ── */
   crystal_vitality: { name:'활기 보존의 결정 ★★', tier:2, type:'compound', output:1, craftTimeSec:10, color:'#3d6fd4',
