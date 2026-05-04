@@ -421,35 +421,7 @@ async function calcOpt() {
 
   // ── UB: 그리디 상한 (여러 정렬 중 최대) ──
   // 그리디는 항상 실제 최적 이하이므로 UB로 쓰면 좋은 해를 날릴 수 있음
-  // 하지만 초기해가 실제 최적에 가까우면 그리디 UB도 충분히 타이트해짐
-  function computeUBgreedy(ci, cr) {
-    let best = cr;
-    for (const keys of [sortedNonZero, [...sortedNonZero].reverse(), byNonZeroUnit, byTier2First]) {
-      for (const au of [true, false]) {
-        const tmp = {...ci}; let extra = 0;
-        for (const k of keys) {
-          const fa = finalAnalysis[k];
-          let n = au ? maxMake(fa.sfNeed, tmp) : (() => {
-            let m = Infinity;
-            for (const [sf, nd] of Object.entries(fa.sfNeed)) {
-              if (nd <= 0) continue;
-              m = Math.min(m, Math.floor((tmp[sf]||0) / Math.ceil(nd)));
-            }
-            return m === Infinity ? 0 : m;
-          })();
-          if (n <= 0) continue;
-          extra += n * fa.sellPrice;
-          for (let i = 0; i < n; i++) doConsumeSF(fa.sfNeed, tmp);
-        }
-        best = Math.max(best, cr + extra);
-      }
-    }
-    return best;
-  }
-
   // ── 연립방정식으로 tier별 최적 개수 계산 ──
-  // 각 tier의 어패류를 남김없이 소진하는 조합을 역산
-  // 이를 초기해로 쓰면 그리디 UB가 충분히 타이트해짐
   function solveLinearPlan(startInv, zeroRev, zeroPlan) {
     const SF_TYPES_LOCAL = ['oyster','conch','octopus','seaweed','urchin'];
     const tier2K = nonZeroKeys.filter(k => finalAnalysis[k].tier === 2);
@@ -541,179 +513,24 @@ async function calcOpt() {
     return { plan: curPlan, rev, remInv: curInv };
   }
 
-  // ── 그리디 초기해: 업그레이드 있/없 × 여러 정렬 → 가장 높은 값 선택 ──
-  // 초기해가 높을수록 이후 B&B 가지치기가 강해짐
-  function greedyOnce(keys, startInv, allowUpgrade) {
-    const plan = Object.fromEntries(allFKeys.map(k=>[k,0]));
-    const curInv = {...startInv};
-    for (const fKey of keys) {
-      const fa = finalAnalysis[fKey];
-      // 업그레이드 없음: 직보유만으로 maxMake
-      let n;
-      if (!allowUpgrade) {
-        n = Infinity;
-        for (const [sf, need] of Object.entries(fa.sfNeed)) {
-          if (need <= 0) continue;
-          n = Math.min(n, Math.floor((curInv[sf]||0) / Math.ceil(need)));
-        }
-        n = n === Infinity ? 0 : n;
-      } else {
-        n = maxMake(fa.sfNeed, curInv);
-      }
-      if (n <= 0) continue;
-      plan[fKey] = n;
-      for (let i = 0; i < n; i++) doConsumeSF(fa.sfNeed, curInv);
-    }
-    const rev = allFKeys.reduce((s,k) => s + finalAnalysis[k].sellPrice * plan[k], 0);
-    return { plan, rev, remInv: curInv };
-  }
-
-  // 판매가 내림차순 / 어패류당 단가 내림차순 / 0성 우선
-  const byPrice = [...allFKeys].sort((a,b) => finalAnalysis[b].sellPrice - finalAnalysis[a].sellPrice);
-  const byUnit  = [...allFKeys].sort((a,b) => {
-    const ua = finalAnalysis[a].sellPrice / (Object.values(finalAnalysis[a].sfNeed).reduce((s,v)=>s+v,0)||1);
-    const ub = finalAnalysis[b].sellPrice / (Object.values(finalAnalysis[b].sfNeed).reduce((s,v)=>s+v,0)||1);
-    return ub - ua;
-  });
-  const byPriceWithDiluted = [...allFKeys].sort((a,b) => {
-    if (finalAnalysis[a].tier === 0) return -1;
-    if (finalAnalysis[b].tier === 0) return 1;
-    return finalAnalysis[b].sellPrice - finalAnalysis[a].sellPrice;
-  });
-
-  // B&B용 분리 (0성 외부루프이므로 비0성만 정렬)
+  // 0성/비0성 분리
   const nonZeroKeys   = allFKeys.filter(k => finalAnalysis[k].tier !== 0);
   const zeroKeys      = allFKeys.filter(k => finalAnalysis[k].tier === 0);
-  const sortedNonZero = [...nonZeroKeys].sort((a,b) => finalAnalysis[b].sellPrice - finalAnalysis[a].sellPrice);
-  const byNonZeroUnit = [...nonZeroKeys].sort((a,b) => {
-    const ua = finalAnalysis[a].sellPrice / (Object.values(finalAnalysis[a].sfNeed).reduce((s,v)=>s+v,0)||1);
-    const ub = finalAnalysis[b].sellPrice / (Object.values(finalAnalysis[b].sfNeed).reduce((s,v)=>s+v,0)||1);
-    return ub - ua;
-  });
-  // 2성 우선 정렬: 2성 직보유+업그레이드 혼합 전략을 그리디가 발견할 수 있도록
-  const byTier2First = [...nonZeroKeys].sort((a,b) => {
-    const ta = finalAnalysis[a].tier, tb = finalAnalysis[b].tier;
-    if (ta === 2 && tb !== 2) return -1;
-    if (tb === 2 && ta !== 2) return 1;
-    return finalAnalysis[b].sellPrice - finalAnalysis[a].sellPrice;
-  });
 
-  // 초기해: d=0..maxD × 여러 정렬 × 업그레이드 있/없
-  // → 최대 d일 때 최적을 그리디로 빠르게 찾아 bestRev를 높게 잡음
+  // 희석액 최대 제작 가능 수
   const maxDilutedForInit = zeroKeys.length > 0
     ? zeroKeys.reduce((mn,k) => Math.min(mn, maxMake(finalAnalysis[k].sfNeed, {...inv})), Infinity)
     : 0;
 
-  showOptLoading(10, '초기해 계산 중');
+  showOptLoading(10, '연립방정식 탐색 중');
   await new Promise(r => setTimeout(r, 20));
 
   let bestRev  = 0;
   let bestPlan = Object.fromEntries(allFKeys.map(k=>[k,0]));
   let workInv  = {...inv};
 
-  for (let d = 0; d <= (maxDilutedForInit === Infinity ? 0 : maxDilutedForInit); d++) {
-    const startInv = {...inv};
-    let zeroRev = 0;
-    const zeroPlan = Object.fromEntries(allFKeys.map(k=>[k,0]));
-    let ok = true;
-    for (const zk of zeroKeys) {
-      for (let i = 0; i < d; i++) {
-        if (!canAffordSF(finalAnalysis[zk].sfNeed, startInv)) { ok = false; break; }
-        doConsumeSF(finalAnalysis[zk].sfNeed, startInv);
-      }
-      if (!ok) break;
-      zeroPlan[zk] = d;
-      zeroRev += d * finalAnalysis[zk].sellPrice;
-    }
-    if (!ok) break;
-
-    // 나머지 그리디 + 연립방정식 해
-    const tier2Keys = nonZeroKeys.filter(k => finalAnalysis[k].tier === 2);
-    const tier3Keys = nonZeroKeys.filter(k => finalAnalysis[k].tier === 3);
-    const tier1Keys = nonZeroKeys.filter(k => finalAnalysis[k].tier === 1);
-    const tier2ByPrice = [...tier2Keys].sort((a,b) => finalAnalysis[b].sellPrice - finalAnalysis[a].sellPrice);
-
-    for (const keys of [sortedNonZero, byNonZeroUnit, byTier2First, [...sortedNonZero].reverse(), [...byNonZeroUnit].reverse()]) {
-      for (const allowUp of [true, false]) {
-        const curInv = {...startInv};
-        const curPlan = {...zeroPlan};
-        let rev = zeroRev;
-        for (const k of keys) {
-          const fa = finalAnalysis[k];
-          let n;
-          if (!allowUp) {
-            n = Infinity;
-            for (const [sf, need] of Object.entries(fa.sfNeed)) {
-              if (need <= 0) continue;
-              n = Math.min(n, Math.floor((curInv[sf]||0) / Math.ceil(need)));
-            }
-            n = n === Infinity ? 0 : n;
-          } else {
-            n = maxMake(fa.sfNeed, curInv);
-          }
-          if (n <= 0) continue;
-          curPlan[k] = n;
-          rev += n * fa.sellPrice;
-          for (let i = 0; i < n; i++) doConsumeSF(fa.sfNeed, curInv);
-        }
-        if (rev > bestRev) { bestRev = rev; bestPlan = {...curPlan}; workInv = {...curInv}; }
-      }
-    }
-
-    // 추가: 2성 개수를 단계적으로 제한하며 시도 (SEA_WING 등 octopus2 공유 문제 해결)
-    // 2성 전체 maxMake → 순차로 줄이며 나머지(3성→1성) 최적화
-    {
-      const maxT2Total = tier2Keys.reduce((s,k) => s + maxMake(finalAnalysis[k].sfNeed, {...startInv}), 0);
-      // 0%, 25%, 50%, 75%, 100% 5단계 + 완전 없음
-      for (const ratio of [0, 0.25, 0.5, 0.75, 1.0]) {
-        // 3성 먼저 최대, 2성은 ratio 비율로, 1성은 나머지
-        const curInv = {...startInv};
-        const curPlan = {...zeroPlan};
-        let rev = zeroRev;
-        // 3성
-        for (const k of [...tier3Keys].sort((a,b)=>finalAnalysis[b].sellPrice-finalAnalysis[a].sellPrice)) {
-          const n = maxMake(finalAnalysis[k].sfNeed, curInv);
-          if (!n) continue;
-          curPlan[k] = n; rev += n * finalAnalysis[k].sellPrice;
-          for (let i = 0; i < n; i++) doConsumeSF(finalAnalysis[k].sfNeed, curInv);
-        }
-        // 2성 (ratio 비율로 제한)
-        const t2Budget = Math.round(maxT2Total * ratio);
-        let t2Used = 0;
-        for (const k of tier2ByPrice) {
-          const maxN = maxMake(finalAnalysis[k].sfNeed, curInv);
-          const n = Math.min(maxN, Math.max(0, t2Budget - t2Used));
-          if (!n) continue;
-          curPlan[k] = n; rev += n * finalAnalysis[k].sellPrice; t2Used += n;
-          for (let i = 0; i < n; i++) doConsumeSF(finalAnalysis[k].sfNeed, curInv);
-        }
-        // 1성
-        for (const k of [...tier1Keys].sort((a,b)=>finalAnalysis[b].sellPrice-finalAnalysis[a].sellPrice)) {
-          const n = maxMake(finalAnalysis[k].sfNeed, curInv);
-          if (!n) continue;
-          curPlan[k] = n; rev += n * finalAnalysis[k].sellPrice;
-          for (let i = 0; i < n; i++) doConsumeSF(finalAnalysis[k].sfNeed, curInv);
-        }
-        if (rev > bestRev) { bestRev = rev; bestPlan = {...curPlan}; workInv = {...curInv}; }
-      }
-    }
-
-    // ── 연립방정식 해를 초기해로 추가 ──
-    // 각 tier의 어패류를 남김없이 소진하는 개수 조합을 역산
-    {
-      const lsSol = solveLinearPlan(startInv, zeroRev, zeroPlan);
-      if (lsSol && lsSol.rev > bestRev) {
-        bestRev = lsSol.rev; bestPlan = {...lsSol.plan}; workInv = {...lsSol.remInv};
-      }
-    }
-  }
-
-  showOptLoading(20, `초기해 ${f(bestRev)}원 · 연립방정식 전체 탐색 중`);
-  await new Promise(r => setTimeout(r, 20));
-
   // ── 연립방정식 완전탐색 ──
   // d=0..maxD 각각에서 연립방정식으로 최적 계획 계산
-  // 그리디/B&B 없이 연립방정식만으로 정확한 해를 찾음
   const maxDiluted = maxDilutedForInit;
   let lastYield = Date.now();
 
