@@ -665,13 +665,23 @@ function renderOptResult({ planEntries, finalAnalysis, workInv, totalRev, totalV
       for(const[k,v]of Object.entries(fa.sfNeed))sfUsed[k]=v*cnt;
       const guideId='guide_'+fKey;
 
+      // 50개 단위 분할 표시 (예: 128개 → 50+50+28)
+      const CHUNK = 50;
+      let cntDisplay = fmtQty(cnt);
+      if (cnt > CHUNK) {
+        const parts = [];
+        let rem = cnt;
+        while (rem > 0) { parts.push(Math.min(rem, CHUNK)); rem -= CHUNK; }
+        cntDisplay = fmtQty(cnt) + `<div style="font-size:10px;color:var(--muted);font-weight:500;margin-top:2px">${parts.join('+')}개</div>`;
+      }
+
       html+=`<div class="craft-flow-card" style="--tier-color:${color}">`;
       // 헤더
       html+=`<div class="cfc-header"><div class="cfc-header-left"><div class="cfc-name">${fa.name}</div>`
         +`<div class="cfc-sub"><span style="opacity:.7">${tierLabels[fa.tier]}</span>`
         +` &nbsp;·&nbsp; 판매가 <b>${f(fa.sellPrice)}원</b>/개`
         +` &nbsp;·&nbsp; ${netLabel} <b style="color:${netColor}">${netSign}${f(Math.round(fa.netPerUnit))}원</b>/개${sfCostNote}</div>`
-        +`</div><div class="cfc-header-right"><div class="cfc-count">${fmtQty(cnt)}</div><div class="cfc-revenue">${f(fa.sellPrice*cnt)}원</div></div></div>`;
+        +`</div><div class="cfc-header-right"><div class="cfc-count">${cntDisplay}</div><div class="cfc-revenue">${f(fa.sellPrice*cnt)}원</div></div></div>`;
 
       // 필요 어패류
       const sfEntries=Object.entries(sfUsed).filter(([,v])=>v>0);
@@ -846,11 +856,23 @@ function renderOptResult({ planEntries, finalAnalysis, workInv, totalRev, totalV
     html+=stageSection('0성 완성품',  '🔬', agg.fin0, 'fin0', tierColors[0]);
   }
 
-  // 바닐라 재료 합계
+  // 바닐라 재료 합계 — 그룹 순서대로 정렬
   const vanEntries=Object.entries(totalVan).filter(([,v])=>v>0);
   if(vanEntries.length){
+    // 그룹 순서: 물고기회 → 토양 → 나뭇잎 → 광물 → 해조류 → 네더 → 죽은산호
+    const vanOrder=['shrimp','sea_bream','herring','goldfish','bass',
+      'clay','sand','dirt','gravel','granite',
+      'oak_leaf','spruce_leaf','birch_leaf','cherry_leaf','dark_oak_leaf',
+      'lapis_block','redstone_block','iron_ingot','gold_ingot','diamond',
+      'firn','seaweed_item','kelp','glass_bottle','glowberry',
+      'netherrack','magma','soul_soil','crimson_stem','warped_stem',
+      'coral_dead_tube','coral_dead_brain','coral_dead_bubble','coral_dead_fire','coral_dead_horn'];
+    const vanSorted=[
+      ...vanOrder.filter(k=>totalVan[k]>0).map(k=>[k,totalVan[k]]),
+      ...vanEntries.filter(([k])=>!vanOrder.includes(k)),
+    ];
     html+=`<div class="van-section"><div class="van-section-title">🧪 필요 바닐라 재료 합계</div><div class="van-grid">`;
-    for(const[k,v]of vanEntries)html+=`<div class="van-item"><span class="vi-name" style="color:${getMatColor(k)}">${getMatName(k)}</span><span class="vi-qty">${fmtQty(v)}</span></div>`;
+    for(const[k,v]of vanSorted)html+=`<div class="van-item"><span class="vi-name" style="color:${getMatColor(k)}">${getMatName(k)}</span><span class="vi-qty">${fmtQty(v)}</span></div>`;
     html+=`</div></div>`;
   }
 
@@ -892,6 +914,11 @@ function renderOptResult({ planEntries, finalAnalysis, workInv, totalRev, totalV
   }
   html+=`<div style="display:flex;gap:0;align-items:stretch">`;
   html+=`<div style="flex:1;text-align:center;padding:4px 8px"><div class="rb-label">총 예상 수익</div><div class="rb-value" style="color:var(--grn)">${f(totalRev)}원</div></div>`;
+  html+=`<div style="width:1px;background:var(--bdr2);margin:4px 0"></div>`;
+  const totalNet=planEntries.reduce((s,[k,cnt])=>s+Math.round(finalAnalysis[k].netPerUnit)*cnt,0);
+  const netSign2=totalNet>=0?'+':'';
+  const netCol2=totalNet>=0?'var(--grn)':'var(--red)';
+  html+=`<div style="flex:1;text-align:center;padding:4px 8px"><div class="rb-label">${netLabel}</div><div class="rb-value" style="color:${netCol2}">${netSign2}${f(totalNet)}원</div></div>`;
   html+=`<div style="width:1px;background:var(--bdr2);margin:4px 0"></div>`;
   html+=`<div style="flex:1;text-align:center;padding:4px 8px"><div class="rb-label">총 제작 시간</div><div class="rb-value" style="font-size:16px">${fmtTime(totalSec)}</div></div>`;
   html+=`</div></div>`;
