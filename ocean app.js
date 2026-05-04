@@ -481,8 +481,9 @@ async function calcOpt() {
       if (activeSF.length < n) return null;
 
       // 가장 병목이 되는 n개 sf로 n×n 연립방정식
+      // 방정식: Asq[sf_idx][item_idx] × x[item_idx] = b[sf_idx]
       const chosen = activeSF.slice(0, n);
-      const Asq = items.map((_,ii) => chosen.map(({si}) => A[ii][si]));
+      const Asq = chosen.map(({si}) => items.map((_,ii) => A[ii][si])); // n×n: sf × items
       const b = chosen.map(({stock}) => stock);
 
       // n×n Cramer's rule
