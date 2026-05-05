@@ -940,35 +940,36 @@ function renderOptResult({ planEntries, finalAnalysis, workInv, totalRev, totalV
     html+=`</div></div>`;
   }
 
-  // 잉여 중간재료 계산 (output:2인 정수/에센스/엘릭서를 홀수 개 사용 시 1개 남음)
-  const leftoverInterm = {}; // { key: 남는 개수 }
+  // 잉여 중간재료 계산: essence/에센스/엘릭서(output:2 또는 1)를 사용할 때
+  // 필요량이 output의 배수가 아니면 1개 잉여 발생
+  // 모든 완성품에 걸쳐 essence 종류별 총 필요량을 합산 후 한 번에 계산
+  const essenceNeeded = {}; // { essenceKey: 총 필요 개수 }
   for (const [fKey, cnt] of planEntries) {
     const fRec = PRECISION_ALCHEMY[fKey];
-    // 최종산물 재료 순회
-    for (const [mk, mq] of Object.entries(fRec.materials)) {
-      const rec = ALCHEMY[mk]; if (!rec) continue;
-      if (rec.type === 'compound') {
-        const totalComp = mq * cnt; // 필요한 compound 총 개수
-        const batchComp = Math.ceil(totalComp / (rec.output || 1));
-        // compound 재료 중 essence 확인
-        for (const [mk2, mq2] of Object.entries(rec.materials)) {
-          const rec2 = ALCHEMY[mk2]; if (!rec2 || rec2.type !== 'essence') continue;
-          const needed = mq2 * batchComp;           // 필요한 essence 개수
-          const output2 = rec2.output || 1;
-          const batches2 = Math.ceil(needed / output2); // 제작 배치 수
-          const produced = batches2 * output2;           // 실제 생산량
-          const leftover = produced - needed;            // 잉여
-          if (leftover > 0) leftoverInterm[mk2] = (leftoverInterm[mk2] || 0) + leftover;
-        }
-      } else if (rec.type === 'essence') {
-        const needed = mq * cnt;
-        const output2 = rec.output || 1;
-        const batches2 = Math.ceil(needed / output2);
-        const produced = batches2 * output2;
-        const leftover = produced - needed;
-        if (leftover > 0) leftoverInterm[mk] = (leftoverInterm[mk] || 0) + leftover;
+    function walkForEssence(key, qty, depth=0) {
+      if (depth > 12 || qty <= 0) return;
+      const rec = ALCHEMY[key]; if (!rec) return;
+      if (rec.type === 'essence') {
+        essenceNeeded[key] = (essenceNeeded[key] || 0) + qty;
+        return;
       }
+      // compound → essence 하위로
+      const output = rec.output || 1;
+      const batches = Math.ceil(qty / output);
+      for (const [mk, mq] of Object.entries(rec.materials)) walkForEssence(mk, mq * batches, depth+1);
     }
+    for (const [mk, mq] of Object.entries(fRec.materials)) walkForEssence(mk, mq * cnt);
+  }
+  // 종류별 잉여: 실제 생산량(배치×output) - 필요량, 최대 output-1개
+  const leftoverInterm = {};
+  for (const [key, needed] of Object.entries(essenceNeeded)) {
+    const rec = ALCHEMY[key]; if (!rec) continue;
+    const output = rec.output || 1;
+    if (output <= 1) continue; // output:1이면 잉여 없음
+    const batches = Math.ceil(needed / output);
+    const produced = batches * output;
+    const leftover = produced - needed; // 0 또는 1
+    if (leftover > 0) leftoverInterm[key] = leftover;
   }
 
   // 남은 재고 (어패류 + 잉여 중간재료)
