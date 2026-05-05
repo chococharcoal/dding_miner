@@ -6,7 +6,7 @@
 import {
   SKILLS, ENGRAVING, ROD, OCEAN, CLAM, CRAFTS, ALCHEMY, PRECISION_ALCHEMY, VANILLA_META,
   SEAFOOD_TYPES, UNITS, DEFAULT_PRICES,
-} from './ocean%20config.js';
+} from './ocean%20config.js?v=2';
 
 
 /* ════════════════════════════════════════
@@ -258,9 +258,8 @@ function calcSFNeedForFinal(fKey) {
     // 어패류 → 직접 기록
     if (SF_SET.has(key)) { need[key] = (need[key]||0) + qty; return; }
     const rec = ALCHEMY[key]; if (!rec) return;
-    // reversible:false(핵/결정/영약) → 분해 불가, 직접 필요 재료로 기록
-    if (rec.reversible === false) { need[key] = (need[key]||0) + qty; return; }
-    // reversible:true(정수/에센스/엘릭서) → 하위로 전개
+    // 모든 중간재료는 하위로 전개 (reversible 무관)
+    // reversible:false(핵/결정/영약)도 어패류 필요량 계산을 위해 전개
     const output = rec.output || 1;
     const batches = qty / output;
     for (const [mk, mq] of Object.entries(rec.materials))
@@ -357,15 +356,17 @@ async function calcOpt() {
   const includeSFCost = document.getElementById('sfCostToggle')?.checked      ?? false;
   const viewByStage   = document.getElementById('viewByStageToggle')?.checked  ?? false;
 
-  // 재고 소비: 어패류(업글 포함) + 핵/결정/영약(reversible:false 중간재료) 직접 소비
+  // 재고 소비: 어패류(업글 포함) + 핵/결정/영약(reversible:false) 직접 보유분 우선 소비
   function consumeSF(sfKey, need, curInv) {
     const needInt = Math.ceil(need);
-    // 핵/결정/영약: inv에 직접 보유 → 그대로 차감
+    // 핵/결정/영약: 직접 보유량 먼저 차감, 부족분은 어패류로 충당 (어패류 차감은 별도)
     if (ALCHEMY[sfKey]?.reversible === false) {
       const have = curInv[sfKey] || 0;
-      if (have < needInt) return false;
-      curInv[sfKey] = have - needInt;
-      return true;
+      const useFromStock = Math.min(have, needInt);
+      curInv[sfKey] = have - useFromStock;
+      // 부족분이 있으면 어패류로 만들어야 하지만 consumeSF는 어패류 키만 처리
+      // → 부족분은 이미 sfNeed에 어패류로 포함돼 있으므로 별도 처리 불필요
+      return true; // 항상 성공 (sfNeed가 어패류 기준으로 이미 계산됨)
     }
     const m=sfKey.match(/^(oyster|conch|octopus|seaweed|urchin)(\d)$/); if(!m)return false;
     const sf=m[1], tier=+m[2];
@@ -437,9 +438,11 @@ async function calcOpt() {
     for (const [sf, need] of Object.entries(sfNeed)) {
       if (need <= 0) continue;
       const needInt = Math.ceil(need);
-      // 핵/결정/영약: 직접 보유량으로만 판단
+      // 핵/결정/영약 직접 보유분은 차감 후 나머지를 어패류로 충당
+      // sfNeed는 어패류 기준으로 계산됐으므로 직접 보유분만큼 어패류 여유 생김
       if (ALCHEMY[sf]?.reversible === false) {
-        m = Math.min(m, Math.floor((curInv[sf]||0) / needInt));
+        // 직접 보유분은 어패류 0개 필요, 나머지는 sfNeed에 이미 포함
+        // → maxMake 제한 없음 (어패류 체크에서 처리)
         continue;
       }
       const tier = parseInt(sf.slice(-1));
@@ -509,9 +512,33 @@ async function calcOpt() {
 
       const D = detFn(Asq);
       if (Math.abs(D) < 0.001) return null;
-      return Array.from({length: n}, (_, i) =>
-        Math.max(0, Math.round(detFn(replaceCol(Asq, i, b)) / D))
-      );
+      const rawSol = Array.from({length: n}, (_, i) => detFn(replaceCol(Asq, i, b)) / D);
+      let sol = rawSol.map(v => Math.max(0, Math.round(v)));
+
+      // 반올림 후 모든 sf 재고 초과 검증 및 조정
+      // A 행렬(ceil된 sfNeed)로 사용량 추정 → 초과 시 해당 아이템 줄임
+      for (let iter = 0; iter < 30; iter++) {
+        let worstOverflow = 0, worstSi = -1;
+        for (let si = 0; si < SF_TYPES_LOCAL.length; si++) {
+          // A[ii][si]는 sfNeed를 ceil한 값이나, 실제로는 배치 단위라 더 클 수 있음
+          // 안전하게 A 기반으로 체크 (보수적 추정)
+          const used = items.reduce((s, _, ii) => s + A[ii][si] * sol[ii], 0);
+          const over = used - stock[si];
+          if (over > worstOverflow) { worstOverflow = over; worstSi = si; }
+        }
+        if (worstSi < 0) break;
+        // 가장 많이 쓰는 아이템을 ceil(over/A)만큼 줄임
+        let worstIdx = -1, worstA = 0;
+        for (let ii = 0; ii < n; ii++) {
+          if (A[ii][worstSi] > worstA && sol[ii] > 0) { worstA = A[ii][worstSi]; worstIdx = ii; }
+        }
+        if (worstIdx < 0) break;
+        const reduce = Math.ceil(worstOverflow / worstA);
+        sol[worstIdx] = Math.max(0, sol[worstIdx] - reduce);
+      }
+      // 추가 안전장치: maxMake 기반 최종 클램프는 solveLinearPlan에서 처리
+
+      return sol;
     }
 
     // tier 순서로 풀기: 3성 → 2성 → 1성
@@ -696,8 +723,13 @@ function renderOptResult({ planEntries, finalAnalysis, workInv, totalRev, totalV
       t3sec=cnt*(fa.craftTimeSec||0);
       const totalSecCard=(t1sec+t2sec+t3sec)*(1-fr);
 
-      const sfUsed={};
-      for(const[k,v]of Object.entries(fa.sfNeed))sfUsed[k]=v*cnt;
+      // 필요 어패류 표시: sfNeed(소수) × cnt를 반올림
+      // sfNeed는 calcSFNeedForFinal에서 소수로 계산됨 (output:2 에센스 영향)
+      // × cnt 후 Math.round로 표시 (ceil보다 실제에 가까움)
+      const sfUsed = {};
+      for (const [k, v] of Object.entries(fa.sfNeed)) {
+        if (v > 0) sfUsed[k] = v * cnt;
+      }
       const guideId='guide_'+fKey;
 
       // 50개 단위 분할 표시 (예: 128개 → 50+50+28)
@@ -722,7 +754,7 @@ function renderOptResult({ planEntries, finalAnalysis, workInv, totalRev, totalV
       const sfEntries=Object.entries(sfUsed).filter(([,v])=>v>0);
       if(sfEntries.length){
         html+=`<div class="cfc-section"><div class="cfc-section-label">📦 필요 어패류</div><div class="sf-chip-wrap">`;
-        for(const[k,v]of sfEntries){const cl=getMatColor(k),nm=getMatName(k);html+=`<div class="sf-chip" style="--chip-color:${cl}"><span class="sc-name">${nm}</span><span class="sc-qty">${fmtQty(Math.ceil(v))}</span></div>`;}
+        for(const[k,v]of sfEntries){const cl=getMatColor(k),nm=getMatName(k);html+=`<div class="sf-chip" style="--chip-color:${cl}"><span class="sc-name">${nm}</span><span class="sc-qty">${fmtQty(Math.round(v))}</span></div>`;}
         html+=`</div></div>`;
       }
 
@@ -908,7 +940,38 @@ function renderOptResult({ planEntries, finalAnalysis, workInv, totalRev, totalV
     html+=`</div></div>`;
   }
 
-  // 남은 재고
+  // 잉여 중간재료 계산 (output:2인 정수/에센스/엘릭서를 홀수 개 사용 시 1개 남음)
+  const leftoverInterm = {}; // { key: 남는 개수 }
+  for (const [fKey, cnt] of planEntries) {
+    const fRec = PRECISION_ALCHEMY[fKey];
+    // 최종산물 재료 순회
+    for (const [mk, mq] of Object.entries(fRec.materials)) {
+      const rec = ALCHEMY[mk]; if (!rec) continue;
+      if (rec.type === 'compound') {
+        const totalComp = mq * cnt; // 필요한 compound 총 개수
+        const batchComp = Math.ceil(totalComp / (rec.output || 1));
+        // compound 재료 중 essence 확인
+        for (const [mk2, mq2] of Object.entries(rec.materials)) {
+          const rec2 = ALCHEMY[mk2]; if (!rec2 || rec2.type !== 'essence') continue;
+          const needed = mq2 * batchComp;           // 필요한 essence 개수
+          const output2 = rec2.output || 1;
+          const batches2 = Math.ceil(needed / output2); // 제작 배치 수
+          const produced = batches2 * output2;           // 실제 생산량
+          const leftover = produced - needed;            // 잉여
+          if (leftover > 0) leftoverInterm[mk2] = (leftoverInterm[mk2] || 0) + leftover;
+        }
+      } else if (rec.type === 'essence') {
+        const needed = mq * cnt;
+        const output2 = rec.output || 1;
+        const batches2 = Math.ceil(needed / output2);
+        const produced = batches2 * output2;
+        const leftover = produced - needed;
+        if (leftover > 0) leftoverInterm[mk] = (leftoverInterm[mk] || 0) + leftover;
+      }
+    }
+  }
+
+  // 남은 재고 (어패류 + 잉여 중간재료)
   const remEntries=SF_KEYS.map(k=>[k,workInv[k]||0]).filter(([,v])=>v>0);
 
   // 총합
@@ -939,9 +1002,18 @@ function renderOptResult({ planEntries, finalAnalysis, workInv, totalRev, totalV
   }
 
   html+=`<div class="result-box" style="margin-top:12px">`;
-  if(remEntries.length){
-    html+=`<div style="margin-bottom:8px;padding-bottom:8px;border-bottom:1px dashed var(--bdr2);font-size:11px;color:var(--muted)">남은 어패류: `;
-    html+=remEntries.map(([k,v])=>`<span style="color:${getMatColor(k)}">${getMatName(k)} ${fmtQty(v)}</span>`).join(' · ');
+  if(remEntries.length || Object.keys(leftoverInterm).length){
+    html+=`<div style="margin-bottom:8px;padding-bottom:8px;border-bottom:1px dashed var(--bdr2);font-size:11px;color:var(--muted)">남은 재료: `;
+    const parts=[];
+    for(const[k,v]of remEntries) parts.push(`<span style="color:${getMatColor(k)}">${getMatName(k)} ${fmtQty(v)}</span>`);
+    for(const[k,v]of Object.entries(leftoverInterm)){
+      if(v<=0)continue;
+      const rec=ALCHEMY[k];
+      const name=rec?.name||k;
+      const color=rec?.color||'var(--muted)';
+      parts.push(`<span style="color:${color}">${name} ${fmtQty(v)} <span style="font-size:9px;opacity:.7">(잉여)</span></span>`);
+    }
+    html+=parts.join(' · ');
     html+=`</div>`;
   }
   html+=`<div style="display:flex;gap:0;align-items:stretch">`;
