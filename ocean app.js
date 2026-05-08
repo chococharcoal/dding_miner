@@ -4,13 +4,9 @@
 ════════════════════════════════════════ */
 
 import {
-  OCEAN_SKILLS as SKILLS, 
-  OCEAN_ENGRAVING as ENGRAVING, 
-  OCEAN_DEFAULT_PRICES as DEFAULT_PRICES,
-  ROD, OCEAN, CLAM, CRAFTS, ALCHEMY, PRECISION_ALCHEMY, VANILLA_META,
-  SEAFOOD_TYPES, UNITS,
-} from './config.js';
-
+  SKILLS, ENGRAVING, ROD, OCEAN, CLAM, CRAFTS, ALCHEMY, PRECISION_ALCHEMY, VANILLA_META,
+  SEAFOOD_TYPES, UNITS, DEFAULT_PRICES,
+} from './ocean%20config.js?v=2';
 
 
 /* ════════════════════════════════════════
@@ -691,7 +687,59 @@ function renderOptResult({ planEntries, finalAnalysis, workInv, totalRev, totalV
   }
 
   const sfColors={oyster:'#3d6fd4',conch:'#c89c00',octopus:'#7c52c8',seaweed:'#d94f3d',urchin:'#3a9e68'};
-  const tierColors={0:'#607090',1:'#3d6fd4',2:'#7c52c8',3:'#d94f3d'};
+  // ── 완성품 tier 색상 (어패류 고유색과 겹치지 않는 색으로 구분) ──
+  // 1성: 딥퍼플 / 라벤더 / 살구핑크
+  // 2성: 다크슬레이트 / 핫핑크 / 스카이블루
+  // 3성: 라일락 / 틸 / 딥로즈
+  const tierColors={
+    0:'#607090',
+    1:'#5a3fd4',   // 1성 섹션 헤더색
+    2:'#3a3060',   // 2성 섹션 헤더색
+    3:'#9070d4',   // 3성 섹션 헤더색
+  };
+  // 완성품별 개별 색상
+  const finColors={
+    // 1성 - 밝은 파랑 / 밝은 라벤더 / 밝은 산호
+    LEVIATHAN: '#4a8fd4',
+    KRAKEN:    '#9098e8',
+    AQUTIS:    '#e87878',
+    // 2성 - 밝은 인디고 / 밝은 핫핑크 / 밝은 스카이블루
+    SEA_WING:  '#6258c8',
+    DEEP_VIAL: '#e84888',
+    WAVE_CORE: '#3a9ae8',
+    // 3성 - 밝은 바이올렛 / 밝은 민트틸 / 밝은 핑크로즈
+    ABYSS_SPINE:'#a878e8',
+    NAUTILUS:   '#38bca8',
+    AQUA_PULSE: '#d84888',
+  };
+  // 핵/결정/영약 색상 (하늘/주황/보라/진빨/밝은초록 순)
+  const compoundColors={
+    core_guard:    '#4db8e8', core_wave:'#f0853a', core_chaos:'#9060c8', core_life:'#c03040', core_corrosion:'#48c070',
+    crystal_vitality:'#4db8e8', crystal_erosion:'#f0853a', crystal_defense:'#9060c8', crystal_torrent:'#c03040', crystal_poison:'#48c070',
+    potion_immortal:'#4db8e8', potion_barrier:'#f0853a', potion_corrupt:'#9060c8', potion_frenzy:'#c03040', potion_venom:'#48c070',
+  };
+  // 정수/에센스/엘릭서 순서 (굴→소라→문어→미역→성게)
+  const essOrder1=['essence_guardian1','essence_wave1','essence_chaos1','essence_life1','essence_corrosion1'];
+  const essOrder2=['essence_guardian2','essence_wave2','essence_chaos2','essence_life2','essence_corrosion2'];
+  const essOrder3=['elixir_guardian','elixir_wave','elixir_chaos','elixir_life','elixir_corrosion'];
+  // 핵 순서: 물결/파동/질서/활력/침식
+  const coreOrder=['core_guard','core_wave','core_chaos','core_life','core_corrosion'];
+  // 결정 순서: 활기/파도/방어/격류/맹독
+  const crysOrder=['crystal_vitality','crystal_erosion','crystal_defense','crystal_torrent','crystal_poison'];
+  // 영약 순서: 불멸/파동/타락/생명/맹독
+  const potiOrder=['potion_immortal','potion_barrier','potion_corrupt','potion_frenzy','potion_venom'];
+  // 완성품 순서
+  const fin1Order=['LEVIATHAN','KRAKEN','AQUTIS'];
+  const fin2Order=['SEA_WING','DEEP_VIAL','WAVE_CORE'];
+  const fin3Order=['ABYSS_SPINE','NAUTILUS','AQUA_PULSE'];
+
+  function sortedEntries(aggMap, orderArr) {
+    const present = Object.entries(aggMap).filter(([,v])=>v>0);
+    if (!orderArr) return present;
+    const ordered = orderArr.filter(k=>aggMap[k]>0).map(k=>[k,aggMap[k]]);
+    const rest = present.filter(([k])=>!orderArr.includes(k));
+    return [...ordered,...rest];
+  }
   const tierLabels=['0성','★ 1성','★★ 2성','★★★ 3성'];
   const fr=getSK().fr;
 
@@ -714,7 +762,7 @@ function renderOptResult({ planEntries, finalAnalysis, workInv, totalRev, totalV
   ────────────────────────────────────── */
   if (!viewByStage) {
     for(const[fKey,cnt]of planEntries){
-      const fa=finalAnalysis[fKey],color=tierColors[fa.tier]||'#607090';
+      const fa=finalAnalysis[fKey],color=finColors[fKey]||tierColors[fa.tier]||'#607090';
       const netColor=fa.netPerUnit>=0?'var(--grn)':'var(--red)',netSign=fa.netPerUnit>=0?'+':'';
       const sfCostNote=includeSFCost&&fa.sfCost>0
         ?` <small style="color:var(--muted)">(어패류 ${f(Math.round(fa.sfCost))}원 + 바닐라 ${f(Math.round(fa.vanCost))}원)</small>`
@@ -865,8 +913,8 @@ function renderOptResult({ planEntries, finalAnalysis, workInv, totalRev, totalV
       }
     }
 
-    function stageSection(label,emoji,aggMap,secKey,accentColor){
-      const entries=Object.entries(aggMap).filter(([,v])=>v>0);
+    function stageSection(label,emoji,aggMap,secKey,accentColor,orderArr){
+      const entries=sortedEntries(aggMap,orderArr);
       if(!entries.length)return'';
       const tSec=timeSec[secKey]*(1-fr);
       let s=`<div class="craft-flow-card" style="--tier-color:${accentColor};margin-bottom:10px">`;
@@ -883,9 +931,11 @@ function renderOptResult({ planEntries, finalAnalysis, workInv, totalRev, totalV
         const fa2=finalAnalysis[key];
         const isPA=!!PRECISION_ALCHEMY[key];
         const name=(fa2?.name||rec?.name||key).replace(/★+\s*/g,'').replace(/\s*★+/g,'').trim();
-        const color2=isPA?(tierColors[fa2.tier]||'#607090'):(rec?.color||'#607090');
+        // 색상: 완성품은 finColors, 핵/결정/영약은 compoundColors, 나머지는 rec.color
+        const color2=isPA
+          ?(finColors[key]||tierColors[fa2.tier]||'#607090')
+          :(compoundColors[key]||rec?.color||'#607090');
 
-        // 완성품 / 중간재료 공통으로 "결과물 칩 + 재료 칩" 형태로 표시
         const batchNeeded=Math.ceil(qty/((rec?.output)||1));
         const matSource=isPA?PRECISION_ALCHEMY[key]?.materials:rec?.materials;
         const matParts=Object.entries(matSource||{}).filter(([,v])=>v>0)
@@ -897,14 +947,20 @@ function renderOptResult({ planEntries, finalAnalysis, workInv, totalRev, totalV
           }).join(' ');
 
         s+=`<div style="${lStyle}">`;
-        s+=`<span style="${chipB};background:${color2}15;border:1.5px solid ${color2}"><span style="color:${color2}">${name}</span> <span style="color:${color2}">${fmtQty(qty)}</span></span>`;
+        // 완성품이면 50개 단위 분할 표시
+        let qtyDisplay=fmtQty(qty);
+        if(isPA&&qty>50){
+          const parts=[];let rem=qty;
+          while(rem>0){parts.push(Math.min(rem,50));rem-=50;}
+          qtyDisplay+=`<span style="font-size:9px;color:${color2};opacity:.7;margin-left:2px">(${parts.join('+')})</span>`;
+        }
+        s+=`<span style="${chipB};background:${color2}18;border:1.5px solid ${color2}"><span style="color:${color2}">${name}</span> <span style="color:${color2}">${qtyDisplay}</span></span>`;
         if(matParts){
           s+=`<span style="color:var(--bdr2);font-size:13px;font-weight:900;flex-shrink:0">·</span>`;
           s+=matParts;
         }
         if(isPA){
-          const netColor2=fa2.netPerUnit>=0?'var(--grn)':'var(--red)', netSign2=fa2.netPerUnit>=0?'+':'';
-          s+=`<span style="margin-left:auto;font-size:11px;color:var(--muted);flex-shrink:0">판매 ${f(fa2.sellPrice*qty)}원 <span style="color:${netColor2}">${netSign2}${f(Math.round(fa2.netPerUnit))}/개</span></span>`;
+          // 단계별 보기에서는 수익 표시 안 함 (마지막 합산으로 대신)
         }
         s+=`</div>`;
       }
@@ -912,16 +968,57 @@ function renderOptResult({ planEntries, finalAnalysis, workInv, totalRev, totalV
       return s;
     }
 
-    html+=stageSection('정수 제작',   '⚗️', agg.ess1,'ess1','#3d6fd4');
-    html+=stageSection('핵 제작',     '💠', agg.core, 'core', '#3d6fd4');
-    html+=stageSection('1성 완성품',  '★',  agg.fin1, 'fin1', tierColors[1]);
-    html+=stageSection('에센스 제작', '⚗️', agg.ess2, 'ess2', '#7c52c8');
-    html+=stageSection('결정 제작',   '💎', agg.crys, 'crys', '#7c52c8');
-    html+=stageSection('2성 완성품',  '★★', agg.fin2, 'fin2', tierColors[2]);
-    html+=stageSection('엘릭서 제작', '⚗️', agg.ess3, 'ess3', '#d94f3d');
-    html+=stageSection('영약 제작',   '🧪', agg.poti, 'poti', '#d94f3d');
-    html+=stageSection('3성 완성품',  '★★★',agg.fin3,'fin3', tierColors[3]);
-    html+=stageSection('0성 완성품',  '🔬', agg.fin0, 'fin0', tierColors[0]);
+    html+=stageSection('정수 제작',   '⚗️', agg.ess1,'ess1','#5a7ab8', essOrder1);
+    html+=stageSection('핵 제작',     '💠', agg.core, 'core','#4db8e8', coreOrder);
+    html+=stageSection('1성 완성품',  '★',  agg.fin1, 'fin1','#5a3fd4', fin1Order);
+    html+=stageSection('에센스 제작', '⚗️', agg.ess2, 'ess2','#6a5a9a', essOrder2);
+    html+=stageSection('결정 제작',   '💎', agg.crys, 'crys','#4db8e8', crysOrder);
+    html+=stageSection('2성 완성품',  '★★', agg.fin2, 'fin2','#3a3060', fin2Order);
+    html+=stageSection('엘릭서 제작', '⚗️', agg.ess3, 'ess3','#8a6aaa', essOrder3);
+    html+=stageSection('영약 제작',   '🧪', agg.poti, 'poti','#4db8e8', potiOrder);
+    html+=stageSection('3성 완성품',  '★★★',agg.fin3,'fin3','#9070d4', fin3Order);
+    html+=stageSection('0성 완성품',  '🔬', agg.fin0, 'fin0','#607090', null);
+
+    // 단계별 보기 수익 합산
+    const allFinAgg = {...agg.fin0,...agg.fin1,...agg.fin2,...agg.fin3};
+    const finSummaryEntries = Object.entries(allFinAgg).filter(([,v])=>v>0);
+    if(finSummaryEntries.length){
+      const chipB='display:inline-flex;align-items:center;gap:3px;border-radius:6px;padding:2px 7px;font-size:11px;white-space:nowrap;font-weight:700';
+      html+=`<div class="craft-flow-card" style="--tier-color:var(--acc);margin-bottom:10px">`;
+      html+=`<div class="cfc-header" style="border-left-color:var(--acc)">`;
+      html+=`<div class="cfc-header-left"><div class="cfc-name" style="font-size:14px">💰 수익 합산</div></div>`;
+      html+=`<div class="cfc-header-right"><div style="font-size:13px;color:var(--grn);font-weight:900">${f(totalRev)}원</div></div>`;
+      html+=`</div><div class="cfc-section" style="padding:8px 14px">`;
+      const lStyle='display:flex;align-items:center;gap:8px;padding:4px 0;border-bottom:1px dashed var(--bdr)';
+      // tier 순서로 정렬
+      const orderedFin=[...fin3Order,...fin2Order,...fin1Order,'DILUTED_EXTRACT']
+        .filter(k=>allFinAgg[k]>0).map(k=>[k,allFinAgg[k]]);
+      const restFin=finSummaryEntries.filter(([k])=>!orderedFin.find(([ok])=>ok===k));
+      for(const[key,qty]of[...orderedFin,...restFin]){
+        const fa2=finalAnalysis[key];if(!fa2)continue;
+        const color2=finColors[key]||tierColors[fa2.tier]||'#607090';
+        const rev=fa2.sellPrice*qty;
+        const netTot=Math.round(fa2.netPerUnit)*qty;
+        const netColor2=netTot>=0?'var(--grn)':'var(--red)';
+        const netSign2=netTot>=0?'+':'';
+        const name=fa2.name.replace(/★+\s*/g,'').replace(/\s*★+/g,'').trim();
+        html+=`<div style="${lStyle}">`;
+        html+=`<span style="${chipB};background:${color2}18;border:1.5px solid ${color2};min-width:100px"><span style="color:${color2}">${name}</span></span>`;
+        html+=`<span style="font-size:12px;color:var(--muted);flex-shrink:0">${fmtQty(qty)}개</span>`;
+        html+=`<span style="font-size:12px;color:var(--txt);font-weight:900;flex-shrink:0">${f(rev)}원</span>`;
+        html+=`<span style="font-size:11px;color:${netColor2};margin-left:auto;flex-shrink:0">${netSign2}${f(netTot)}원</span>`;
+        html+=`</div>`;
+      }
+      // 합계 행
+      const totalNet=planEntries.reduce((s,[k,cnt])=>s+Math.round(finalAnalysis[k].netPerUnit)*cnt,0);
+      const netCol=totalNet>=0?'var(--grn)':'var(--red)', netSgn=totalNet>=0?'+':'';
+      html+=`<div style="display:flex;align-items:center;gap:8px;padding:6px 0;margin-top:2px;border-top:1.5px solid var(--bdr2)">`;
+      html+=`<span style="font-family:'Jua',sans-serif;font-size:12px;color:var(--muted)">합계</span>`;
+      html+=`<span style="font-size:13px;color:var(--grn);font-weight:900;margin-left:auto">${f(totalRev)}원</span>`;
+      html+=`<span style="font-size:12px;color:${netCol};font-weight:700">(${netSgn}${f(totalNet)}원)</span>`;
+      html+=`</div>`;
+      html+=`</div></div>`;
+    }
   }
 
   // 바닐라 재료 합계 — 그룹 순서대로 정렬
