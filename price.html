@@ -1,0 +1,586 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>띵타이쿤 시세 그래프</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Jua&family=Noto+Sans+KR:wght@500;700;900&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+*,input,select,button,textarea{font-family:'Noto Sans KR','Apple SD Gothic Neo',sans-serif!important;font-weight:700}
+:root{
+  --bg:#f7f4ef;--surf:#fff;--bdr:#e2ddd6;--bdr2:#c8c0b4;
+  --txt:#1e2419;--muted:#7a7468;--acc:#2d6a4f;--acc2:#40916c;
+  --grn:#2d6a4f;--grn-bg:#d8f3dc;--red:#b5391c;--red-bg:#fdecea;
+  --ylw:#d4a017;--ylw-bg:#fef9ec;--r:12px;--rs:8px;
+  --sh:0 1px 8px rgba(30,36,25,.08);
+}
+html,body{
+  min-height:100vh;
+  background:var(--bg);
+  background-image:radial-gradient(ellipse at 80% 0%,rgba(45,106,79,.07) 0%,transparent 50%);
+  color:var(--txt);
+}
+.page{max-width:1100px;margin:0 auto;padding:0 16px 60px}
+
+/* ── 헤더 ── */
+.hdr{padding:22px 0 16px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.hdr-left{display:flex;align-items:center;gap:10px}
+.hdr-title{font-family:'Jua',sans-serif!important;font-size:24px;color:var(--acc)}
+.hdr-sub{font-family:'Jua',sans-serif!important;font-size:13px;color:var(--muted)}
+.back-btn{font-family:'Jua',sans-serif!important;font-size:12px;padding:6px 12px;border-radius:20px;border:1.5px solid var(--bdr2);background:var(--surf);color:var(--muted);text-decoration:none;display:inline-flex;align-items:center;gap:4px;transition:all .15s}
+.back-btn:hover{border-color:var(--acc);color:var(--acc)}
+
+/* ── 카드 ── */
+.card{background:var(--surf);border:1px solid var(--bdr);border-radius:var(--r);padding:16px;box-shadow:var(--sh);margin-bottom:14px}
+.card-title{font-family:'Jua',sans-serif!important;font-size:13px;color:var(--muted);margin-bottom:12px;display:flex;align-items:center;gap:6px;letter-spacing:.3px}
+.card-title::before{content:'';display:inline-block;width:3px;height:13px;background:var(--acc);border-radius:2px}
+
+/* ── 레이아웃: 사이드바 + 메인 ── */
+.layout{display:grid;grid-template-columns:1fr;gap:14px}
+@media(min-width:860px){
+  .layout{grid-template-columns:280px 1fr;align-items:start}
+  .sidebar{position:sticky;top:14px;max-height:calc(100vh - 28px);overflow-y:auto;scrollbar-width:thin;scrollbar-color:var(--bdr2) transparent}
+}
+
+/* ── URL 입력 ── */
+.url-row{display:flex;gap:8px}
+.url-input{flex:1;padding:8px 11px;border:1px solid var(--bdr2);border-radius:var(--rs);background:var(--bg);font-size:11px!important;color:var(--txt);outline:none;transition:border-color .15s}
+.url-input::placeholder{color:var(--muted)}
+.url-input:focus{border-color:var(--acc)}
+.load-btn{padding:8px 16px;font-family:'Jua',sans-serif!important;font-size:13px;background:var(--acc);color:#fff;border:none;border-radius:var(--rs);cursor:pointer;white-space:nowrap;font-weight:900;box-shadow:0 2px 6px rgba(45,106,79,.25);transition:opacity .15s}
+.load-btn:hover{opacity:.88}
+.status{font-size:11px;color:var(--muted);margin-top:6px;min-height:16px}
+
+/* ── 검색 ── */
+.search-wrap{position:relative;margin-bottom:10px}
+.search-input{width:100%;padding:8px 36px 8px 12px;border:1px solid var(--bdr2);border-radius:var(--rs);background:var(--bg);font-size:12px;color:var(--txt);outline:none;transition:border-color .15s}
+.search-input::placeholder{color:var(--muted)}
+.search-input:focus{border-color:var(--acc)}
+.search-icon{position:absolute;right:10px;top:50%;transform:translateY(-50%);color:var(--muted);pointer-events:none;font-size:14px}
+
+/* ── 빠른 선택 ── */
+.preset-wrap{display:flex;flex-direction:column;gap:4px}
+.preset-btn{font-family:'Jua',sans-serif!important;font-size:12px;padding:7px 11px;border-radius:var(--rs);border:1px solid var(--bdr);background:var(--bg);color:var(--txt);cursor:pointer;text-align:left;transition:all .12s;display:flex;align-items:center;justify-content:space-between}
+.preset-btn:hover{border-color:var(--acc);color:var(--acc);background:var(--grn-bg)}
+.preset-count{font-size:10px;color:var(--muted)}
+
+/* ── 카테고리별 칩 ── */
+.cat-section{margin-bottom:12px}
+.cat-title{font-family:'Jua',sans-serif!important;font-size:10px;color:var(--muted);letter-spacing:.5px;margin-bottom:6px;padding-bottom:4px;border-bottom:1px solid var(--bdr);display:flex;align-items:center;justify-content:space-between}
+.cat-toggle{font-size:10px;cursor:pointer;color:var(--acc);user-select:none;opacity:.8}
+.cat-toggle:hover{opacity:1}
+.chips{display:flex;flex-wrap:wrap;gap:5px}
+.chip{font-family:'Jua',sans-serif!important;font-size:11px;padding:4px 10px;border-radius:14px;border:1px solid var(--bdr2);background:var(--bg);color:var(--muted);cursor:pointer;transition:all .12s;white-space:nowrap;line-height:1.3}
+.chip:hover{border-color:var(--chip-c,var(--acc));color:var(--chip-c,var(--acc))}
+.chip.on{border-color:var(--chip-c,var(--acc));background:color-mix(in srgb,var(--chip-c,var(--acc)) 12%,#fff);color:var(--chip-c,var(--acc))}
+
+/* ── 선택된 태그 ── */
+.tag{display:inline-flex;align-items:center;gap:4px;font-size:11px;padding:3px 7px 3px 9px;border-radius:10px;border:1px solid color-mix(in srgb,var(--chip-c,var(--acc)) 40%,transparent);background:color-mix(in srgb,var(--chip-c,var(--acc)) 12%,transparent);color:var(--chip-c,var(--txt));white-space:nowrap}
+.tag-del{border:none;background:none;cursor:pointer;color:inherit;font-size:13px;line-height:1;padding:0;opacity:.55;display:flex;align-items:center}
+.tag-del:hover{opacity:1}
+
+/* ── 컨트롤 바 ── */
+.ctrl-bar{display:flex;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:10px}
+.range-btn{font-family:'Jua',sans-serif!important;font-size:12px;padding:5px 13px;border-radius:16px;border:1px solid var(--bdr2);background:var(--bg);color:var(--muted);cursor:pointer;transition:all .15s}
+.range-btn:hover{border-color:var(--acc);color:var(--acc)}
+.range-on{background:var(--grn-bg)!important;border-color:var(--acc)!important;color:var(--acc)!important}
+.custom-range{display:none;align-items:center;gap:6px;font-size:12px}
+.date-input{padding:5px 8px;border:1px solid var(--bdr2);border-radius:var(--rs);font-size:11px;background:var(--bg);color:var(--txt);outline:none}
+.date-input:focus{border-color:var(--acc)}
+.apply-btn{padding:5px 11px;font-family:'Jua',sans-serif!important;font-size:12px;background:var(--acc);color:#fff;border:none;border-radius:var(--rs);cursor:pointer;font-weight:900}
+
+/* ── 세트 토글 ── */
+.set-toggle-wrap{display:flex;align-items:center;gap:7px;cursor:pointer;user-select:none;margin-left:auto}
+.tog-track{position:relative;width:36px;height:20px;background:var(--bdr2);border-radius:10px;flex-shrink:0;transition:background .2s}
+.tog-thumb{position:absolute;top:2px;left:2px;width:16px;height:16px;background:#fff;border-radius:50%;box-shadow:0 1px 4px rgba(0,0,0,.18);transition:transform .2s}
+.tog-label{font-family:'Jua',sans-serif!important;font-size:13px;color:var(--muted)}
+#setCheck:checked+.tog-track{background:var(--acc)}
+#setCheck:checked+.tog-track .tog-thumb{transform:translateX(16px)}
+
+/* ── 차트 영역 ── */
+.chart-wrap{position:relative;height:340px;margin-bottom:12px}
+.chart-empty{display:flex;flex-direction:column;align-items:center;justify-content:center;height:300px;color:var(--muted);gap:8px}
+.chart-empty-icon{font-size:40px;opacity:.25}
+.chart-empty-txt{font-family:'Jua',sans-serif!important;font-size:14px;opacity:.6}
+
+/* ── 태그 목록 ── */
+.tag-list{display:flex;flex-wrap:wrap;gap:6px;margin-top:4px;min-height:28px}
+.clear-all{font-family:'Jua',sans-serif!important;font-size:11px;padding:3px 10px;border-radius:12px;border:1px solid var(--bdr2);background:transparent;color:var(--muted);cursor:pointer;transition:all .15s}
+.clear-all:hover{border-color:var(--red);color:var(--red)}
+
+/* 스크롤바 */
+::-webkit-scrollbar{width:4px}
+::-webkit-scrollbar-thumb{background:var(--bdr2);border-radius:2px}
+
+/* ── 반응형 조정 ── */
+@media(max-width:500px){.hdr-title{font-size:20px}}
+</style>
+</head>
+<body>
+<div class="page">
+
+  <!-- 헤더 -->
+  <div class="hdr">
+    <div class="hdr-left">
+      <a class="back-btn" href="index.html">← 허브</a>
+      <div>
+        <div class="hdr-title">📈 시세 그래프</div>
+        <div class="hdr-sub">Google Sheets 연동 · 재료별 시세 추이</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- URL 입력 -->
+  <div class="card">
+    <div class="url-row">
+      <input class="url-input" id="urlInput" type="text"
+        placeholder="Apps Script 웹앱 URL 입력 (https://script.google.com/macros/s/...)"
+        oninput="saveUrl()">
+      <button class="load-btn" onclick="loadData(true)">⬇️ 불러오기</button>
+    </div>
+    <div class="status" id="status"></div>
+  </div>
+
+  <div class="layout">
+
+    <!-- 사이드바: 항목 선택 -->
+    <div class="sidebar">
+
+      <!-- 빠른 선택 -->
+      <div class="card">
+        <div class="card-title">⚡ 빠른 선택</div>
+        <div class="preset-wrap" id="presetWrap"></div>
+      </div>
+
+      <!-- 검색 + 개별 선택 -->
+      <div class="card">
+        <div class="card-title">🔍 항목 검색</div>
+        <div class="search-wrap">
+          <input class="search-input" id="searchInput" type="text"
+            placeholder="재료 이름 검색..." oninput="filterItems()">
+          <span class="search-icon">🔍</span>
+        </div>
+        <div id="itemList"></div>
+      </div>
+
+    </div>
+
+    <!-- 메인: 그래프 -->
+    <div class="main-area">
+
+      <!-- 컨트롤 바 -->
+      <div class="card" style="position:sticky;top:14px;z-index:10">
+        <div class="ctrl-bar">
+          <button class="range-btn range-on" onclick="setRange(14,this)">2주</button>
+          <button class="range-btn"           onclick="setRange(30,this)">1개월</button>
+          <button class="range-btn"           onclick="setRange(0,this)">전체</button>
+          <button class="range-btn"           onclick="setRange(-1,this)">직접입력</button>
+          <div class="custom-range" id="customRange">
+            <input class="date-input" id="dateFrom" type="date">
+            <span style="color:var(--muted)">~</span>
+            <input class="date-input" id="dateTo"   type="date">
+            <button class="apply-btn" onclick="drawChart()">적용</button>
+          </div>
+          <!-- 세트 토글 -->
+          <label class="set-toggle-wrap">
+            <input type="checkbox" id="setCheck" style="display:none" onchange="drawChart()">
+            <span class="tog-track"><span class="tog-thumb"></span></span>
+            <span class="tog-label" id="togLabel">개당</span>
+          </label>
+        </div>
+        <!-- 선택된 항목 태그 -->
+        <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:6px">
+          <div class="tag-list" id="tagList"></div>
+          <button class="clear-all" onclick="clearAll()">전체 해제</button>
+        </div>
+      </div>
+
+      <!-- 차트 카드 -->
+      <div class="card">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+          <span style="font-family:'Jua',sans-serif;font-size:13px;color:var(--muted)" id="chartMeta"></span>
+        </div>
+        <div class="chart-wrap">
+          <canvas id="chartCanvas" style="display:none"></canvas>
+          <div class="chart-empty" id="chartEmpty">
+            <div class="chart-empty-icon">📊</div>
+            <div class="chart-empty-txt">왼쪽에서 항목을 선택하세요</div>
+            <div style="font-size:11px;color:var(--muted)">여러 항목을 동시에 비교할 수 있어요</div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script type="module">
+import { SheetsSync } from './sheets.js';
+
+// ══════════════════════════════════════
+// 재료 카탈로그
+// ══════════════════════════════════════
+const ITEMS = [
+  // 해양 어패류
+  {key:'ocean_sf_tier1',label:'1성 어패류',   color:'#3d6fd4',cat:'해양 어패류'},
+  {key:'ocean_sf_tier2',label:'2성 어패류',   color:'#6090e8',cat:'해양 어패류'},
+  {key:'ocean_sf_tier3',label:'3성 어패류',   color:'#a0b8ff',cat:'해양 어패류'},
+  // 물고기 회
+  {key:'ocean_shrimp',      label:'깐 새우',    color:'#e07b2a',cat:'물고기 회'},
+  {key:'ocean_sea_bream',   label:'도미 회',    color:'#e05050',cat:'물고기 회'},
+  {key:'ocean_herring',     label:'청어 회',    color:'#5090c0',cat:'물고기 회'},
+  {key:'ocean_goldfish',    label:'금붕어 회',  color:'#e08030',cat:'물고기 회'},
+  {key:'ocean_bass',        label:'농어 회',    color:'#608090',cat:'물고기 회'},
+  // 해양 재료
+  {key:'ocean_firn',            label:'불우렁쉥이', color:'#3a9e68',cat:'해양 재료'},
+  {key:'ocean_seaweed_item',    label:'해초',       color:'#2d8050',cat:'해양 재료'},
+  {key:'ocean_kelp',            label:'켈프',       color:'#257040',cat:'해양 재료'},
+  {key:'ocean_glass_bottle',    label:'유리병',     color:'#90b8e0',cat:'해양 재료'},
+  {key:'ocean_glowberry',       label:'발광 열매',  color:'#e07b2a',cat:'해양 재료'},
+  {key:'ocean_clay',            label:'점토',       color:'#9090a8',cat:'해양 재료'},
+  {key:'ocean_sand',            label:'모래',       color:'#c8a870',cat:'해양 재료'},
+  {key:'ocean_dirt',            label:'흙',         color:'#8b6340',cat:'해양 재료'},
+  {key:'ocean_gravel',          label:'자갈',       color:'#909090',cat:'해양 재료'},
+  {key:'ocean_granite',         label:'화강암',     color:'#c09080',cat:'해양 재료'},
+  {key:'ocean_lapis_block',     label:'청금석 블록',color:'#3d6fd4',cat:'해양 재료'},
+  {key:'ocean_redstone_block',  label:'레드스톤 블록',color:'#d94f3d',cat:'해양 재료'},
+  {key:'ocean_iron_ingot',      label:'철 주괴',    color:'#a0a0b0',cat:'해양 재료'},
+  {key:'ocean_gold_ingot',      label:'금 주괴',    color:'#c89c00',cat:'해양 재료'},
+  {key:'ocean_diamond',         label:'다이아몬드', color:'#40c0e0',cat:'해양 재료'},
+  {key:'ocean_netherrack',      label:'네더랙',     color:'#8b2020',cat:'해양 재료'},
+  {key:'ocean_magma',           label:'마그마 블록',color:'#e05010',cat:'해양 재료'},
+  {key:'ocean_soul_soil',       label:'영혼 흙',    color:'#6070a0',cat:'해양 재료'},
+  {key:'ocean_crimson_stem',    label:'진홍빛 자루',color:'#9e3030',cat:'해양 재료'},
+  {key:'ocean_warped_stem',     label:'뒤틀린 자루',color:'#207060',cat:'해양 재료'},
+  // 죽은 산호
+  {key:'ocean_coral_dead_tube',   label:'죽은 관 산호',  color:'#c05050',cat:'죽은 산호'},
+  {key:'ocean_coral_dead_brain',  label:'죽은 뇌 산호',  color:'#c07050',cat:'죽은 산호'},
+  {key:'ocean_coral_dead_bubble', label:'죽은 거품 산호',color:'#9050c0',cat:'죽은 산호'},
+  {key:'ocean_coral_dead_fire',   label:'죽은 불 산호',  color:'#d04030',cat:'죽은 산호'},
+  {key:'ocean_coral_dead_horn',   label:'죽은 뿔 산호',  color:'#c04070',cat:'죽은 산호'},
+  // 채광 주괴
+  {key:'mining_ingot_corum',  label:'코룸 주괴',   color:'#3d6fd4',cat:'채광 주괴'},
+  {key:'mining_ingot_rifton', label:'리프톤 주괴', color:'#c89c00',cat:'채광 주괴'},
+  {key:'mining_ingot_serent', label:'세렌트 주괴', color:'#7c52c8',cat:'채광 주괴'},
+  // 채광 원석
+  {key:'mining_gem_corum',  label:'코룸 원석',   color:'#2d5fb0',cat:'채광 원석'},
+  {key:'mining_gem_rifton', label:'리프톤 원석', color:'#a07c00',cat:'채광 원석'},
+  {key:'mining_gem_serent', label:'세렌트 원석', color:'#6040a0',cat:'채광 원석'},
+  // 라이프스톤
+  {key:'mining_ls1',  label:'하급 라이프스톤', color:'#3a9e68',cat:'라이프스톤'},
+  {key:'mining_ls2',  label:'중급 라이프스톤', color:'#2d7850',cat:'라이프스톤'},
+  {key:'mining_ls3',  label:'상급 라이프스톤', color:'#1d5038',cat:'라이프스톤'},
+  {key:'mining_abil', label:'어빌리티 스톤',   color:'#d94f3d',cat:'라이프스톤'},
+  // 채광 보석
+  {key:'mining_topaz',    label:'토파즈',    color:'#e07b2a',cat:'채광 보석'},
+  {key:'mining_sapphire', label:'사파이어',  color:'#3d6fd4',cat:'채광 보석'},
+  {key:'mining_platinum', label:'플레티넘',  color:'#808090',cat:'채광 보석'},
+  // 채광 광물
+  {key:'mining_iron',     label:'철 주괴',    color:'#a0a0b0',cat:'채광 광물'},
+  {key:'mining_gold',     label:'금 주괴',    color:'#c89c00',cat:'채광 광물'},
+  {key:'mining_diamond',  label:'다이아몬드', color:'#40c0e0',cat:'채광 광물'},
+  {key:'mining_copper',   label:'구리 주괴',  color:'#c06830',cat:'채광 광물'},
+  {key:'mining_redstone', label:'레드스톤',   color:'#d94f3d',cat:'채광 광물'},
+  {key:'mining_lapis',    label:'청금석',     color:'#3d6fd4',cat:'채광 광물'},
+  {key:'mining_amethyst', label:'자수정',     color:'#9060c0',cat:'채광 광물'},
+  {key:'mining_cobblestone',             label:'조약돌',       color:'#909090',cat:'채광 광물'},
+  {key:'mining_deepslate_cobblestone',   label:'심층암 조약돌',color:'#606070',cat:'채광 광물'},
+  // 재배 씨앗
+  {key:'farming_seed_tomato', label:'토마토 씨앗', color:'#d94f3d',cat:'재배 씨앗'},
+  {key:'farming_seed_onion',  label:'양파 씨앗',   color:'#c89c00',cat:'재배 씨앗'},
+  {key:'farming_seed_garlic', label:'마늘 씨앗',   color:'#9ab0c8',cat:'재배 씨앗'},
+  // 재배 작물
+  {key:'farming_crop_pumpkin',    label:'호박 묶음',     color:'#e07b2a',cat:'재배 작물'},
+  {key:'farming_crop_potato',     label:'감자 묶음',     color:'#c8a060',cat:'재배 작물'},
+  {key:'farming_crop_carrot',     label:'당근 묶음',     color:'#e67e22',cat:'재배 작물'},
+  {key:'farming_crop_beet',       label:'비트 묶음',     color:'#9e3a5a',cat:'재배 작물'},
+  {key:'farming_crop_watermelon', label:'수박 묶음',     color:'#3a9e68',cat:'재배 작물'},
+  {key:'farming_crop_sweetfruit', label:'달콤한 열매',   color:'#d94f3d',cat:'재배 작물'},
+  {key:'farming_crop_sugar',      label:'설탕 큐브',     color:'#9090a0',cat:'재배 작물'},
+  {key:'farming_crop_hay',        label:'건초더미',      color:'#c8a020',cat:'재배 작물'},
+  // 고기류
+  {key:'farming_other_steak',           label:'스테이크',      color:'#8b4513',cat:'고기류'},
+  {key:'farming_other_pork',            label:'익힌 돼지고기', color:'#c07050',cat:'고기류'},
+  {key:'farming_other_pork_belly',      label:'익힌 삼겹살',   color:'#c06040',cat:'고기류'},
+  {key:'farming_other_pork_front',      label:'익힌 앞다리살', color:'#b86050',cat:'고기류'},
+  {key:'farming_other_lamb',            label:'익힌 양고기',   color:'#a07860',cat:'고기류'},
+  {key:'farming_other_lamb_rib',        label:'익힌 양 갈비살',color:'#987060',cat:'고기류'},
+  {key:'farming_other_lamb_leg',        label:'익힌 양 다리살',color:'#906858',cat:'고기류'},
+  {key:'farming_other_chicken',         label:'익힌 닭고기',   color:'#c89050',cat:'고기류'},
+  {key:'farming_other_chicken_leg',     label:'익힌 닭 다리살',color:'#c08040',cat:'고기류'},
+  {key:'farming_other_chicken_breast',  label:'익힌 닭 가슴살',color:'#c09060',cat:'고기류'},
+  {key:'farming_other_beef_sirloin',    label:'익힌 소 등심',  color:'#a04030',cat:'고기류'},
+  {key:'farming_other_beef_rib',        label:'익힌 소 갈비살',color:'#983828',cat:'고기류'},
+  // 기타 재배
+  {key:'farming_other_coconut',   label:'코코넛',   color:'#8b6914',cat:'기타 재배'},
+  {key:'farming_other_pineapple', label:'파인애플', color:'#c8a000',cat:'기타 재배'},
+  // 채광 기타
+  {key:'mining_skillPulse', label:'스킬 펄스',       color:'#3d6fd4',cat:'채광 기타'},
+  {key:'mining_artifactPt', label:'유물 포인트/100pt',color:'#c89c00',cat:'채광 기타'},
+  {key:'mining_charcoal',   label:'목탄',            color:'#404050',cat:'채광 기타'},
+  {key:'mining_wood',       label:'나무',            color:'#8b6340',cat:'채광 기타'},
+  {key:'mining_diorite',    label:'섬록암',          color:'#d0d0d0',cat:'채광 기타'},
+  {key:'mining_tuff',       label:'응회암',          color:'#9090a0',cat:'채광 기타'},
+  {key:'mining_andesite',   label:'안산암',          color:'#b0b0b8',cat:'채광 기타'},
+];
+
+const PRESETS = [
+  {label:'🌊 해양 어패류',   emoji:'🌊', keys: ITEMS.filter(x=>x.cat==='해양 어패류').map(x=>x.key)},
+  {label:'🐟 물고기 회',     emoji:'🐟', keys: ITEMS.filter(x=>x.cat==='물고기 회').map(x=>x.key)},
+  {label:'🪸 죽은 산호',     emoji:'🪸', keys: ITEMS.filter(x=>x.cat==='죽은 산호').map(x=>x.key)},
+  {label:'⛏️ 채광 주괴',    emoji:'⛏️', keys: ITEMS.filter(x=>x.cat==='채광 주괴').map(x=>x.key)},
+  {label:'💎 채광 보석',     emoji:'💎', keys: ITEMS.filter(x=>x.cat==='채광 보석').map(x=>x.key)},
+  {label:'🪨 라이프스톤',    emoji:'🪨', keys: ITEMS.filter(x=>x.cat==='라이프스톤').map(x=>x.key)},
+  {label:'🌱 재배 씨앗',     emoji:'🌱', keys: ITEMS.filter(x=>x.cat==='재배 씨앗').map(x=>x.key)},
+  {label:'🌾 재배 작물',     emoji:'🌾', keys: ITEMS.filter(x=>x.cat==='재배 작물').map(x=>x.key)},
+  {label:'🥩 고기류',        emoji:'🥩', keys: ITEMS.filter(x=>x.cat==='고기류').map(x=>x.key)},
+];
+
+const CATS = [...new Set(ITEMS.map(x=>x.cat))];
+const byKey = Object.fromEntries(ITEMS.map(x=>[x.key,x]));
+const SET = 64;
+
+// 상태
+let _sync     = null;
+let _history  = [];
+let _selected = new Set();
+let _range    = 14;
+let _chart    = null;
+
+// ── 초기화 ──
+window.addEventListener('DOMContentLoaded', () => {
+  const saved = localStorage.getItem('sheetsUrl');
+  if (saved) document.getElementById('urlInput').value = saved;
+  buildPresets();
+  buildItems('');
+  // 기간 직접입력 기본값
+  const to = new Date(), from = new Date();
+  from.setDate(to.getDate() - 29);
+  document.getElementById('dateTo').value   = to.toISOString().slice(0,10);
+  document.getElementById('dateFrom').value = from.toISOString().slice(0,10);
+});
+
+window.saveUrl = () => {
+  const url = document.getElementById('urlInput').value.trim();
+  if (url) localStorage.setItem('sheetsUrl', url);
+};
+
+// ── 빠른 선택 ──
+function buildPresets() {
+  const wrap = document.getElementById('presetWrap');
+  for (const p of PRESETS) {
+    const btn = document.createElement('button');
+    btn.className = 'preset-btn';
+    btn.innerHTML = `<span>${p.label}</span><span class="preset-count">${p.keys.length}개</span>`;
+    btn.onclick = () => { selectKeys(p.keys); drawChart(); };
+    wrap.appendChild(btn);
+  }
+}
+
+// ── 항목 리스트 ──
+function buildItems(q) {
+  const wrap = document.getElementById('itemList');
+  wrap.innerHTML = '';
+  const lower = q.toLowerCase();
+  for (const cat of CATS) {
+    const items = ITEMS.filter(x => x.cat===cat && (!q || x.label.includes(lower) || x.key.includes(lower)));
+    if (!items.length) continue;
+    const sec = document.createElement('div');
+    sec.className = 'cat-section';
+    const titleBar = document.createElement('div');
+    titleBar.className = 'cat-title';
+    titleBar.innerHTML = `<span>${cat}</span><span class="cat-toggle" onclick="toggleCat(this,'${cat}')">전체 선택</span>`;
+    const chips = document.createElement('div');
+    chips.className = 'chips';
+    for (const item of items) {
+      const chip = makeChip(item);
+      chips.appendChild(chip);
+    }
+    sec.appendChild(titleBar);
+    sec.appendChild(chips);
+    wrap.appendChild(sec);
+  }
+}
+
+function makeChip(item) {
+  const chip = document.createElement('button');
+  chip.className = 'chip' + (_selected.has(item.key) ? ' on' : '');
+  chip.textContent = item.label;
+  chip.dataset.key = item.key;
+  chip.style.setProperty('--chip-c', item.color);
+  chip.onclick = () => {
+    _selected.has(item.key) ? _selected.delete(item.key) : _selected.add(item.key);
+    chip.classList.toggle('on', _selected.has(item.key));
+    drawChart();
+  };
+  return chip;
+}
+
+window.filterItems = () => buildItems(document.getElementById('searchInput').value);
+
+window.toggleCat = (btn, cat) => {
+  const catItems = ITEMS.filter(x=>x.cat===cat);
+  const allOn = catItems.every(x=>_selected.has(x.key));
+  catItems.forEach(x => allOn ? _selected.delete(x.key) : _selected.add(x.key));
+  btn.textContent = allOn ? '전체 선택' : '전체 해제';
+  document.querySelectorAll('.chip').forEach(c => {
+    if (catItems.find(x=>x.key===c.dataset.key))
+      c.classList.toggle('on', _selected.has(c.dataset.key));
+  });
+  drawChart();
+};
+
+function selectKeys(keys) {
+  _selected = new Set(keys);
+  document.querySelectorAll('.chip').forEach(c =>
+    c.classList.toggle('on', _selected.has(c.dataset.key))
+  );
+}
+
+window.clearAll = () => {
+  _selected = new Set();
+  document.querySelectorAll('.chip').forEach(c => c.classList.remove('on'));
+  drawChart();
+};
+
+// ── 기간 ──
+window.setRange = (days, btn) => {
+  _range = days;
+  document.querySelectorAll('.range-btn').forEach(b => b.classList.remove('range-on'));
+  btn.classList.add('range-on');
+  document.getElementById('customRange').style.display = days===-1 ? 'flex':'none';
+  if (days !== -1) drawChart();
+};
+
+// ── 데이터 불러오기 ──
+window.loadData = async (force=false) => {
+  const url = document.getElementById('urlInput').value.trim();
+  if (!url) { setStatus('❌ URL을 입력해주세요','#d94f3d'); return; }
+  if (!_sync || _sync.url!==url) _sync = new SheetsSync(url);
+  setStatus('⏳ 데이터 불러오는 중...','#c89c00');
+  try {
+    const data = await _sync.fetchAll(force);
+    _history = data.history || [];
+    setStatus(`✅ ${_history.length}일치 데이터 로드 완료 · 최신: ${_history[_history.length-1]?.date||'-'}`, '#3a9e68');
+    if (_selected.size>0) drawChart();
+  } catch(e) { setStatus('❌ 실패: '+e.message,'#d94f3d'); }
+};
+
+function setStatus(msg, color='#607090') {
+  const el=document.getElementById('status');
+  el.textContent=msg; el.style.color=color;
+}
+
+// ── 차트 그리기 ──
+window.drawChart = () => {
+  const canvas  = document.getElementById('chartCanvas');
+  const empty   = document.getElementById('chartEmpty');
+  const tagList = document.getElementById('tagList');
+  const meta    = document.getElementById('chartMeta');
+
+  if (!_selected.size) {
+    canvas.style.display='none'; empty.style.display='flex';
+    tagList.innerHTML=''; meta.textContent=''; return;
+  }
+
+  // 기간 필터
+  let hist = [..._history].sort((a,b)=>a.date.localeCompare(b.date));
+  if (_range===0) {
+    // 전체
+  } else if (_range===-1) {
+    const from=document.getElementById('dateFrom').value;
+    const to  =document.getElementById('dateTo').value;
+    if (from) hist=hist.filter(h=>h.date>=from);
+    if (to)   hist=hist.filter(h=>h.date<=to);
+  } else {
+    const cut=new Date(); cut.setDate(cut.getDate()-_range+1);
+    hist=hist.filter(h=>h.date>=cut.toISOString().slice(0,10));
+  }
+
+  const isSet = document.getElementById('setCheck').checked;
+  const selArr = [..._selected];
+  const dates  = hist.map(h=>h.date);
+
+  const datasets = selArr.map(key => {
+    const item = byKey[key]||{label:key,color:'#607090'};
+    return {
+      label: item.label,
+      data: hist.map(h=>{
+        const v=h.prices?.[key];
+        return (v!==undefined&&v!==null) ? (isSet?v*SET:v) : null;
+      }),
+      borderColor: item.color,
+      backgroundColor: item.color+'22',
+      tension:0.3, pointRadius:3, fill:false, spanGaps:true, borderWidth:2,
+    };
+  });
+
+  canvas.style.display='block'; empty.style.display='none';
+
+  if (_chart) _chart.destroy();
+  _chart = new Chart(canvas, {
+    type:'line',
+    data:{ labels:dates, datasets },
+    options:{
+      responsive:true, maintainAspectRatio:false,
+      interaction:{mode:'index',intersect:false},
+      plugins:{
+        legend:{
+          position:'top',
+          labels:{font:{family:'Noto Sans KR',weight:'700'},padding:12,boxWidth:12,usePointStyle:true,color:'#1e2419'}
+        },
+        tooltip:{
+          backgroundColor:'#fff',
+          borderColor:'#e2ddd6',
+          borderWidth:1,
+          titleColor:'#1e2419',
+          bodyColor:'#7a7468',
+          callbacks:{label:c=>`${c.dataset.label}: ${c.parsed.y?.toLocaleString()}원${isSet?'/세트':'/개'}`}
+        },
+      },
+      scales:{
+        x:{
+          ticks:{maxTicksLimit:10,font:{size:11},color:'#7a7468'},
+          grid:{color:'rgba(30,36,25,0.05)'},
+          border:{color:'#e2ddd6'},
+        },
+        y:{
+          ticks:{callback:v=>v.toLocaleString()+'원',font:{size:11},color:'#7a7468'},
+          grid:{color:'rgba(30,36,25,0.05)'},
+          border:{color:'#e2ddd6'},
+        },
+      },
+    },
+  });
+
+  // 태그
+  tagList.innerHTML='';
+  for (const key of selArr) {
+    const item=byKey[key]||{label:key,color:'#607090'};
+    const tag=document.createElement('span');
+    tag.className='tag';
+    tag.style.setProperty('--chip-c',item.color);
+    tag.innerHTML=`${item.label}<button class="tag-del" onclick="removeKey('${key}')">✕</button>`;
+    tagList.appendChild(tag);
+  }
+
+  // 세트 토글 라벨
+  document.getElementById('togLabel').textContent = isSet?'세트당':'개당';
+
+  // 메타
+  const rangeLabel = _range===0?'전체':_range===-1?'직접입력':_range+'일';
+  meta.textContent = `${selArr.length}개 항목 · ${rangeLabel} · ${isSet?'세트당':'개당'}`;
+};
+
+window.removeKey = key => {
+  _selected.delete(key);
+  document.querySelectorAll(`.chip[data-key="${key}"]`).forEach(c=>c.classList.remove('on'));
+  drawChart();
+};
+</script>
+</body>
+</html>

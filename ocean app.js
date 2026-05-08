@@ -4,9 +4,13 @@
 ════════════════════════════════════════ */
 
 import {
-  SKILLS, ENGRAVING, ROD, OCEAN, CLAM, CRAFTS, ALCHEMY, PRECISION_ALCHEMY, VANILLA_META,
-  SEAFOOD_TYPES, UNITS, DEFAULT_PRICES,
-} from './ocean%20config.js?v=2';
+  OCEAN_SKILLS as SKILLS, 
+  OCEAN_ENGRAVING as ENGRAVING, 
+  OCEAN_DEFAULT_PRICES as DEFAULT_PRICES,
+  ROD, OCEAN, CLAM, CRAFTS, ALCHEMY, PRECISION_ALCHEMY, VANILLA_META,
+  SEAFOOD_TYPES, UNITS,
+} from './config.js';
+
 
 
 /* ════════════════════════════════════════
