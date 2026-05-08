@@ -4,9 +4,12 @@
 ════════════════════════════════════════ */
 
 import {
-  SKILLS, ENGRAVING, ROD, OCEAN, CLAM, CRAFTS, ALCHEMY, PRECISION_ALCHEMY, VANILLA_META,
-  SEAFOOD_TYPES, UNITS, DEFAULT_PRICES,
-} from './ocean%20config.js?v=2';
+  OCEAN_SKILLS as SKILLS,
+  OCEAN_ENGRAVING as ENGRAVING,
+  ROD, OCEAN, CLAM, CRAFTS, ALCHEMY, PRECISION_ALCHEMY, VANILLA_META,
+  SEAFOOD_TYPES, UNITS,
+  OCEAN_DEFAULT_PRICES as DEFAULT_PRICES,
+} from './config.js?v=2';
 
 
 /* ════════════════════════════════════════
@@ -39,12 +42,11 @@ const TAB_TITLES = ['하루 수익 예상','시세 입력','연금 최적화'];
 ════════════════════════════════════════ */
 window.sw = (i, el) => {
   document.querySelectorAll('.tab').forEach(t => t.classList.remove('on'));
-  [0,1,2].forEach(k => { const p = document.getElementById('t'+k); if (p) p.style.display = 'none'; });
+  [0,1,2,3].forEach(k => { const p = document.getElementById('t'+k); if (p) p.style.display = 'none'; });
   el.classList.add('on');
   document.getElementById('t'+i).style.display = 'block';
   const t = document.getElementById('pageTabTitle'); if (t) t.textContent = TAB_TITLES[i];
   document.title = `해양 계산기 — ${TAB_TITLES[i]}`;
-  // 탭2 전환 시 자동 계산 안 함 — 버튼으로만 실행
 };
 
 
