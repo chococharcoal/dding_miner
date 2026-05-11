@@ -784,25 +784,12 @@ function renderOptResult({ planEntries, finalAnalysis, workInv, totalRev, totalV
         +` &nbsp;·&nbsp; ⏱️ ${fmtTime(totalSecCard)}</div>`
         +`</div><div class="cfc-header-right"><div class="cfc-count">${cntDisplay}</div></div></div>`;
 
-      // 필요 어패류 (보유 중간재료로 절감되는 어패류 별도 표시)
       const sfEntries=Object.entries(sfUsed).filter(([,v])=>v>0);
       if(sfEntries.length){
         html+=`<div class="cfc-section"><div class="cfc-section-label">📦 필요 어패류</div><div class="sf-chip-wrap">`;
-        // 보유 중간재료로 얼마나 절감되는지 계산
-        const sfSaved={}; // { sfKey: 절감량 }
-        for(const[iKey,iQty]of Object.entries(intermHave)){
-          const rec=ALCHEMY[iKey];if(!rec)continue;
-          const SF_SET2=new Set(SF_TYPES.flatMap(s=>SF_TIERS.map(t=>`${s}${t}`)));
-          function walkSaved(k,q,d=0){if(d>15||q<=0)return;if(SF_SET2.has(k)){sfSaved[k]=(sfSaved[k]||0)+q;return;}const r=ALCHEMY[k];if(!r)return;const b=q/(r.output||1);for(const[mk,mq]of Object.entries(r.materials))walkSaved(mk,mq*b,d+1);}
-          walkSaved(iKey,iQty);
-        }
         for(const[k,v]of sfEntries){
           const cl=getMatColor(k),nm=getMatName(k);
-          const saved=Math.min(sfSaved[k]||0,v);
-          const needAfter=Math.max(0,v-saved);
-          let qtyStr=fmtQty(Math.round(needAfter));
-          if(saved>0)qtyStr+=` <span style="font-size:9px;opacity:.6">+보유${fmtQty(Math.round(saved))}</span>`;
-          html+=`<div class="sf-chip" style="--chip-color:${cl}"><span class="sc-name">${nm}</span><span class="sc-qty">${qtyStr}</span></div>`;
+          html+=`<div class="sf-chip" style="--chip-color:${cl}"><span class="sc-name">${nm}</span><span class="sc-qty">${fmtQty(Math.round(v))}</span></div>`;
         }
         html+=`</div></div>`;
       }
@@ -818,15 +805,31 @@ function renderOptResult({ planEntries, finalAnalysis, workInv, totalRev, totalV
       // 공통 칩 스타일 (크기 동일)
       const chipBase = 'display:inline-flex;align-items:center;gap:3px;border-radius:6px;padding:2px 7px;font-size:11px;white-space:nowrap;font-weight:700';
 
+      // 상위 재료(핵/결정) 보유 시 하위(정수/에센스) 보유 표시 제외
+      const skipHave=new Set();
+      for(const[k,q]of Object.entries(intermHave)){
+        if(q<=0)continue;
+        const r=ALCHEMY[k];if(!r)continue;
+        if(r.reversible===false)for(const mk2 of Object.keys(r.materials||{}))skipHave.add(mk2);
+      }
+      // 보유 중간재료 소진 추적 (완성품 카드 내에서만)
+      const iRemain={...intermHave};
+
       function matChips(matObj, batchMul) {
         return Object.entries(matObj).filter(([,v])=>v>0)
           .map(([mk,mq])=>{
             const totalQ = Math.ceil(mq*batchMul);
             const col = getMatColor(mk);
-            const haveQ = intermHave[mk]||0;
-            const needQ = Math.max(0,totalQ-haveQ);
-            let qtyStr = fmtQty(needQ);
-            if(haveQ>0&&haveQ<=totalQ) qtyStr+=` <span style="font-size:9px;opacity:.6">+보유${fmtQty(Math.min(haveQ,totalQ))}</span>`;
+            let qtyStr = fmtQty(totalQ);
+            if(!skipHave.has(mk)){
+              const avail=iRemain[mk]||0;
+              if(avail>0){
+                const use=Math.min(avail,totalQ);
+                iRemain[mk]=avail-use;
+                const needQ=Math.max(0,totalQ-use);
+                qtyStr=`${fmtQty(needQ)} <span style="font-size:9px;opacity:.6">+보유${fmtQty(use)}</span>`;
+              }
+            }
             return `<span style="${chipBase};background:var(--bg);border:1.5px solid ${col}44"><span style="color:${col}">${dispName(mk)}</span> <span style="color:var(--txt)">${qtyStr}</span></span>`;
           })
           .join(' ');
@@ -953,21 +956,45 @@ function renderOptResult({ planEntries, finalAnalysis, workInv, totalRev, totalV
       const tSec=timeSec[secKey]*(1-fr);
       let s=`<div class="craft-flow-card" style="--tier-color:${accentColor};margin-bottom:10px">`;
       s+=`<div class="cfc-header" style="border-left-color:${accentColor}">`;
-      s+=`<div class="cfc-header-left"><div class="cfc-name" style="font-size:14px">${emoji} ${label} <span style="font-size:11px;color:${accentColor};font-weight:700;margin-left:4px">⏱️ ${fmtTime(tSec)}</span></div></div>`;
+      s+=`<div class="cfc-header-left"><div class="cfc-name" style="font-size:14px">${emoji} ${label}</div></div>`;
+      s+=`<div class="cfc-header-right"><div style="font-size:12px;color:${accentColor};font-weight:700">⏱️ ${fmtTime(tSec)}</div></div>`;
       s+=`</div><div class="cfc-section" style="padding:8px 14px">`;
 
       const chipB='display:inline-flex;align-items:center;gap:3px;border-radius:6px;padding:2px 7px;font-size:11px;white-space:nowrap;font-weight:700;justify-content:center';
       const lStyle='display:flex;align-items:center;flex-wrap:wrap;gap:5px;padding:5px 0;border-bottom:1px dashed var(--bdr)';
+
+      // 보유 중간재료 소진 추적 (stageSection 호출마다 독립적으로 사용)
+      const intermRemain={...intermHave};
+
+      // 상위 재료(핵/결정/영약)가 보유되어 있으면 하위(정수/에센스/엘릭서)에 표시 안 함
+      // → 이미 calcOpt에서 어패류 등가로 전환했으므로 단계별 표시에서만 처리
+      // 핵/결정/영약 보유량이 있으면 그 재료의 하위 재료는 보유 표시 제외
+      const skipHaveDisplay=new Set();
+      for(const[k,q]of Object.entries(intermHave)){
+        if(q<=0)continue;
+        const rec=ALCHEMY[k];if(!rec)continue;
+        if(rec.reversible===false){
+          // 이 핵/결정/영약이 필요로 하는 하위 재료들은 보유 표시 제외
+          for(const mk2 of Object.keys(rec.materials||{}))skipHaveDisplay.add(mk2);
+        }
+      }
 
       for(const[key,qty]of entries){
         const rec=ALCHEMY[key]||PRECISION_ALCHEMY[key];
         const fa2=finalAnalysis[key];
         const isPA=!!PRECISION_ALCHEMY[key];
         const name=(fa2?.name||rec?.name||key).replace(/★+\s*/g,'').replace(/\s*★+/g,'').trim();
-        // 색상: 완성품은 finColors, 핵/결정/영약은 compoundColors, 나머지는 rec.color
         const color2=isPA
           ?(finColors[key]||tierColors[fa2.tier]||'#607090')
           :(compoundColors[key]||rec?.color||'#607090');
+
+        // 이 항목의 제작 시간 계산
+        const recAlch=ALCHEMY[key];
+        let itemSec=0;
+        if(!isPA&&recAlch){
+          const batchN=Math.ceil(qty/(recAlch.output||1));
+          itemSec=batchN*(recAlch.craftTimeSec||0)*(1-fr);
+        }
 
         const batchNeeded=Math.ceil(qty/((rec?.output)||1));
         const matSource=isPA?PRECISION_ALCHEMY[key]?.materials:rec?.materials;
@@ -976,18 +1003,21 @@ function renderOptResult({ planEntries, finalAnalysis, workInv, totalRev, totalV
             const totalQ=isPA?mq*qty:Math.ceil(mq*batchNeeded);
             const col=getMatColor(mk);
             const nm=getMatName(mk).replace(/\s*★+/g,'').trim();
-            // 보유 중간재료가 있으면 차감 표시
-            const haveQ=intermHave[mk]||0;
+            // 보유 중간재료 소진 방식으로 차감 (1번만 표시)
             let qtyStr=fmtQty(totalQ);
-            if(!isPA&&haveQ>0){
-              const needQ=Math.max(0,totalQ-haveQ);
-              qtyStr=`${fmtQty(needQ)} <span style="font-size:9px;opacity:.6">+보유${fmtQty(haveQ)}</span>`;
+            if(!isPA&&!skipHaveDisplay.has(mk)){
+              const avail=intermRemain[mk]||0;
+              if(avail>0){
+                const use=Math.min(avail,totalQ);
+                intermRemain[mk]=avail-use;
+                const needQ=Math.max(0,totalQ-use);
+                qtyStr=`${fmtQty(needQ)} <span style="font-size:9px;opacity:.6">+보유${fmtQty(use)}</span>`;
+              }
             }
             return `<span style="${chipB};background:var(--bg);border:1.5px solid ${col}44"><span style="color:${col}">${nm}</span> <span style="color:var(--txt)">${qtyStr}</span></span>`;
           }).join(' ');
 
         s+=`<div style="${lStyle}">`;
-        // 완성품이면 50개 단위 분할 표시
         let qtyDisplay=fmtQty(qty);
         if(isPA&&qty>50){
           const parts=[];let rem=qty;
@@ -999,8 +1029,9 @@ function renderOptResult({ planEntries, finalAnalysis, workInv, totalRev, totalV
           s+=`<span style="color:var(--bdr2);font-size:13px;font-weight:900;flex-shrink:0">·</span>`;
           s+=matParts;
         }
-        if(isPA){
-          // 단계별 보기에서는 수익 표시 안 함 (마지막 합산으로 대신)
+        // 중간재료 항목에 개별 시간 표시 (오른쪽 끝)
+        if(!isPA&&itemSec>0){
+          s+=`<span style="margin-left:auto;font-size:10px;color:var(--muted);flex-shrink:0">⏱️ ${fmtTime(itemSec)}</span>`;
         }
         s+=`</div>`;
       }
