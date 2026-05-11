@@ -329,16 +329,15 @@ async function calcOpt() {
   });
 
   // 중간재료를 하위 어패류 등가로 전개해서 inv에 가산
-  // reversible:true  (정수/에센스/엘릭서) → 어패류로 분해 가능 → inv에 어패류 등가 가산
-  // reversible:false (핵/결정/영약)       → 분해 불가 → inv에 직접 추가 후 제작 시 소진
+  // reversible:true  → 어패류로 분해 가능 → 하위 어패류로 전개
+  // reversible:false → 분해 불가이지만, 보유한 경우 해당 재료가 필요로 하는 어패류를
+  //                    절감해주므로 동일하게 어패류 등가로 전개해서 inv에 가산
   {
     const SF_SET = new Set(SF_TYPES.flatMap(sf => SF_TIERS.map(t => `${sf}${t}`)));
     function expandIntermToSF(key, qty, depth=0) {
       if (depth > 15 || qty <= 0) return;
       if (SF_SET.has(key)) { inv[key] = (inv[key]||0) + qty; return; }
       const rec = ALCHEMY[key]; if (!rec) return;
-      // reversible:false(핵/결정/영약) → 분해 불가, inv에 그대로 보관
-      if (rec.reversible === false) { inv[key] = (inv[key]||0) + qty; return; }
       const output = rec.output || 1;
       const batches = qty / output;
       for (const [mk, mq] of Object.entries(rec.materials))
@@ -361,15 +360,6 @@ async function calcOpt() {
   // 재고 소비: 어패류(업글 포함) + 핵/결정/영약(reversible:false) 직접 보유분 우선 소비
   function consumeSF(sfKey, need, curInv) {
     const needInt = Math.ceil(need);
-    // 핵/결정/영약: 직접 보유량 먼저 차감, 부족분은 어패류로 충당 (어패류 차감은 별도)
-    if (ALCHEMY[sfKey]?.reversible === false) {
-      const have = curInv[sfKey] || 0;
-      const useFromStock = Math.min(have, needInt);
-      curInv[sfKey] = have - useFromStock;
-      // 부족분이 있으면 어패류로 만들어야 하지만 consumeSF는 어패류 키만 처리
-      // → 부족분은 이미 sfNeed에 어패류로 포함돼 있으므로 별도 처리 불필요
-      return true; // 항상 성공 (sfNeed가 어패류 기준으로 이미 계산됨)
-    }
     const m=sfKey.match(/^(oyster|conch|octopus|seaweed|urchin)(\d)$/); if(!m)return false;
     const sf=m[1], tier=+m[2];
     let have=curInv[sfKey]||0, remaining=needInt-have;
@@ -440,13 +430,6 @@ async function calcOpt() {
     for (const [sf, need] of Object.entries(sfNeed)) {
       if (need <= 0) continue;
       const needInt = Math.ceil(need);
-      // 핵/결정/영약 직접 보유분은 차감 후 나머지를 어패류로 충당
-      // sfNeed는 어패류 기준으로 계산됐으므로 직접 보유분만큼 어패류 여유 생김
-      if (ALCHEMY[sf]?.reversible === false) {
-        // 직접 보유분은 어패류 0개 필요, 나머지는 sfNeed에 이미 포함
-        // → maxMake 제한 없음 (어패류 체크에서 처리)
-        continue;
-      }
       const tier = parseInt(sf.slice(-1));
       let avail = curInv[sf] || 0;
       if (tier === 2) avail += Math.floor((curInv[sf.replace('2','1')]||0) / 3);
@@ -637,7 +620,12 @@ async function calcOpt() {
   await new Promise(r => setTimeout(r, 20));
 
   const planEntries=Object.entries(bestPlan).filter(([,cnt])=>cnt>0)
-    .sort((a,b)=>finalAnalysis[b[0]].tier-finalAnalysis[a[0]].tier||finalAnalysis[b[0]].sellPrice-finalAnalysis[a[0]].sellPrice);
+    .sort((a,b)=>{
+      const ta=finalAnalysis[a[0]].tier, tb=finalAnalysis[b[0]].tier;
+      // 0성은 맨 뒤, 나머지는 1→2→3 오름차순
+      const ra=ta===0?99:ta, rb=tb===0?99:tb;
+      return ra-rb || finalAnalysis[b[0]].sellPrice-finalAnalysis[a[0]].sellPrice;
+    });
 
   if(!planEntries.length){
     _cachedOptResult = null;
@@ -693,28 +681,20 @@ function renderOptResult({ planEntries, finalAnalysis, workInv, totalRev, totalV
   // 1성: 딥퍼플 / 라벤더 / 살구핑크
   // 2성: 다크슬레이트 / 핫핑크 / 스카이블루
   // 3성: 라일락 / 틸 / 딥로즈
+  // tier 색상: 1성=초록, 2성=파랑, 3성=빨강, 0성=노랑
   const tierColors={
-    0:'#607090',
-    1:'#5a3fd4',   // 1성 섹션 헤더색
-    2:'#3a3060',   // 2성 섹션 헤더색
-    3:'#9070d4',   // 3성 섹션 헤더색
+    0:'#c8920a',  // 노랑 (0성)
+    1:'#1e9e58',  // 초록 (1성)
+    2:'#2060c8',  // 파랑 (2성)
+    3:'#c82828',  // 빨강 (3성)
   };
-  // 완성품별 개별 색상
+  // 완성품별 색상 — 같은 tier는 명도/채도 변주, 어패류색과 차별화
   const finColors={
-    // 1성 - 밝은 파랑 / 밝은 라벤더 / 밝은 산호
-    LEVIATHAN: '#4a8fd4',
-    KRAKEN:    '#9098e8',
-    AQUTIS:    '#e87878',
-    // 2성 - 밝은 인디고 / 밝은 핫핑크 / 밝은 스카이블루
-    SEA_WING:  '#6258c8',
-    DEEP_VIAL: '#e84888',
-    WAVE_CORE: '#3a9ae8',
-    // 3성 - 밝은 바이올렛 / 밝은 민트틸 / 밝은 핑크로즈
-    ABYSS_SPINE:'#a878e8',
-    NAUTILUS:   '#38bca8',
-    AQUA_PULSE: '#d84888',
+    LEVIATHAN: '#1e9e58', KRAKEN: '#1e9e58', AQUTIS: '#1e9e58',
+    SEA_WING:  '#2060c8', DEEP_VIAL: '#2060c8', WAVE_CORE: '#2060c8',
+    ABYSS_SPINE:'#c82828', NAUTILUS: '#c82828', AQUA_PULSE: '#c82828',
   };
-  // 핵/결정/영약 색상 (하늘/주황/보라/진빨/밝은초록 순)
+  // 핵/결정/영약: tier 색상 기반으로 통일 (개별 항목은 기존 유지)
   const compoundColors={
     core_guard:    '#4db8e8', core_wave:'#f0853a', core_chaos:'#9060c8', core_life:'#c03040', core_corrosion:'#48c070',
     crystal_vitality:'#4db8e8', crystal_erosion:'#f0853a', crystal_defense:'#9060c8', crystal_torrent:'#c03040', crystal_poison:'#48c070',
@@ -970,16 +950,16 @@ function renderOptResult({ planEntries, finalAnalysis, workInv, totalRev, totalV
       return s;
     }
 
-    html+=stageSection('정수 제작',   '⚗️', agg.ess1,'ess1','#5a7ab8', essOrder1);
-    html+=stageSection('핵 제작',     '💠', agg.core, 'core','#4db8e8', coreOrder);
-    html+=stageSection('1성 완성품',  '★',  agg.fin1, 'fin1','#5a3fd4', fin1Order);
-    html+=stageSection('에센스 제작', '⚗️', agg.ess2, 'ess2','#6a5a9a', essOrder2);
-    html+=stageSection('결정 제작',   '💎', agg.crys, 'crys','#4db8e8', crysOrder);
-    html+=stageSection('2성 완성품',  '★★', agg.fin2, 'fin2','#3a3060', fin2Order);
-    html+=stageSection('엘릭서 제작', '⚗️', agg.ess3, 'ess3','#8a6aaa', essOrder3);
-    html+=stageSection('영약 제작',   '🧪', agg.poti, 'poti','#4db8e8', potiOrder);
-    html+=stageSection('3성 완성품',  '★★★',agg.fin3,'fin3','#9070d4', fin3Order);
-    html+=stageSection('0성 완성품',  '🔬', agg.fin0, 'fin0','#607090', null);
+    html+=stageSection('정수 제작',   '⚗️', agg.ess1,'ess1','#1e9e58', essOrder1);
+    html+=stageSection('핵 제작',     '💠', agg.core, 'core','#1e9e58', coreOrder);
+    html+=stageSection('1성 완성품',  '★',  agg.fin1, 'fin1','#1e9e58', fin1Order);
+    html+=stageSection('에센스 제작', '⚗️', agg.ess2, 'ess2','#2060c8', essOrder2);
+    html+=stageSection('결정 제작',   '💎', agg.crys, 'crys','#2060c8', crysOrder);
+    html+=stageSection('2성 완성품',  '★★', agg.fin2, 'fin2','#2060c8', fin2Order);
+    html+=stageSection('엘릭서 제작', '⚗️', agg.ess3, 'ess3','#c82828', essOrder3);
+    html+=stageSection('영약 제작',   '🧪', agg.poti, 'poti','#c82828', potiOrder);
+    html+=stageSection('3성 완성품',  '★★★',agg.fin3,'fin3','#c82828', fin3Order);
+    html+=stageSection('0성 완성품',  '🔬', agg.fin0, 'fin0','#c8920a', null);
 
     // 단계별 보기 수익 합산
     const allFinAgg = {...agg.fin0,...agg.fin1,...agg.fin2,...agg.fin3};
@@ -993,7 +973,7 @@ function renderOptResult({ planEntries, finalAnalysis, workInv, totalRev, totalV
       html+=`</div><div class="cfc-section" style="padding:8px 14px">`;
       const lStyle='display:flex;align-items:center;gap:8px;padding:4px 0;border-bottom:1px dashed var(--bdr)';
       // tier 순서로 정렬
-      const orderedFin=[...fin3Order,...fin2Order,...fin1Order,'DILUTED_EXTRACT']
+      const orderedFin=[...fin1Order,...fin2Order,...fin3Order,'DILUTED_EXTRACT']
         .filter(k=>allFinAgg[k]>0).map(k=>[k,allFinAgg[k]]);
       const restFin=finSummaryEntries.filter(([k])=>!orderedFin.find(([ok])=>ok===k));
       for(const[key,qty]of[...orderedFin,...restFin]){
@@ -1043,35 +1023,30 @@ function renderOptResult({ planEntries, finalAnalysis, workInv, totalRev, totalV
     html+=`</div></div>`;
   }
 
-  // 잉여 중간재료 계산: essence/에센스/엘릭서(output:2 또는 1)를 사용할 때
-  // 필요량이 output의 배수가 아니면 1개 잉여 발생
-  // 모든 완성품에 걸쳐 essence 종류별 총 필요량을 합산 후 한 번에 계산
-  const essenceNeeded = {}; // { essenceKey: 총 필요 개수 }
+  // 잉여 중간재료 계산: essence 종류별 총 필요량 합산 후 잉여 계산
+  const essenceNeeded = {};
+  function walkForEssence(key, qty, depth=0) {
+    if (depth > 12 || qty <= 0) return;
+    const rec = ALCHEMY[key]; if (!rec) return;
+    if (rec.type === 'essence') {
+      essenceNeeded[key] = (essenceNeeded[key] || 0) + qty;
+      return;
+    }
+    const output = rec.output || 1;
+    const batches = Math.ceil(qty / output);
+    for (const [mk, mq] of Object.entries(rec.materials)) walkForEssence(mk, mq * batches, depth+1);
+  }
   for (const [fKey, cnt] of planEntries) {
     const fRec = PRECISION_ALCHEMY[fKey];
-    function walkForEssence(key, qty, depth=0) {
-      if (depth > 12 || qty <= 0) return;
-      const rec = ALCHEMY[key]; if (!rec) return;
-      if (rec.type === 'essence') {
-        essenceNeeded[key] = (essenceNeeded[key] || 0) + qty;
-        return;
-      }
-      // compound → essence 하위로
-      const output = rec.output || 1;
-      const batches = Math.ceil(qty / output);
-      for (const [mk, mq] of Object.entries(rec.materials)) walkForEssence(mk, mq * batches, depth+1);
-    }
     for (const [mk, mq] of Object.entries(fRec.materials)) walkForEssence(mk, mq * cnt);
   }
-  // 종류별 잉여: 실제 생산량(배치×output) - 필요량, 최대 output-1개
   const leftoverInterm = {};
   for (const [key, needed] of Object.entries(essenceNeeded)) {
     const rec = ALCHEMY[key]; if (!rec) continue;
     const output = rec.output || 1;
-    if (output <= 1) continue; // output:1이면 잉여 없음
+    if (output <= 1) continue;
     const batches = Math.ceil(needed / output);
-    const produced = batches * output;
-    const leftover = produced - needed; // 0 또는 1
+    const leftover = batches * output - needed;
     if (leftover > 0) leftoverInterm[key] = leftover;
   }
 
