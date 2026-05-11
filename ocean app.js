@@ -9,7 +9,7 @@ import {
   ROD, OCEAN, CLAM, CRAFTS, ALCHEMY, PRECISION_ALCHEMY, VANILLA_META,
   SEAFOOD_TYPES, UNITS,
   OCEAN_DEFAULT_PRICES as DEFAULT_PRICES,
-} from './config.js?v=2';
+} from './config.js?v=3';
 
 
 /* ════════════════════════════════════════
