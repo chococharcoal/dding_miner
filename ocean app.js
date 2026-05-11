@@ -42,7 +42,7 @@ const TAB_TITLES = ['하루 수익 예상','시세 입력','연금 최적화'];
 ════════════════════════════════════════ */
 window.sw = (i, el) => {
   document.querySelectorAll('.tab').forEach(t => t.classList.remove('on'));
-  [0,1,2,3].forEach(k => { const p = document.getElementById('t'+k); if (p) p.style.display = 'none'; });
+  [0,1,2].forEach(k => { const p = document.getElementById('t'+k); if (p) p.style.display = 'none'; });
   el.classList.add('on');
   document.getElementById('t'+i).style.display = 'block';
   const t = document.getElementById('pageTabTitle'); if (t) t.textContent = TAB_TITLES[i];

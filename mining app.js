@@ -808,7 +808,7 @@ export function co() {
     const bgColor     = isGain ? 'var(--ylw-bg)' : 'var(--bg)';
     const label = isGain
       ? '🔄 교환 시 +' + f(gain) + '원 이득 — ' + toName + '으로 전환'
-      : '🔄 교환 시 ' + f(Math.abs(gain)) + '원 손해 (그래도 교환 결과 표시)';
+      : '🔄 교환 시 ' + f(Math.abs(gain)) + '원 손해';
     const labelColor = isGain ? 'var(--ylw)' : 'var(--muted)';
     return '<div style="background:' + bgColor + ';border:1.5px solid ' + borderColor + ';border-radius:var(--rs);padding:8px 10px;margin-bottom:10px">'
       + '<div style="font-family:\'Jua\',sans-serif!important;font-size:12px;color:' + labelColor + ';margin-bottom:5px">' + label + '</div>'
