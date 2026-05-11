@@ -322,10 +322,11 @@ async function calcOpt() {
   // 중간재료 수집 (ALCHEMY 키: 정수/핵/에센스/결정/엘릭서/영약)
   const intermHave = {};
   document.querySelectorAll('#intermList .interm-row').forEach(row => {
-    const sel=row.querySelector('select.interm-sel'), inp=row.querySelector('input.interm-qty');
-    if (!sel||!inp) return;
-    const key=sel.value, qty=parseInt(inp.value||'0')||0;
-    if (key&&qty>0) intermHave[key]=(intermHave[key]||0)+qty;
+    const sel=row.querySelector('select.interm-sel');if(!sel)return;
+    const key=sel.value;if(!key)return;
+    const rid=row.id.replace('irow_','');
+    const qty=readSplitQty('iqty_'+rid);
+    if(qty>0)intermHave[key]=(intermHave[key]||0)+qty;
   });
 
   // 중간재료를 하위 어패류 등가로 전개해서 inv에 가산
@@ -657,7 +658,7 @@ async function calcOpt() {
     }
   }
 
-  _cachedOptResult = { planEntries, finalAnalysis, workInv, totalRev, totalVan, SF_KEYS, upgradeInfo, inv };
+  _cachedOptResult = { planEntries, finalAnalysis, workInv, totalRev, totalVan, SF_KEYS, upgradeInfo, inv, intermHave };
 
   renderOptResult(_cachedOptResult);
 }
@@ -666,7 +667,7 @@ async function calcOpt() {
    renderOptResult — 캐시된 결과를 토글 상태에 맞게 렌더링
    calcOpt 완료 후 호출, 토글 변경 시에도 재호출
 ════════════════════════════════════════ */
-function renderOptResult({ planEntries, finalAnalysis, workInv, totalRev, totalVan, SF_KEYS, upgradeInfo, inv }) {
+function renderOptResult({ planEntries, finalAnalysis, workInv, totalRev, totalVan, SF_KEYS, upgradeInfo, inv, intermHave={} }) {
   const includeSFCost = document.getElementById('sfCostToggle')?.checked      ?? false;
   const viewByStage   = document.getElementById('viewByStageToggle')?.checked  ?? false;
 
@@ -777,18 +778,32 @@ function renderOptResult({ planEntries, finalAnalysis, workInv, totalRev, totalV
       }
 
       html+=`<div class="craft-flow-card" style="--tier-color:${color}">`;
-      // 헤더
+      // 헤더 — 수익/가격 제거, 합계 시간 표시
       html+=`<div class="cfc-header"><div class="cfc-header-left"><div class="cfc-name">${fa.name}</div>`
         +`<div class="cfc-sub"><span style="opacity:.7">${tierLabels[fa.tier]}</span>`
-        +` &nbsp;·&nbsp; 판매가 <b>${f(fa.sellPrice)}원</b>/개`
-        +` &nbsp;·&nbsp; ${netLabel} <b style="color:${netColor}">${netSign}${f(Math.round(fa.netPerUnit))}원</b>/개${sfCostNote}</div>`
-        +`</div><div class="cfc-header-right"><div class="cfc-count">${cntDisplay}</div><div class="cfc-revenue">${f(fa.sellPrice*cnt)}원</div></div></div>`;
+        +` &nbsp;·&nbsp; ⏱️ ${fmtTime(totalSecCard)}</div>`
+        +`</div><div class="cfc-header-right"><div class="cfc-count">${cntDisplay}</div></div></div>`;
 
-      // 필요 어패류
+      // 필요 어패류 (보유 중간재료로 절감되는 어패류 별도 표시)
       const sfEntries=Object.entries(sfUsed).filter(([,v])=>v>0);
       if(sfEntries.length){
         html+=`<div class="cfc-section"><div class="cfc-section-label">📦 필요 어패류</div><div class="sf-chip-wrap">`;
-        for(const[k,v]of sfEntries){const cl=getMatColor(k),nm=getMatName(k);html+=`<div class="sf-chip" style="--chip-color:${cl}"><span class="sc-name">${nm}</span><span class="sc-qty">${fmtQty(Math.round(v))}</span></div>`;}
+        // 보유 중간재료로 얼마나 절감되는지 계산
+        const sfSaved={}; // { sfKey: 절감량 }
+        for(const[iKey,iQty]of Object.entries(intermHave)){
+          const rec=ALCHEMY[iKey];if(!rec)continue;
+          const SF_SET2=new Set(SF_TYPES.flatMap(s=>SF_TIERS.map(t=>`${s}${t}`)));
+          function walkSaved(k,q,d=0){if(d>15||q<=0)return;if(SF_SET2.has(k)){sfSaved[k]=(sfSaved[k]||0)+q;return;}const r=ALCHEMY[k];if(!r)return;const b=q/(r.output||1);for(const[mk,mq]of Object.entries(r.materials))walkSaved(mk,mq*b,d+1);}
+          walkSaved(iKey,iQty);
+        }
+        for(const[k,v]of sfEntries){
+          const cl=getMatColor(k),nm=getMatName(k);
+          const saved=Math.min(sfSaved[k]||0,v);
+          const needAfter=Math.max(0,v-saved);
+          let qtyStr=fmtQty(Math.round(needAfter));
+          if(saved>0)qtyStr+=` <span style="font-size:9px;opacity:.6">+보유${fmtQty(Math.round(saved))}</span>`;
+          html+=`<div class="sf-chip" style="--chip-color:${cl}"><span class="sc-name">${nm}</span><span class="sc-qty">${qtyStr}</span></div>`;
+        }
         html+=`</div></div>`;
       }
 
@@ -806,9 +821,13 @@ function renderOptResult({ planEntries, finalAnalysis, workInv, totalRev, totalV
       function matChips(matObj, batchMul) {
         return Object.entries(matObj).filter(([,v])=>v>0)
           .map(([mk,mq])=>{
-            const qty = fmtQty(Math.ceil(mq*batchMul));
+            const totalQ = Math.ceil(mq*batchMul);
             const col = getMatColor(mk);
-            return `<span style="${chipBase};background:var(--bg);border:1.5px solid ${col}44"><span style="color:${col}">${dispName(mk)}</span> <span style="color:var(--txt)">${qty}</span></span>`;
+            const haveQ = intermHave[mk]||0;
+            const needQ = Math.max(0,totalQ-haveQ);
+            let qtyStr = fmtQty(needQ);
+            if(haveQ>0&&haveQ<=totalQ) qtyStr+=` <span style="font-size:9px;opacity:.6">+보유${fmtQty(Math.min(haveQ,totalQ))}</span>`;
+            return `<span style="${chipBase};background:var(--bg);border:1.5px solid ${col}44"><span style="color:${col}">${dispName(mk)}</span> <span style="color:var(--txt)">${qtyStr}</span></span>`;
           })
           .join(' ');
       }
@@ -850,9 +869,42 @@ function renderOptResult({ planEntries, finalAnalysis, workInv, totalRev, totalV
       html+=dot;
       html+=matChips(PRECISION_ALCHEMY[fKey].materials, cnt);
       html+=`</div>`;
-      html+=`<div style="text-align:right;font-size:11px;color:${color};font-weight:700;margin-top:6px;padding-top:6px;border-top:1px solid var(--bdr)">⏱️ 합계 ${fmtTime(totalSecCard)}</div>`;
 
       html+=`</div></div></div>`;
+    }
+
+    // 완성품별 보기 수익 합산 (단계별과 동일)
+    {
+      const chipB='display:inline-flex;align-items:center;gap:3px;border-radius:6px;padding:2px 7px;font-size:11px;white-space:nowrap;font-weight:700;justify-content:center';
+      html+=`<div class="craft-flow-card" style="--tier-color:var(--acc);margin-bottom:10px">`;
+      html+=`<div class="cfc-header" style="border-left-color:var(--acc)">`;
+      html+=`<div class="cfc-header-left"><div class="cfc-name" style="font-size:14px">💰 수익 합산</div></div>`;
+      html+=`<div class="cfc-header-right"><div style="font-size:13px;color:var(--grn);font-weight:900">${f(totalRev)}원</div></div>`;
+      html+=`</div><div class="cfc-section" style="padding:8px 14px">`;
+      const lStyle='display:flex;align-items:center;gap:8px;padding:4px 0;border-bottom:1px dashed var(--bdr)';
+      for(const[fKey,cnt]of planEntries){
+        const fa2=finalAnalysis[fKey];if(!fa2||cnt<=0)continue;
+        const color2=finColors[fKey]||tierColors[fa2.tier]||'#607090';
+        const rev=fa2.sellPrice*cnt;
+        const netTot=Math.round(fa2.netPerUnit)*cnt;
+        const netColor2=netTot>=0?'var(--grn)':'var(--red)';
+        const netSign2=netTot>=0?'+':'';
+        const name=fa2.name.replace(/★+\s*/g,'').replace(/\s*★+/g,'').trim();
+        html+=`<div style="${lStyle}">`;
+        html+=`<span style="${chipB};background:${color2}18;border:1.5px solid ${color2};min-width:100px"><span style="color:${color2}">${name}</span></span>`;
+        html+=`<span style="font-size:12px;color:var(--muted);flex-shrink:0">${fmtQty(cnt)}개</span>`;
+        html+=`<span style="font-size:12px;color:var(--txt);font-weight:900;flex-shrink:0">${f(rev)}원</span>`;
+        html+=`<span style="font-size:11px;color:${netColor2};margin-left:auto;flex-shrink:0">${netSign2}${f(netTot)}원</span>`;
+        html+=`</div>`;
+      }
+      const totalNet=planEntries.reduce((s,[k,cnt])=>s+Math.round(finalAnalysis[k].netPerUnit)*cnt,0);
+      const netCol=totalNet>=0?'var(--grn)':'var(--red)', netSgn=totalNet>=0?'+':'';
+      html+=`<div style="display:flex;align-items:center;gap:8px;padding:6px 0;margin-top:2px;border-top:1.5px solid var(--bdr2)">`;
+      html+=`<span style="font-family:'Jua',sans-serif;font-size:12px;color:var(--muted)">합계</span>`;
+      html+=`<span style="font-size:13px;color:var(--grn);font-weight:900;margin-left:auto">${f(totalRev)}원</span>`;
+      html+=`<span style="font-size:12px;color:${netCol};font-weight:700">(${netSgn}${f(totalNet)}원)</span>`;
+      html+=`</div>`;
+      html+=`</div></div>`;
     }
 
   /* ──────────────────────────────────────
@@ -901,11 +953,10 @@ function renderOptResult({ planEntries, finalAnalysis, workInv, totalRev, totalV
       const tSec=timeSec[secKey]*(1-fr);
       let s=`<div class="craft-flow-card" style="--tier-color:${accentColor};margin-bottom:10px">`;
       s+=`<div class="cfc-header" style="border-left-color:${accentColor}">`;
-      s+=`<div class="cfc-header-left"><div class="cfc-name" style="font-size:14px">${emoji} ${label}</div></div>`;
-      s+=`<div class="cfc-header-right"><div style="font-size:12px;color:${accentColor};font-weight:700">⏱️ ${fmtTime(tSec)}</div></div>`;
+      s+=`<div class="cfc-header-left"><div class="cfc-name" style="font-size:14px">${emoji} ${label} <span style="font-size:11px;color:${accentColor};font-weight:700;margin-left:4px">⏱️ ${fmtTime(tSec)}</span></div></div>`;
       s+=`</div><div class="cfc-section" style="padding:8px 14px">`;
 
-      const chipB='display:inline-flex;align-items:center;gap:3px;border-radius:6px;padding:2px 7px;font-size:11px;white-space:nowrap;font-weight:700';
+      const chipB='display:inline-flex;align-items:center;gap:3px;border-radius:6px;padding:2px 7px;font-size:11px;white-space:nowrap;font-weight:700;justify-content:center';
       const lStyle='display:flex;align-items:center;flex-wrap:wrap;gap:5px;padding:5px 0;border-bottom:1px dashed var(--bdr)';
 
       for(const[key,qty]of entries){
@@ -925,7 +976,14 @@ function renderOptResult({ planEntries, finalAnalysis, workInv, totalRev, totalV
             const totalQ=isPA?mq*qty:Math.ceil(mq*batchNeeded);
             const col=getMatColor(mk);
             const nm=getMatName(mk).replace(/\s*★+/g,'').trim();
-            return `<span style="${chipB};background:var(--bg);border:1.5px solid ${col}44"><span style="color:${col}">${nm}</span> <span style="color:var(--txt)">${fmtQty(totalQ)}</span></span>`;
+            // 보유 중간재료가 있으면 차감 표시
+            const haveQ=intermHave[mk]||0;
+            let qtyStr=fmtQty(totalQ);
+            if(!isPA&&haveQ>0){
+              const needQ=Math.max(0,totalQ-haveQ);
+              qtyStr=`${fmtQty(needQ)} <span style="font-size:9px;opacity:.6">+보유${fmtQty(haveQ)}</span>`;
+            }
+            return `<span style="${chipB};background:var(--bg);border:1.5px solid ${col}44"><span style="color:${col}">${nm}</span> <span style="color:var(--txt)">${qtyStr}</span></span>`;
           }).join(' ');
 
         s+=`<div style="${lStyle}">`;
@@ -965,7 +1023,7 @@ function renderOptResult({ planEntries, finalAnalysis, workInv, totalRev, totalV
     const allFinAgg = {...agg.fin0,...agg.fin1,...agg.fin2,...agg.fin3};
     const finSummaryEntries = Object.entries(allFinAgg).filter(([,v])=>v>0);
     if(finSummaryEntries.length){
-      const chipB='display:inline-flex;align-items:center;gap:3px;border-radius:6px;padding:2px 7px;font-size:11px;white-space:nowrap;font-weight:700';
+      const chipB='display:inline-flex;align-items:center;gap:3px;border-radius:6px;padding:2px 7px;font-size:11px;white-space:nowrap;font-weight:700;justify-content:center';
       html+=`<div class="craft-flow-card" style="--tier-color:var(--acc);margin-bottom:10px">`;
       html+=`<div class="cfc-header" style="border-left-color:var(--acc)">`;
       html+=`<div class="cfc-header-left"><div class="cfc-name" style="font-size:14px">💰 수익 합산</div></div>`;
@@ -1090,7 +1148,7 @@ function renderOptResult({ planEntries, finalAnalysis, workInv, totalRev, totalV
       const rec=ALCHEMY[k];
       const name=rec?.name||k;
       const color=rec?.color||'var(--muted)';
-      parts.push(`<span style="color:${color}">${name} ${fmtQty(v)} <span style="font-size:9px;opacity:.7">(잉여)</span></span>`);
+      parts.push(`<span style="color:${color}">${name} ${fmtQty(v)}</span>`);
     }
     html+=parts.join(' · ');
     html+=`</div>`;
@@ -1153,10 +1211,24 @@ window.addIntermRow=()=>{
   const list=document.getElementById('intermList');if(!list)return;
   const rid=++intermRowId,row=document.createElement('div');
   row.className='interm-row';row.id='irow_'+rid;
-  row.innerHTML='<div class="interm-sel-wrap"><select class="interm-sel" id="isel_'+rid+'" onchange="saveAll()">'+makeIntermOptions()+'</select></div>'
-    +'<div class="interm-qty-wrap"><input class="interm-qty" id="iqty_'+rid+'" type="number" inputmode="numeric" placeholder="개수" min="0" oninput="saveAll()"></div>'
+  row.innerHTML=
+    '<div class="interm-sel-wrap"><select class="interm-sel" id="isel_'+rid+'" onchange="saveAll()">'+makeIntermOptions()+'</select></div>'
+    +'<div style="flex:1;min-width:0">'
+    +splitQtyHtml('iqty_'+rid,'var(--acc)')
+    +'</div>'
     +'<button class="del-btn" onclick="document.getElementById(\'irow_'+rid+'\').remove();saveAll()">✕</button>';
-  list.appendChild(row);initOneCdd(row.querySelector('select'));saveAll();
+  list.appendChild(row);
+  // splitQtyHtml 입력 이벤트를 saveAll로 연결
+  ['_box','_set','_ea'].forEach(s=>{
+    const el=document.getElementById('iqty_'+rid+s);
+    if(el)el.addEventListener('input',()=>{
+      const n=readSplitQty('iqty_'+rid);
+      const p=document.getElementById('iqty_'+rid+'_p');
+      if(p)p.textContent=n>0?'총 '+f(n)+'개':'';
+      saveAll();
+    });
+  });
+  initOneCdd(row.querySelector('select'));saveAll();
 };
 function buildHaveSeafoodGrid(){
   const el=document.getElementById('haveSeafoodGrid');if(!el)return;
@@ -1212,7 +1284,11 @@ function saveAll(){
   d.__sfCostToggle     =document.getElementById('sfCostToggle')?.checked     ??false;
   d.__viewByStageToggle=document.getElementById('viewByStageToggle')?.checked??false;
   const irows=[];
-  document.querySelectorAll('#intermList .interm-row').forEach(row=>{const sel=row.querySelector('select.interm-sel'),inp=row.querySelector('input.interm-qty');irows.push({key:sel?.value||'',qty:inp?.value||''});});
+  document.querySelectorAll('#intermList .interm-row').forEach(row=>{
+    const sel=row.querySelector('select.interm-sel');if(!sel)return;
+    const rid=row.id.replace('irow_','');
+    irows.push({key:sel?.value||'',box:document.getElementById('iqty_'+rid+'_box')?.value||'',set:document.getElementById('iqty_'+rid+'_set')?.value||'',ea:document.getElementById('iqty_'+rid+'_ea')?.value||''});
+  });
   d.__irows=irows;localStorage.setItem(KEY,JSON.stringify(d));
 }
 function loadAll(){
@@ -1222,7 +1298,24 @@ function loadAll(){
     const sfTog=document.getElementById('sfCostToggle');     if(sfTog)sfTog.checked    =d.__sfCostToggle     ??false;
     const stTog=document.getElementById('viewByStageToggle');if(stTog)stTog.checked    =d.__viewByStageToggle??false;
     SF_TYPES.forEach(sf=>SF_TIERS.forEach(t=>{const id='have_'+sf+'_'+t,p=document.getElementById(id+'_p'),n=readSplitQty(id);if(p&&n>0)p.textContent='총 '+f(n)+'개';}));
-    if(Array.isArray(d.__irows)){d.__irows.forEach(({key,qty})=>{addIntermRow();const list=document.getElementById('intermList'),row=list?.lastElementChild;if(!row)return;const sel=row.querySelector('select.interm-sel');if(sel&&key){sel.value=key;const cdd=sel.previousElementSibling;if(cdd?.classList.contains('cdd')){const lbl=cdd.querySelector('.cdd-label');if(lbl)lbl.textContent=sel.options[sel.selectedIndex]?.text||'';cdd.querySelectorAll('.cdd-item').forEach(item=>item.classList.toggle('selected',item.dataset.value===key));}}const inp=row.querySelector('input.interm-qty');if(inp)inp.value=qty;});}
+    if(Array.isArray(d.__irows)){d.__irows.forEach(({key,box,set,ea,qty})=>{
+      addIntermRow();
+      const list=document.getElementById('intermList'),row=list?.lastElementChild;if(!row)return;
+      const rid=row.id.replace('irow_','');
+      const sel=row.querySelector('select.interm-sel');
+      if(sel&&key){sel.value=key;const cdd=sel.previousElementSibling;if(cdd?.classList.contains('cdd')){const lbl=cdd.querySelector('.cdd-label');if(lbl)lbl.textContent=sel.options[sel.selectedIndex]?.text||'';cdd.querySelectorAll('.cdd-item').forEach(item=>item.classList.toggle('selected',item.dataset.value===key));}}
+      // 분리 입력 복원 (이전 qty 단일 입력도 호환)
+      const bEl=document.getElementById('iqty_'+rid+'_box');
+      const sEl=document.getElementById('iqty_'+rid+'_set');
+      const eEl=document.getElementById('iqty_'+rid+'_ea');
+      if(box!==undefined&&bEl)bEl.value=box;
+      if(set!==undefined&&sEl)sEl.value=set;
+      if(ea!==undefined&&eEl)eEl.value=ea;
+      else if(qty&&eEl)eEl.value=qty; // 구버전 호환
+      const n=readSplitQty('iqty_'+rid);
+      const p=document.getElementById('iqty_'+rid+'_p');
+      if(p&&n>0)p.textContent='총 '+f(n)+'개';
+    });}
   }catch(e){}
 }
 
