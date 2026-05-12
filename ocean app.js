@@ -333,16 +333,13 @@ async function calcOpt() {
     if(qty>0)intermHave[key]=(intermHave[key]||0)+qty;
   });
 
-  // 중간재료를 inv에 반영
-  // reversible:true  (정수/에센스/엘릭서) → 어패류로 전개해서 inv에 가산
-  // reversible:false (핵/결정/영약) → inv에 중간재료 키로 보관 (어패류로 환산 X)
+  // 중간재료를 하위 어패류로 전개해서 inv에 가산
   {
     const SF_SET = new Set(SF_TYPES.flatMap(sf => SF_TIERS.map(t => `${sf}${t}`)));
     function expandIntermToSF(key, qty, depth=0) {
       if (depth > 15 || qty <= 0) return;
       if (SF_SET.has(key)) { inv[key] = (inv[key]||0) + qty; return; }
       const rec = ALCHEMY[key]; if (!rec) return;
-      if (rec.reversible === false) { inv[key] = (inv[key]||0) + qty; return; }
       const output = rec.output || 1;
       const batches = qty / output;
       for (const [mk, mq] of Object.entries(rec.materials))
@@ -362,7 +359,6 @@ async function calcOpt() {
   const includeSFCost = document.getElementById('sfCostToggle')?.checked      ?? false;
   const viewByStage   = document.getElementById('viewByStageToggle')?.checked  ?? false;
 
-  // 재고 소비: 어패류(업글 포함) + compound(핵/결정/영약) 직접 보유분 차감
   function consumeSF(sfKey, need, curInv) {
     const needInt = Math.ceil(need);
     const m=sfKey.match(/^(oyster|conch|octopus|seaweed|urchin)(\d)$/); if(!m)return false;
@@ -373,21 +369,10 @@ async function calcOpt() {
     if(remaining>0)return false;
     curInv[sfKey]=have-needInt;return true;
   }
+  function canAffordSF(sfNeed,curInv){const tmp={...curInv};for(const[k,v]of Object.entries(sfNeed))if(!consumeSF(k,v,tmp))return false;return true;}
+  function doConsumeSF(sfNeed,curInv){for(const[k,v]of Object.entries(sfNeed))consumeSF(k,v,curInv);}
 
-  function canAffordSF(sfNeed,curInv,compoundNeed={}){
-    const tmp={...curInv};
-    for(const[k,q]of Object.entries(compoundNeed)){const have=tmp[k]||0,use=Math.min(have,q);tmp[k]=have-use;}
-    for(const[k,v]of Object.entries(sfNeed))if(!consumeSF(k,v,tmp))return false;
-    return true;
-  }
-
-  function doConsumeSF(sfNeed,curInv,compoundNeed={}){
-    for(const[k,q]of Object.entries(compoundNeed)){const have=curInv[k]||0,use=Math.min(have,q);curInv[k]=have-use;}
-    for(const[k,v]of Object.entries(sfNeed))consumeSF(k,v,curInv);
-  }
-
-  // maxMake: 어패류 제약 (compound 보유분은 doConsumeSF에서 처리)
-  function maxMake(sfNeed, curInv, compoundNeed={}) {
+  function maxMake(sfNeed, curInv) {
     let m = Infinity;
     for (const [sf, need] of Object.entries(sfNeed)) {
       if (need <= 0) continue;
@@ -416,11 +401,6 @@ async function calcOpt() {
   for (const [fKey, fRec] of Object.entries(PRECISION_ALCHEMY)) {
     const sfNeed = calcSFNeedForFinal(fKey);
     // compound(핵/결정/영약) 보유분을 직접 소비하기 위해 필요량 저장
-    const compoundNeed = {}; // { compoundKey: qty per final product }
-    for (const [mk, mq] of Object.entries(fRec.materials)) {
-      if (ALCHEMY[mk]?.reversible === false) compoundNeed[mk] = mq;
-    }
-
     const step2={}, step3={};
     for(const[mk,mq]of Object.entries(fRec.materials)){
       const rec=ALCHEMY[mk];if(!rec)continue;
@@ -434,7 +414,7 @@ async function calcOpt() {
     const vanCost=calcVanillaCost(fKey);
     const sfCost=calcSFCostForFinal(sfNeed);
     const netPerUnit=sellPrice-vanCost-(includeSFCost?sfCost:0);
-    finalAnalysis[fKey]={name:fRec.name,tier:fRec.tier,sfNeed,compoundNeed,vanCost,sfCost,sellPrice,netPerUnit,step2,step3,craftTimeSec:fRec.craftTimeSec||0};
+    finalAnalysis[fKey]={name:fRec.name,tier:fRec.tier,sfNeed,vanCost,sfCost,sellPrice,netPerUnit,step2,step3,craftTimeSec:fRec.craftTimeSec||0};
   }
 
   /* ──────────────────────────────────────
@@ -562,17 +542,17 @@ async function calcOpt() {
       let feasible = true;
       for (let i = 0; i < sortedTK.length; i++) {
         const k = sortedTK[i];
-        const n = Math.min(sol[i] || 0, maxMake(finalAnalysis[k].sfNeed, tmpInv, finalAnalysis[k].compoundNeed||{}));
+        const n = Math.min(sol[i] || 0, maxMake(finalAnalysis[k].sfNeed, tmpInv));
         if (n < 0) { feasible = false; break; }
         made.push([k, n]);
-        for (let j = 0; j < n; j++) doConsumeSF(finalAnalysis[k].sfNeed, tmpInv, finalAnalysis[k].compoundNeed||{});
+        for (let j = 0; j < n; j++) doConsumeSF(finalAnalysis[k].sfNeed, tmpInv);
       }
       if (!feasible) continue;
 
       for (const [k, n] of made) {
         curPlan[k] = n;
         rev += n * finalAnalysis[k].sellPrice;
-        for (let j = 0; j < n; j++) doConsumeSF(finalAnalysis[k].sfNeed, curInv, finalAnalysis[k].compoundNeed||{});
+        for (let j = 0; j < n; j++) doConsumeSF(finalAnalysis[k].sfNeed, curInv);
       }
     }
     return { plan: curPlan, rev, remInv: curInv };
@@ -606,8 +586,8 @@ async function calcOpt() {
     let ok = true;
     for (const zk of zeroKeys) {
       for (let i = 0; i < d; i++) {
-        if (!canAffordSF(finalAnalysis[zk].sfNeed, invAfterZero, finalAnalysis[zk].compoundNeed||{})) { ok = false; break; }
-        doConsumeSF(finalAnalysis[zk].sfNeed, invAfterZero, finalAnalysis[zk].compoundNeed||{});
+        if (!canAffordSF(finalAnalysis[zk].sfNeed, invAfterZero)) { ok = false; break; }
+        doConsumeSF(finalAnalysis[zk].sfNeed, invAfterZero);
       }
       if (!ok) break;
       zeroPlan[zk] = d;
