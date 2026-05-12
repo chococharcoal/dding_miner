@@ -846,7 +846,7 @@ function renderOptResult({ planEntries, finalAnalysis, workInv, totalRev, totalV
         const name=fa2.name.replace(/★+\s*/g,'').replace(/\s*★+/g,'').trim();
         html+=`<div style="${lStyle}">`;
         html+=`<span style="${chipB};background:${color2}18;border:1.5px solid ${color2};min-width:100px"><span style="color:${color2}">${name}</span></span>`;
-        html+=`<span style="font-size:12px;color:var(--muted);flex-shrink:0">${fmtQty(cnt)}개</span>`;
+        html+=`<span style="font-size:12px;color:var(--muted);flex-shrink:0">${fmtQty(cnt)}</span>`;
         html+=`<span style="font-size:12px;color:var(--txt);font-weight:900;flex-shrink:0">${f(rev)}원</span>`;
         html+=`<span style="font-size:11px;color:${netColor2};margin-left:auto;flex-shrink:0">${netSign2}${f(netTot)}원</span>`;
         html+=`</div>`;
@@ -1035,7 +1035,7 @@ function renderOptResult({ planEntries, finalAnalysis, workInv, totalRev, totalV
         const name=fa2.name.replace(/★+\s*/g,'').replace(/\s*★+/g,'').trim();
         html+=`<div style="${lStyle}">`;
         html+=`<span style="${chipB};background:${color2}18;border:1.5px solid ${color2};min-width:100px"><span style="color:${color2}">${name}</span></span>`;
-        html+=`<span style="font-size:12px;color:var(--muted);flex-shrink:0">${fmtQty(qty)}개</span>`;
+        html+=`<span style="font-size:12px;color:var(--muted);flex-shrink:0">${fmtQty(qty)}</span>`;
         html+=`<span style="font-size:12px;color:var(--txt);font-weight:900;flex-shrink:0">${f(rev)}원</span>`;
         html+=`<span style="font-size:11px;color:${netColor2};margin-left:auto;flex-shrink:0">${netSign2}${f(netTot)}원</span>`;
         html+=`</div>`;
@@ -1178,43 +1178,30 @@ function makeIntermOptions(){
   for(const{label,keys}of groups){opts+='<optgroup label="'+label+'">';for(const k of keys){const rec=ALCHEMY[k];if(!rec)continue;opts+='<option value="'+k+'">'+rec.name+'</option>';}opts+='</optgroup>';}
   return opts;
 }
+const COMPOUND_KEYS = new Set(['core_guard','core_wave','core_chaos','core_life','core_corrosion','crystal_vitality','crystal_erosion','crystal_defense','crystal_torrent','crystal_poison','potion_immortal','potion_barrier','potion_corrupt','potion_frenzy','potion_venom']);
+
+window.updateIntermWarning = function() {
+  const warn = document.getElementById('intermWarning');
+  if (!warn) return;
+  const hasCompound = [...document.querySelectorAll('#intermList .interm-sel')]
+    .some(sel => COMPOUND_KEYS.has(sel.value));
+  warn.style.display = hasCompound ? '' : 'none';
+};
+
+window.onIntermSelChange = () => { saveAll(); updateIntermWarning(); };
+
 let intermRowId=0;
 window.addIntermRow=()=>{
   const list=document.getElementById('intermList');if(!list)return;
   const rid=++intermRowId,row=document.createElement('div');
   row.className='interm-row';row.id='irow_'+rid;
-  const COMPOUND_KEYS = new Set(['core_guard','core_wave','core_chaos','core_life','core_corrosion','crystal_vitality','crystal_erosion','crystal_defense','crystal_torrent','crystal_poison','potion_immortal','potion_barrier','potion_corrupt','potion_frenzy','potion_venom']);
 
   row.innerHTML=
-    '<div class="interm-sel-wrap"><select class="interm-sel" id="isel_'+rid+'" onchange="onIntermSelChange(\''+rid+'\')">'+makeIntermOptions()+'</select></div>'
+    '<div class="interm-sel-wrap"><select class="interm-sel" id="isel_'+rid+'" onchange="onIntermSelChange()">'+makeIntermOptions()+'</select></div>'
     +'<div style="flex:1;min-width:0">'
     +splitQtyHtml('iqty_'+rid,'var(--acc)')
     +'</div>'
     +'<button class="del-btn" onclick="document.getElementById(\'irow_'+rid+'\').remove();updateIntermWarning();saveAll()">✕</button>';
-
-  window.onIntermSelChange = (rid2) => {
-    saveAll();
-    updateIntermWarning();
-  };
-
-  function updateIntermWarning() {
-    const warn = document.getElementById('intermWarning');
-    if (!warn) return;
-    const hasCompound = [...document.querySelectorAll('#intermList .interm-sel')]
-      .some(sel => COMPOUND_KEYS.has(sel.value));
-    warn.style.display = hasCompound ? '' : 'none';
-  }
-
-  // 경고 박스가 없으면 생성
-  const list2 = document.getElementById('intermList');
-  if (list2 && !document.getElementById('intermWarning')) {
-    const warnEl = document.createElement('div');
-    warnEl.id = 'intermWarning';
-    warnEl.style.cssText = 'display:none;margin-top:8px;padding:7px 10px;background:var(--ylw-bg);border:1.5px solid var(--ylw);border-radius:var(--rs);font-size:11px;color:var(--ylw);line-height:1.5';
-    warnEl.innerHTML = '⚠️ <b>핵 · 결정 · 영약</b>을 보유 중간재료로 입력하면 최적화 결과가 실제 최적이 아닐 수 있습니다. (분해 불가 재료로 인해 계산 방식이 달라질 수 있음)';
-    list2.parentNode.insertBefore(warnEl, list2.nextSibling);
-  }
-  list.appendChild(row);
   // splitQtyHtml 입력 이벤트를 saveAll로 연결
   ['_box','_set','_ea'].forEach(s=>{
     const el=document.getElementById('iqty_'+rid+s);
@@ -1233,7 +1220,7 @@ function buildHaveSeafoodGrid(){
   const starLabels={1:'★ 1성',2:'★★ 2성',3:'★★★ 3성'};
   let html='<div class="slabel">🦀 어패류</div>';
   for(const sf of SF_TYPES){const meta=SEAFOOD_TYPES[sf],cl=sfColors[sf];html+='<div style="margin-bottom:8px"><div style="font-size:10px;font-weight:700;color:'+cl+';margin-bottom:4px">'+meta.name+'</div><div class="g3">';for(const t of SF_TIERS){const id='have_'+sf+'_'+t;html+='<div class="field"><label style="color:'+cl+'">'+starLabels[t]+'</label>'+splitQtyHtml(id,cl)+'</div>';}html+='</div></div>';}
-  html+='<div class="slabel" style="margin-top:8px">⚗️ 보유 중간재료 <small style="font-weight:500;font-size:9px">(선택)</small></div><div id="intermList"></div><button class="add-interm-btn" onclick="addIntermRow()">+ 중간재료 추가</button>';
+  html+='<div class="slabel" style="margin-top:8px">⚗️ 보유 중간재료 <small style="font-weight:500;font-size:9px">(선택)</small></div><div id="intermList"></div><div id="intermWarning" style="display:none;margin-top:8px;padding:7px 10px;background:var(--ylw-bg);border:1.5px solid var(--ylw);border-radius:var(--rs);font-size:11px;color:var(--ylw);line-height:1.5">⚠️ <b>핵 · 결정 · 영약</b>을 보유 중간재료로 입력하면 최적화 결과가 실제 최적이 아닐 수 있습니다.</div><button class="add-interm-btn" onclick="addIntermRow()">+ 중간재료 추가</button>';
   el.innerHTML=html;
 }
 window.onSFQtyInput=(id)=>{const n=readSplitQty(id);const p=document.getElementById(id+'_p');if(p)p.textContent=n>0?'총 '+f(n)+'개':'';saveAll();};
