@@ -252,23 +252,27 @@ window.calcDaily = () => {
 
 function calcSFNeedForFinal(fKey) {
   const fRec = PRECISION_ALCHEMY[fKey]; if (!fRec) return {};
+  return calcSFNeedFromMats(fRec.materials);
+}
+
+function calcSFNeedForFinal_single(alchemyKey) {
+  const rec = ALCHEMY[alchemyKey]; if (!rec) return {};
+  return calcSFNeedFromMats({[alchemyKey]: 1});
+}
+
+function calcSFNeedFromMats(materials) {
   const SF_SET = new Set(SF_TYPES.flatMap(sf => SF_TIERS.map(t => `${sf}${t}`)));
   const need = {};
-
   function expand(key, qty, depth=0) {
     if (depth > 15 || qty <= 0) return;
-    // 어패류 → 직접 기록
     if (SF_SET.has(key)) { need[key] = (need[key]||0) + qty; return; }
     const rec = ALCHEMY[key]; if (!rec) return;
-    // 모든 중간재료는 하위로 전개 (reversible 무관)
-    // reversible:false(핵/결정/영약)도 어패류 필요량 계산을 위해 전개
     const output = rec.output || 1;
     const batches = qty / output;
     for (const [mk, mq] of Object.entries(rec.materials))
       expand(mk, mq * batches, depth+1);
   }
-
-  for (const [mk, mq] of Object.entries(fRec.materials)) expand(mk, mq);
+  for (const [mk, mq] of Object.entries(materials)) expand(mk, mq);
   return need;
 }
 
@@ -329,16 +333,16 @@ async function calcOpt() {
     if(qty>0)intermHave[key]=(intermHave[key]||0)+qty;
   });
 
-  // 중간재료를 하위 어패류 등가로 전개해서 inv에 가산
-  // reversible:true  → 어패류로 분해 가능 → 하위 어패류로 전개
-  // reversible:false → 분해 불가이지만, 보유한 경우 해당 재료가 필요로 하는 어패류를
-  //                    절감해주므로 동일하게 어패류 등가로 전개해서 inv에 가산
+  // 중간재료를 inv에 반영
+  // reversible:true  (정수/에센스/엘릭서) → 어패류로 전개해서 inv에 가산
+  // reversible:false (핵/결정/영약) → inv에 중간재료 키로 보관 (어패류로 환산 X)
   {
     const SF_SET = new Set(SF_TYPES.flatMap(sf => SF_TIERS.map(t => `${sf}${t}`)));
     function expandIntermToSF(key, qty, depth=0) {
       if (depth > 15 || qty <= 0) return;
       if (SF_SET.has(key)) { inv[key] = (inv[key]||0) + qty; return; }
       const rec = ALCHEMY[key]; if (!rec) return;
+      if (rec.reversible === false) { inv[key] = (inv[key]||0) + qty; return; }
       const output = rec.output || 1;
       const batches = qty / output;
       for (const [mk, mq] of Object.entries(rec.materials))
@@ -358,7 +362,7 @@ async function calcOpt() {
   const includeSFCost = document.getElementById('sfCostToggle')?.checked      ?? false;
   const viewByStage   = document.getElementById('viewByStageToggle')?.checked  ?? false;
 
-  // 재고 소비: 어패류(업글 포함) + 핵/결정/영약(reversible:false) 직접 보유분 우선 소비
+  // 재고 소비: 어패류(업글 포함) + compound(핵/결정/영약) 직접 보유분 차감
   function consumeSF(sfKey, need, curInv) {
     const needInt = Math.ceil(need);
     const m=sfKey.match(/^(oyster|conch|octopus|seaweed|urchin)(\d)$/); if(!m)return false;
@@ -369,8 +373,32 @@ async function calcOpt() {
     if(remaining>0)return false;
     curInv[sfKey]=have-needInt;return true;
   }
-  function canAffordSF(sfNeed,curInv){const tmp={...curInv};for(const[k,v]of Object.entries(sfNeed))if(!consumeSF(k,v,tmp))return false;return true;}
-  function doConsumeSF(sfNeed,curInv){for(const[k,v]of Object.entries(sfNeed))consumeSF(k,v,curInv);}
+
+  function canAffordSF(sfNeed,curInv,compoundNeed={}){
+    const tmp={...curInv};
+    for(const[k,q]of Object.entries(compoundNeed)){const have=tmp[k]||0,use=Math.min(have,q);tmp[k]=have-use;}
+    for(const[k,v]of Object.entries(sfNeed))if(!consumeSF(k,v,tmp))return false;
+    return true;
+  }
+
+  function doConsumeSF(sfNeed,curInv,compoundNeed={}){
+    for(const[k,q]of Object.entries(compoundNeed)){const have=curInv[k]||0,use=Math.min(have,q);curInv[k]=have-use;}
+    for(const[k,v]of Object.entries(sfNeed))consumeSF(k,v,curInv);
+  }
+
+  // maxMake: 어패류 제약 (compound 보유분은 doConsumeSF에서 처리)
+  function maxMake(sfNeed, curInv, compoundNeed={}) {
+    let m = Infinity;
+    for (const [sf, need] of Object.entries(sfNeed)) {
+      if (need <= 0) continue;
+      const needInt = Math.ceil(need);
+      const tier = parseInt(sf.slice(-1));
+      let avail = curInv[sf] || 0;
+      if (tier === 2) avail += Math.floor((curInv[sf.replace('2','1')]||0) / 3);
+      m = Math.min(m, Math.floor(avail / needInt));
+    }
+    return m === Infinity ? 0 : m;
+  }
 
   function calcVanillaCost(fKey) {
     const fRec=PRECISION_ALCHEMY[fKey]; if(!fRec)return 0;
@@ -386,7 +414,13 @@ async function calcOpt() {
   // 최종산물 분석
   const finalAnalysis = {};
   for (const [fKey, fRec] of Object.entries(PRECISION_ALCHEMY)) {
-    const sfNeed=calcSFNeedForFinal(fKey);
+    const sfNeed = calcSFNeedForFinal(fKey);
+    // compound(핵/결정/영약) 보유분을 직접 소비하기 위해 필요량 저장
+    const compoundNeed = {}; // { compoundKey: qty per final product }
+    for (const [mk, mq] of Object.entries(fRec.materials)) {
+      if (ALCHEMY[mk]?.reversible === false) compoundNeed[mk] = mq;
+    }
+
     const step2={}, step3={};
     for(const[mk,mq]of Object.entries(fRec.materials)){
       const rec=ALCHEMY[mk];if(!rec)continue;
@@ -400,7 +434,7 @@ async function calcOpt() {
     const vanCost=calcVanillaCost(fKey);
     const sfCost=calcSFCostForFinal(sfNeed);
     const netPerUnit=sellPrice-vanCost-(includeSFCost?sfCost:0);
-    finalAnalysis[fKey]={name:fRec.name,tier:fRec.tier,sfNeed,vanCost,sfCost,sellPrice,netPerUnit,step2,step3,craftTimeSec:fRec.craftTimeSec||0};
+    finalAnalysis[fKey]={name:fRec.name,tier:fRec.tier,sfNeed,compoundNeed,vanCost,sfCost,sellPrice,netPerUnit,step2,step3,craftTimeSec:fRec.craftTimeSec||0};
   }
 
   /* ──────────────────────────────────────
@@ -425,23 +459,7 @@ async function calcOpt() {
   ────────────────────────────────────── */
   const allFKeys = Object.keys(finalAnalysis);
 
-  // ── maxMake: 업그레이드 포함, 실제 canAfford 기반 ──
-  function maxMake(sfNeed, curInv) {
-    let m = Infinity;
-    for (const [sf, need] of Object.entries(sfNeed)) {
-      if (need <= 0) continue;
-      const needInt = Math.ceil(need);
-      const tier = parseInt(sf.slice(-1));
-      let avail = curInv[sf] || 0;
-      if (tier === 2) avail += Math.floor((curInv[sf.replace('2','1')]||0) / 3);
-      m = Math.min(m, Math.floor(avail / needInt));
-    }
-    return m === Infinity ? 0 : m;
-  }
-
-  // ── UB: 그리디 상한 (여러 정렬 중 최대) ──
-  // 그리디는 항상 실제 최적 이하이므로 UB로 쓰면 좋은 해를 날릴 수 있음
-  // ── 연립방정식으로 tier별 최적 개수 계산 ──
+  // ── UB: 그리디 상한 / 연립방정식으로 tier별 최적 개수 계산 ──
   function solveLinearPlan(startInv, zeroRev, zeroPlan) {
     const SF_TYPES_LOCAL = ['oyster','conch','octopus','seaweed','urchin'];
     const tier2K = nonZeroKeys.filter(k => finalAnalysis[k].tier === 2);
@@ -544,18 +562,17 @@ async function calcOpt() {
       let feasible = true;
       for (let i = 0; i < sortedTK.length; i++) {
         const k = sortedTK[i];
-        const n = Math.min(sol[i] || 0, maxMake(finalAnalysis[k].sfNeed, tmpInv));
+        const n = Math.min(sol[i] || 0, maxMake(finalAnalysis[k].sfNeed, tmpInv, finalAnalysis[k].compoundNeed||{}));
         if (n < 0) { feasible = false; break; }
         made.push([k, n]);
-        for (let j = 0; j < n; j++) doConsumeSF(finalAnalysis[k].sfNeed, tmpInv);
+        for (let j = 0; j < n; j++) doConsumeSF(finalAnalysis[k].sfNeed, tmpInv, finalAnalysis[k].compoundNeed||{});
       }
       if (!feasible) continue;
 
-      // 적용
       for (const [k, n] of made) {
         curPlan[k] = n;
         rev += n * finalAnalysis[k].sellPrice;
-        for (let j = 0; j < n; j++) doConsumeSF(finalAnalysis[k].sfNeed, curInv);
+        for (let j = 0; j < n; j++) doConsumeSF(finalAnalysis[k].sfNeed, curInv, finalAnalysis[k].compoundNeed||{});
       }
     }
     return { plan: curPlan, rev, remInv: curInv };
@@ -589,8 +606,8 @@ async function calcOpt() {
     let ok = true;
     for (const zk of zeroKeys) {
       for (let i = 0; i < d; i++) {
-        if (!canAffordSF(finalAnalysis[zk].sfNeed, invAfterZero)) { ok = false; break; }
-        doConsumeSF(finalAnalysis[zk].sfNeed, invAfterZero);
+        if (!canAffordSF(finalAnalysis[zk].sfNeed, invAfterZero, finalAnalysis[zk].compoundNeed||{})) { ok = false; break; }
+        doConsumeSF(finalAnalysis[zk].sfNeed, invAfterZero, finalAnalysis[zk].compoundNeed||{});
       }
       if (!ok) break;
       zeroPlan[zk] = d;
