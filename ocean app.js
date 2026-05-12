@@ -447,60 +447,72 @@ async function calcOpt() {
 
     function solveExact(items, ti, inv2) {
       if(!items.length) return null;
-      const invCopy = {...inv2};
+      const SF_TYPES_LOCAL = ['oyster','conch','octopus','seaweed','urchin'];
+      const stock = SF_TYPES_LOCAL.map(sf => inv2[`${sf}${ti}`] || 0);
+      const n = items.length;
 
-        // 각 아이템의 단독 최대 제작량
-        const maxEach = items.map(k => maxMake(finalAnalysis[k].sfNeed, {...invCopy}));
-        if(maxEach.every(m=>m===0)) return null;
+      // 각 아이템별 소비 계수
+      const A = items.map(k =>
+        SF_TYPES_LOCAL.map(sf => {
+          const need = finalAnalysis[k].sfNeed[`${sf}${ti}`];
+          return need ? Math.ceil(need) : 0;
+        })
+      );
 
-        // 수익 내림차순 정렬로 그리디 초기해
-        const sorted = items.map((k,i)=>({k,i,price:finalAnalysis[k].sellPrice,mx:maxEach[i]}))
-          .sort((a,b)=>b.price-a.price);
+      // 실제로 소비가 있는 sf 목록
+      const activeSF = SF_TYPES_LOCAL
+        .map((sf, si) => ({ si, stock: stock[si], total: items.reduce((s,_,ii)=>s+A[ii][si],0) }))
+        .filter(x => x.total > 0 && x.stock > 0);
 
-        const greedySol = new Array(items.length).fill(0);
-        const greedyInv = {...invCopy};
-        for(const {k,i} of sorted){
-          const n = maxMake(finalAnalysis[k].sfNeed, greedyInv);
-          greedySol[i] = n;
-          for(let j=0;j<n;j++) doConsumeSF(finalAnalysis[k].sfNeed, greedyInv);
-        }
+      if (activeSF.length < n) return null;
 
-        // 조정: 수익 낮은 아이템을 줄이고 수익 높은 아이템을 늘리는 시도
-        let bestSol = [...greedySol];
-        let bestRev = bestSol.reduce((s,n,i)=>s+n*finalAnalysis[items[i]].sellPrice,0);
-
-        // 각 아이템 쌍에 대해 교환 시도 (최대 50회)
-        for(let iter=0; iter<50; iter++){
-          let improved = false;
-          for(let lo=items.length-1; lo>=0; lo--){
-            for(let hi=0; hi<lo; hi++){
-              if(finalAnalysis[items[hi]].sellPrice <= finalAnalysis[items[lo]].sellPrice) continue;
-              // lo 아이템 1개 줄이고 hi 아이템 늘릴 수 있나?
-              if(bestSol[lo] <= 0) continue;
-              const testSol = [...bestSol];
-              testSol[lo]--;
-              // 남은 재고 계산
-              const testInv = {...invCopy};
-              for(let i=0;i<items.length;i++){
-                for(let j=0;j<testSol[i];j++) doConsumeSF(finalAnalysis[items[i]].sfNeed, testInv);
-              }
-              const gain = maxMake(finalAnalysis[items[hi]].sfNeed, testInv);
-              if(gain > 0){
-                testSol[hi] += gain;
-                const testRev = testSol.reduce((s,n,i)=>s+n*finalAnalysis[items[i]].sellPrice,0);
-                if(testRev > bestRev){
-                  bestRev = testRev;
-                  bestSol = testSol;
-                  improved = true;
-                }
-              }
-            }
-          }
-          if(!improved) break;
-        }
-
-        return bestSol;
+      function det2x2(m) { return m[0][0]*m[1][1] - m[0][1]*m[1][0]; }
+      function det3x3([[a,b2,c],[d,e,f_],[g,h,ii]]) {
+        return a*(e*ii-f_*h) - b2*(d*ii-f_*g) + c*(d*h-e*g);
       }
+      function replaceCol(M,col,bVec){ return M.map((row,i)=>row.map((v,j)=>j===col?bVec[i]:v)); }
+
+      function trySolve(chosen) {
+        const Asq = chosen.map(({si})=>items.map((_,ii)=>A[ii][si]));
+        const b = chosen.map(({stock})=>stock);
+        let detFn;
+        if(n===1) return [Math.max(0, Math.round(b[0]/(Asq[0][0]||1)))];
+        if(n===2) detFn=det2x2;
+        else if(n===3) detFn=det3x3;
+        else return null;
+        const D=detFn(Asq);
+        if(Math.abs(D)<0.001) return null;
+        let sol = Array.from({length:n},(_,i)=>Math.max(0,Math.round(detFn(replaceCol(Asq,i,b))/D)));
+        // 초과 조정
+        for(let iter=0;iter<30;iter++){
+          let wo=0,wsi=-1;
+          for(let si=0;si<5;si++){const over=items.reduce((s,_,ii)=>s+A[ii][si]*sol[ii],0)-stock[si];if(over>wo){wo=over;wsi=si;}}
+          if(wsi<0)break;
+          let wi=-1,wa=0;for(let ii=0;ii<n;ii++){if(A[ii][wsi]>wa&&sol[ii]>0){wa=A[ii][wsi];wi=ii;}}
+          if(wi<0)break;
+          sol[wi]=Math.max(0,sol[wi]-Math.ceil(wo/wa));
+        }
+        return sol;
+      }
+
+      // 모든 가능한 SF 조합 중 수익 최대인 해 선택
+      let bestSol = null, bestRev = -1;
+      // n개의 activeSF 중 n개 선택 (조합)
+      function combinations(arr, k) {
+        if(k===0) return [[]];
+        if(arr.length<k) return [];
+        const [first,...rest] = arr;
+        return [...combinations(rest,k-1).map(c=>[first,...c]), ...combinations(rest,k)];
+      }
+      const combos = combinations(activeSF, n);
+      for(const chosen of combos){
+        const sol = trySolve(chosen);
+        if(!sol) continue;
+        const rev = sol.reduce((s,x,i)=>s+x*finalAnalysis[items[i]].sellPrice,0);
+        if(rev > bestRev){ bestRev=rev; bestSol=sol; }
+      }
+      return bestSol;
+    }
 
     // tier 순서로 풀기: 3성 → 2성 → 1성
     const curInv = {...startInv};
