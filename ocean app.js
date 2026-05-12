@@ -1183,12 +1183,37 @@ window.addIntermRow=()=>{
   const list=document.getElementById('intermList');if(!list)return;
   const rid=++intermRowId,row=document.createElement('div');
   row.className='interm-row';row.id='irow_'+rid;
+  const COMPOUND_KEYS = new Set(['core_guard','core_wave','core_chaos','core_life','core_corrosion','crystal_vitality','crystal_erosion','crystal_defense','crystal_torrent','crystal_poison','potion_immortal','potion_barrier','potion_corrupt','potion_frenzy','potion_venom']);
+
   row.innerHTML=
-    '<div class="interm-sel-wrap"><select class="interm-sel" id="isel_'+rid+'" onchange="saveAll()">'+makeIntermOptions()+'</select></div>'
+    '<div class="interm-sel-wrap"><select class="interm-sel" id="isel_'+rid+'" onchange="onIntermSelChange(\''+rid+'\')">'+makeIntermOptions()+'</select></div>'
     +'<div style="flex:1;min-width:0">'
     +splitQtyHtml('iqty_'+rid,'var(--acc)')
     +'</div>'
-    +'<button class="del-btn" onclick="document.getElementById(\'irow_'+rid+'\').remove();saveAll()">✕</button>';
+    +'<button class="del-btn" onclick="document.getElementById(\'irow_'+rid+'\').remove();updateIntermWarning();saveAll()">✕</button>';
+
+  window.onIntermSelChange = (rid2) => {
+    saveAll();
+    updateIntermWarning();
+  };
+
+  function updateIntermWarning() {
+    const warn = document.getElementById('intermWarning');
+    if (!warn) return;
+    const hasCompound = [...document.querySelectorAll('#intermList .interm-sel')]
+      .some(sel => COMPOUND_KEYS.has(sel.value));
+    warn.style.display = hasCompound ? '' : 'none';
+  }
+
+  // 경고 박스가 없으면 생성
+  const list2 = document.getElementById('intermList');
+  if (list2 && !document.getElementById('intermWarning')) {
+    const warnEl = document.createElement('div');
+    warnEl.id = 'intermWarning';
+    warnEl.style.cssText = 'display:none;margin-top:8px;padding:7px 10px;background:var(--ylw-bg);border:1.5px solid var(--ylw);border-radius:var(--rs);font-size:11px;color:var(--ylw);line-height:1.5';
+    warnEl.innerHTML = '⚠️ <b>핵 · 결정 · 영약</b>을 보유 중간재료로 입력하면 최적화 결과가 실제 최적이 아닐 수 있습니다. (분해 불가 재료로 인해 계산 방식이 달라질 수 있음)';
+    list2.parentNode.insertBefore(warnEl, list2.nextSibling);
+  }
   list.appendChild(row);
   // splitQtyHtml 입력 이벤트를 saveAll로 연결
   ['_box','_set','_ea'].forEach(s=>{
