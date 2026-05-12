@@ -897,7 +897,7 @@ function renderOptResult({ planEntries, finalAnalysis, workInv, totalRev, totalV
         const name=fa2.name.replace(/★+\s*/g,'').replace(/\s*★+/g,'').trim();
         html+=`<div style="${lStyle}">`;
         html+=`<span style="${chipB};background:${color2}18;border:1.5px solid ${color2};min-width:100px"><span style="color:${color2}">${name}</span></span>`;
-        html+=`<span style="font-size:12px;color:var(--muted);flex-shrink:0">${fmtQty(cnt)}</span>`;
+        html+=`<span style="font-size:12px;color:var(--muted);flex-shrink:0">${fmtQty(cnt)}개</span>`;
         html+=`<span style="font-size:12px;color:var(--txt);font-weight:900;flex-shrink:0">${f(rev)}원</span>`;
         html+=`<span style="font-size:11px;color:${netColor2};margin-left:auto;flex-shrink:0">${netSign2}${f(netTot)}원</span>`;
         html+=`</div>`;
@@ -1027,18 +1027,19 @@ function renderOptResult({ planEntries, finalAnalysis, workInv, totalRev, totalV
           }).join(' ');
 
         s+=`<div style="${lStyle}">`;
-        // 수량 표시: 제작량 + 보유량
-        let qtyDisplay=fmtQty(qty);
-        if(saved>0) qtyDisplay+=` <span style="font-size:9px;opacity:.6">+보유${fmtQty(saved)}</span>`;
-        if(isPA&&qty>50){
-          const parts=[];let rem=qty;
+        // 정수/에센스: 총량(제작+보유) 표시, 재료 뒤에 보유분 별도 칩
+        const totalQty = qty + saved;
+        let qtyDisplay = fmtQty(totalQty);
+        if(isPA && totalQty > 50){
+          const parts=[];let rem=totalQty;
           while(rem>0){parts.push(Math.min(rem,50));rem-=50;}
           qtyDisplay+=`<span style="font-size:9px;color:${color2};opacity:.7;margin-left:2px">(${parts.join('+')})</span>`;
         }
         s+=`<span style="${chipB};background:${color2}18;border:1.5px solid ${color2}"><span style="color:${color2}">${name}</span> <span style="color:${color2}">${qtyDisplay}</span></span>`;
-        if(matParts){
-          s+=`<span style="color:var(--bdr2);font-size:13px;font-weight:900;flex-shrink:0">·</span>`;
-          s+=matParts;
+        s+=`<span style="color:var(--bdr2);font-size:13px;font-weight:900;flex-shrink:0">·</span>`;
+        s+=matParts;
+        if(!isPA && saved>0){
+          s+=`<span style="${chipB};background:var(--bg);border:1.5px dashed var(--bdr2)"><span style="color:var(--muted)">보유</span> <span style="color:var(--muted)">${fmtQty(saved)}</span></span>`;
         }
         if(!isPA&&itemSec>0){
           s+=`<span style="margin-left:auto;font-size:10px;color:var(--muted);flex-shrink:0">⏱️ ${fmtTime(itemSec)}</span>`;
@@ -1085,7 +1086,7 @@ function renderOptResult({ planEntries, finalAnalysis, workInv, totalRev, totalV
         const name=fa2.name.replace(/★+\s*/g,'').replace(/\s*★+/g,'').trim();
         html+=`<div style="${lStyle}">`;
         html+=`<span style="${chipB};background:${color2}18;border:1.5px solid ${color2};min-width:100px"><span style="color:${color2}">${name}</span></span>`;
-        html+=`<span style="font-size:12px;color:var(--muted);flex-shrink:0">${fmtQty(qty)}</span>`;
+        html+=`<span style="font-size:12px;color:var(--muted);flex-shrink:0">${fmtQty(qty)}개</span>`;
         html+=`<span style="font-size:12px;color:var(--txt);font-weight:900;flex-shrink:0">${f(rev)}원</span>`;
         html+=`<span style="font-size:11px;color:${netColor2};margin-left:auto;flex-shrink:0">${netSign2}${f(netTot)}원</span>`;
         html+=`</div>`;
