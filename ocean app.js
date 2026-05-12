@@ -441,89 +441,66 @@ async function calcOpt() {
 
   // ── UB: 그리디 상한 / 연립방정식으로 tier별 최적 개수 계산 ──
   function solveLinearPlan(startInv, zeroRev, zeroPlan) {
-    const SF_TYPES_LOCAL = ['oyster','conch','octopus','seaweed','urchin'];
     const tier2K = nonZeroKeys.filter(k => finalAnalysis[k].tier === 2);
     const tier3K = nonZeroKeys.filter(k => finalAnalysis[k].tier === 3);
     const tier1K = nonZeroKeys.filter(k => finalAnalysis[k].tier === 1);
 
-    // 각 어패류에 대해 이 tier 아이템들의 소비 계수 행렬 구성
-    // 병목 sf(가장 적은 보유량 순) n개를 선택해 n×n 연립방정식으로 정확히 풀기
     function solveExact(items, ti, inv2) {
-      const stock = SF_TYPES_LOCAL.map(sf => inv2[`${sf}${ti}`] || 0);
-      const n = items.length;
-      if (n === 0) return null;
+      if(!items.length) return null;
+      const invCopy = {...inv2};
 
-      // 각 아이템별 소비 계수 (sf순)
-      const A = items.map(k =>
-        SF_TYPES_LOCAL.map(sf => {
-          const key = `${sf}${ti}`;
-          const need = finalAnalysis[k].sfNeed[key];
-          return need ? Math.ceil(need) : 0;
-        })
-      ); // n × 5
+        // 각 아이템의 단독 최대 제작량
+        const maxEach = items.map(k => maxMake(finalAnalysis[k].sfNeed, {...invCopy}));
+        if(maxEach.every(m=>m===0)) return null;
 
-      // 실제로 소비가 있는 sf만 (계수 합이 0이 아닌 것)
-      let activeSF = SF_TYPES_LOCAL
-        .map((sf, si) => ({ si, sf, total: items.reduce((s,_,ii) => s + A[ii][si], 0), stock: stock[si] }))
-        .filter(x => x.total > 0 && x.stock > 0)
-        .sort((a, b) => a.stock - b.stock); // 보유량 적은 순(병목 우선)
+        // 수익 내림차순 정렬로 그리디 초기해
+        const sorted = items.map((k,i)=>({k,i,price:finalAnalysis[k].sellPrice,mx:maxEach[i]}))
+          .sort((a,b)=>b.price-a.price);
 
-      // 핵/결정/영약 직접 보유: sfNeed에 포함된 경우 maxMake로 처리 (연립방정식 불필요)
-      // → 이미 maxMake가 이를 반영하므로 solveExact는 어패류 병목만 담당
-      // 단, 직접 보유 중간재료가 있으면 사실상 activeSF가 부족할 수 있으므로
-      // activeSF가 n개 미만이면 maxMake 기반 단순 할당으로 폴백
-      if (activeSF.length < n) return null;
-
-      // 가장 병목이 되는 n개 sf로 n×n 연립방정식
-      // 방정식: Asq[sf_idx][item_idx] × x[item_idx] = b[sf_idx]
-      const chosen = activeSF.slice(0, n);
-      const Asq = chosen.map(({si}) => items.map((_,ii) => A[ii][si])); // n×n: sf × items
-      const b = chosen.map(({stock}) => stock);
-
-      // n×n Cramer's rule
-      function det2x2(m) { return m[0][0]*m[1][1] - m[0][1]*m[1][0]; }
-      function det3x3([[a,b2,c],[d,e,f_],[g,h,ii]]) {
-        return a*(e*ii-f_*h) - b2*(d*ii-f_*g) + c*(d*h-e*g);
-      }
-      function replaceCol(M, col, bVec) {
-        return M.map((row, i) => row.map((v, j) => j === col ? bVec[i] : v));
-      }
-      let detFn;
-      if (n === 1) return [Math.max(0, Math.round(b[0] / (Asq[0][0] || 1)))];
-      if (n === 2) detFn = det2x2;
-      else if (n === 3) detFn = det3x3;
-      else return null;
-
-      const D = detFn(Asq);
-      if (Math.abs(D) < 0.001) return null;
-      const rawSol = Array.from({length: n}, (_, i) => detFn(replaceCol(Asq, i, b)) / D);
-      let sol = rawSol.map(v => Math.max(0, Math.round(v)));
-
-      // 반올림 후 모든 sf 재고 초과 검증 및 조정
-      // A 행렬(ceil된 sfNeed)로 사용량 추정 → 초과 시 해당 아이템 줄임
-      for (let iter = 0; iter < 30; iter++) {
-        let worstOverflow = 0, worstSi = -1;
-        for (let si = 0; si < SF_TYPES_LOCAL.length; si++) {
-          // A[ii][si]는 sfNeed를 ceil한 값이나, 실제로는 배치 단위라 더 클 수 있음
-          // 안전하게 A 기반으로 체크 (보수적 추정)
-          const used = items.reduce((s, _, ii) => s + A[ii][si] * sol[ii], 0);
-          const over = used - stock[si];
-          if (over > worstOverflow) { worstOverflow = over; worstSi = si; }
+        const greedySol = new Array(items.length).fill(0);
+        const greedyInv = {...invCopy};
+        for(const {k,i} of sorted){
+          const n = maxMake(finalAnalysis[k].sfNeed, greedyInv);
+          greedySol[i] = n;
+          for(let j=0;j<n;j++) doConsumeSF(finalAnalysis[k].sfNeed, greedyInv);
         }
-        if (worstSi < 0) break;
-        // 가장 많이 쓰는 아이템을 ceil(over/A)만큼 줄임
-        let worstIdx = -1, worstA = 0;
-        for (let ii = 0; ii < n; ii++) {
-          if (A[ii][worstSi] > worstA && sol[ii] > 0) { worstA = A[ii][worstSi]; worstIdx = ii; }
-        }
-        if (worstIdx < 0) break;
-        const reduce = Math.ceil(worstOverflow / worstA);
-        sol[worstIdx] = Math.max(0, sol[worstIdx] - reduce);
-      }
-      // 추가 안전장치: maxMake 기반 최종 클램프는 solveLinearPlan에서 처리
 
-      return sol;
-    }
+        // 조정: 수익 낮은 아이템을 줄이고 수익 높은 아이템을 늘리는 시도
+        let bestSol = [...greedySol];
+        let bestRev = bestSol.reduce((s,n,i)=>s+n*finalAnalysis[items[i]].sellPrice,0);
+
+        // 각 아이템 쌍에 대해 교환 시도 (최대 50회)
+        for(let iter=0; iter<50; iter++){
+          let improved = false;
+          for(let lo=items.length-1; lo>=0; lo--){
+            for(let hi=0; hi<lo; hi++){
+              if(finalAnalysis[items[hi]].sellPrice <= finalAnalysis[items[lo]].sellPrice) continue;
+              // lo 아이템 1개 줄이고 hi 아이템 늘릴 수 있나?
+              if(bestSol[lo] <= 0) continue;
+              const testSol = [...bestSol];
+              testSol[lo]--;
+              // 남은 재고 계산
+              const testInv = {...invCopy};
+              for(let i=0;i<items.length;i++){
+                for(let j=0;j<testSol[i];j++) doConsumeSF(finalAnalysis[items[i]].sfNeed, testInv);
+              }
+              const gain = maxMake(finalAnalysis[items[hi]].sfNeed, testInv);
+              if(gain > 0){
+                testSol[hi] += gain;
+                const testRev = testSol.reduce((s,n,i)=>s+n*finalAnalysis[items[i]].sellPrice,0);
+                if(testRev > bestRev){
+                  bestRev = testRev;
+                  bestSol = testSol;
+                  improved = true;
+                }
+              }
+            }
+          }
+          if(!improved) break;
+        }
+
+        return bestSol;
+      }
 
     // tier 순서로 풀기: 3성 → 2성 → 1성
     const curInv = {...startInv};
