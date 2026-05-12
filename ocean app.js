@@ -365,7 +365,6 @@ async function calcOpt() {
     const sf=m[1], tier=+m[2];
     let have=curInv[sfKey]||0, remaining=needInt-have;
     if(remaining<=0){curInv[sfKey]=have-needInt;return true;}
-    if(tier===2){const t1=`${sf}1`,canUp=Math.floor((curInv[t1]||0)/3),up=Math.min(canUp,remaining);if(up>0){curInv[t1]-=up*3;curInv[sfKey]=(curInv[sfKey]||0)+up;have=curInv[sfKey];remaining=needInt-have;}}
     if(remaining>0)return false;
     curInv[sfKey]=have-needInt;return true;
   }
@@ -379,7 +378,6 @@ async function calcOpt() {
       const needInt = Math.ceil(need);
       const tier = parseInt(sf.slice(-1));
       let avail = curInv[sf] || 0;
-      if (tier === 2) avail += Math.floor((curInv[sf.replace('2','1')]||0) / 3);
       m = Math.min(m, Math.floor(avail / needInt));
     }
     return m === Infinity ? 0 : m;
@@ -418,24 +416,8 @@ async function calcOpt() {
   }
 
   /* ──────────────────────────────────────
-     Branch & Bound — 100% 정확
-
-     [이전 버그 수정]
-     LP UB를 "단가 내림차순으로 그리디 소비"로 계산하면
-     업그레이드에 1성을 다 써버린 후 1성 완성품을 못 만드는 경우를
-     UB가 과소평가해서 올바른 해를 가지치기로 날려버림.
-
-     [수정된 UB]
-     각 어패류 종류(sf1, sf2, sf3)를 독립 자원으로 보고,
-     각 자원에 대해 "이 자원을 가장 효율적으로 쓰는 아이템의 단가"로
-     상한을 계산. 업그레이드 여부와 무관하게 항상 실제 최적 이상.
-
-     알고리즘:
-     1. 정렬: 아이템을 판매가 내림차순 (단순하고 안전)
-     2. 초기 하한: 업그레이드 있/없 두 가지 그리디로 더 좋은 것 선택
-     3. UB: 각 어패류 종류별로 최고 단가 아이템에 소수점 배분한 합산
-            → 항상 실제 최적해 이상 (안전한 상한)
-     4. 스택 기반 B&B: n=maxN부터 탐색 → 좋은 해 빠르게 확보
+     연립방정식 기반 tier별 최적 배분
+     알고리즘: 3성→2성→1성 순서로 SF 조합 전체 탐색
   ────────────────────────────────────── */
   const allFKeys = Object.keys(finalAnalysis);
 
@@ -483,7 +465,7 @@ async function calcOpt() {
         const D=detFn(Asq);
         if(Math.abs(D)<0.001) return null;
         let sol = Array.from({length:n},(_,i)=>Math.max(0,Math.round(detFn(replaceCol(Asq,i,b))/D)));
-        // 초과 조정
+        // 초과 조정 (stock 기준)
         for(let iter=0;iter<30;iter++){
           let wo=0,wsi=-1;
           for(let si=0;si<5;si++){const over=items.reduce((s,_,ii)=>s+A[ii][si]*sol[ii],0)-stock[si];if(over>wo){wo=over;wsi=si;}}
@@ -497,7 +479,6 @@ async function calcOpt() {
 
       // 모든 가능한 SF 조합 중 수익 최대인 해 선택
       let bestSol = null, bestRev = -1;
-      // n개의 activeSF 중 n개 선택 (조합)
       function combinations(arr, k) {
         if(k===0) return [[]];
         if(arr.length<k) return [];
@@ -626,25 +607,7 @@ async function calcOpt() {
   function collectVan(key,qty,depth=0){if(depth>12)return;if(VANILLA_META[key]){totalVan[key]=(totalVan[key]||0)+qty;return;}const rec=ALCHEMY[key];if(!rec)return;const b=Math.ceil(qty/(rec.output||1));for(const[mk,mq]of Object.entries(rec.materials))collectVan(mk,mq*b,depth+1);}
   for(const[fKey,cnt]of planEntries)for(const[mk,mq]of Object.entries(PRECISION_ALCHEMY[fKey].materials))collectVan(mk,mq*cnt);
 
-  // 결과 캐시 저장
-  // 업그레이드 수량 계산: 초기 재고 vs 최종 재고 비교
-  // 1성이 줄고 2성이 늘었으면 → 업그레이드 발생
-  const upgradeInfo = {}; // { sf: { from1: N, to2: M } }  1성 N개 → 2성 M개
-  for (const sf of SF_TYPES) {
-    const k1 = `${sf}1`, k2 = `${sf}2`;
-    const orig1 = inv[k1] || 0, final1 = workInv[k1] || 0;
-    const orig2 = inv[k2] || 0, final2 = workInv[k2] || 0;
-    const used1 = orig1 - final1; // 총 1성 소비량
-    const used2 = orig2 - final2; // 총 2성 소비량 (음수면 2성이 늘었다는 뜻 = 업그레이드)
-    // 2성이 늘었다면 업그레이드가 있었음
-    if (used2 < 0) {
-      const upgraded2 = -used2; // 업그레이드로 생긴 2성 개수
-      const upgraded1 = upgraded2 * 3; // 소비한 1성 개수
-      upgradeInfo[sf] = { from1: upgraded1, to2: upgraded2 };
-    }
-  }
-
-  _cachedOptResult = { planEntries, finalAnalysis, workInv, totalRev, totalVan, SF_KEYS, upgradeInfo, inv, intermHave };
+  _cachedOptResult = { planEntries, finalAnalysis, workInv, totalRev, totalVan, SF_KEYS, inv, intermHave };
 
   renderOptResult(_cachedOptResult);
 }
@@ -653,7 +616,7 @@ async function calcOpt() {
    renderOptResult — 캐시된 결과를 토글 상태에 맞게 렌더링
    calcOpt 완료 후 호출, 토글 변경 시에도 재호출
 ════════════════════════════════════════ */
-function renderOptResult({ planEntries, finalAnalysis, workInv, totalRev, totalVan, SF_KEYS, upgradeInfo, inv, intermHave={} }) {
+function renderOptResult({ planEntries, finalAnalysis, workInv, totalRev, totalVan, SF_KEYS, inv, intermHave={} }) {
   const includeSFCost = document.getElementById('sfCostToggle')?.checked      ?? false;
   const viewByStage   = document.getElementById('viewByStageToggle')?.checked  ?? false;
 
@@ -1146,25 +1109,6 @@ function renderOptResult({ planEntries, finalAnalysis, workInv, totalRev, totalV
     for(const[mk,mq]of Object.entries(fa.step3)){const r=ALCHEMY[mk];if(r)t+=(mq*cnt)*(r.craftTimeSec||0);}
     return s+t;
   },0)*(1-fr);
-
-  // 업그레이드 안내
-  const sfNames={oyster:'굴',conch:'소라',octopus:'문어',seaweed:'미역',urchin:'성게'};
-  if (upgradeInfo && Object.keys(upgradeInfo).length > 0) {
-    html+=`<div style="background:var(--ylw-bg);border:1.5px solid var(--ylw);border-radius:var(--rs);padding:10px 12px;margin-bottom:10px">`;
-    html+=`<div style="font-family:'Jua',sans-serif;font-size:12px;color:var(--ylw);margin-bottom:6px">🔄 어패류 업그레이드 필요</div>`;
-    for(const[sf,{from1,to2}]of Object.entries(upgradeInfo)){
-      const sfCol=sfColors[sf]||'#888';
-      html+=`<div style="font-size:12px;padding:2px 0;display:flex;align-items:center;gap:6px">`;
-      html+=`<span style="color:${sfCol};font-weight:700">${sfNames[sf]||sf} ★</span>`;
-      html+=`<span style="color:var(--txt)">${fmtQty(from1)}</span>`;
-      html+=`<span style="color:var(--muted)">→</span>`;
-      html+=`<span style="color:${sfCol};font-weight:700">${sfNames[sf]||sf} ★★</span>`;
-      html+=`<span style="color:var(--txt)">${fmtQty(to2)}</span>`;
-      html+=`<span style="color:var(--muted);font-size:10px">(3개→1개)</span>`;
-      html+=`</div>`;
-    }
-    html+=`</div>`;
-  }
 
   html+=`<div class="result-box" style="margin-top:12px">`;
   if(remEntries.length || Object.keys(leftoverInterm).length){
