@@ -1212,7 +1212,9 @@ window.addIntermRow=()=>{
       saveAll();
     });
   });
-  initOneCdd(row.querySelector('select'));saveAll();
+  initOneCdd(row.querySelector('select'));
+  list.appendChild(row);
+  saveAll();
 };
 function buildHaveSeafoodGrid(){
   const el=document.getElementById('haveSeafoodGrid');if(!el)return;
