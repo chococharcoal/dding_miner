@@ -172,24 +172,15 @@ input[type=number]{-moz-appearance:textfield;appearance:textfield}
 #viewByStageToggle:checked+.sf-tog-track{background:var(--acc)}
 #viewByStageToggle:checked+.sf-tog-track .sf-tog-thumb{transform:translateX(16px)}
 #viewByStageToggle:checked~.sf-tog-label{color:var(--acc)}
+#excludeDilutedToggle:checked+.sf-tog-track{background:var(--acc)}
+#excludeDilutedToggle:checked+.sf-tog-track .sf-tog-thumb{transform:translateX(16px)}
+#excludeDilutedToggle:checked~.sf-tog-label{color:var(--acc)}
 #calcOptBtn:disabled{opacity:.5;cursor:not-allowed}
 
 ::-webkit-scrollbar{width:5px}
 ::-webkit-scrollbar-thumb{background:var(--bdr2);border-radius:3px}
 </style>
 </head>
-
-<!-- Google tag (gtag.js) -->
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-TYFFZ1K6QG"></script>
-<script>
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
-
-  gtag('config', 'G-TYFFZ1K6QG');
-</script>
-
-
 <body>
 <div class="page">
 <div class="hdr">
@@ -366,6 +357,14 @@ input[type=number]{-moz-appearance:textfield;appearance:textfield}
         <span class="sf-tog-desc">정수→핵→완성품 순서로 단계 구분 표시</span>
       </label>
 
+      <!-- 희석액 제외 토글 -->
+      <label class="sf-tog-wrap">
+        <input type="checkbox" id="excludeDilutedToggle" style="display:none" onchange="runCalcOpt()">
+        <span class="sf-tog-track"><span class="sf-tog-thumb"></span></span>
+        <span class="sf-tog-label">희석액 제외</span>
+        <span class="sf-tog-desc">추출된 희석액을 최적화에서 제외</span>
+      </label>
+
       <!-- 계산 버튼 -->
       <button id="calcOptBtn" onclick="runCalcOpt()"
         style="width:100%;padding:8px 16px;margin-bottom:12px;
@@ -387,7 +386,7 @@ input[type=number]{-moz-appearance:textfield;appearance:textfield}
 </div>
 </div>
 
-<script type="module" src="./ocean%20app.js?v=5"></script>
+<script type="module" src="./ocean%20app.js?v=6"></script>
 
 </body>
 </html>
