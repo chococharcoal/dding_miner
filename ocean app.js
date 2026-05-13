@@ -661,9 +661,9 @@ function renderOptResult({ planEntries, finalAnalysis, workInv, totalRev, totalV
   // 영약 순서: 불멸/파동/타락/생명/맹독
   const potiOrder=['potion_immortal','potion_barrier','potion_corrupt','potion_frenzy','potion_venom'];
   // 완성품 순서
-  const fin1Order=['LEVIATHAN','KRAKEN','AQUTIS'];
-  const fin2Order=['SEA_WING','DEEP_VIAL','WAVE_CORE'];
-  const fin3Order=['ABYSS_SPINE','NAUTILUS','AQUA_PULSE'];
+  const fin1Order=['AQUTIS','KRAKEN','LEVIATHAN'];
+  const fin2Order=['WAVE_CORE','DEEP_VIAL','SEA_WING'];
+  const fin3Order=['AQUA_PULSE','NAUTILUS','ABYSS_SPINE'];
 
   function sortedEntries(aggMap, orderArr) {
     const present = Object.entries(aggMap).filter(([,v])=>v>0);
@@ -677,7 +677,12 @@ function renderOptResult({ planEntries, finalAnalysis, workInv, totalRev, totalV
 
   function getSFMatch(k){return k.match(/^(oyster|conch|octopus|seaweed|urchin)(\d)$/);}
   function getSFName(k){const m=getSFMatch(k);if(!m)return null;return (SEAFOOD_TYPES[m[1]]?.name||m[1])+' '+'★'.repeat(+m[2]);}
-  function getMatName(k){return getSFName(k)||VANILLA_META[k]?.name||ALCHEMY[k]?.name||k;}
+  const SHORT_NAMES={
+    coral_dead_tube:'관 산호', coral_dead_brain:'사방산호',
+    coral_dead_bubble:'거품 산호', coral_dead_fire:'불 산호', coral_dead_horn:'뇌 산호',
+    spruce_leaf:'가문비 잎', dark_oak_leaf:'짙참 잎',
+  };
+  function getMatName(k){return SHORT_NAMES[k]||getSFName(k)||VANILLA_META[k]?.name||ALCHEMY[k]?.name||k;}
   function getMatColor(k){const m=getSFMatch(k);if(m)return sfColors[m[1]];if(VANILLA_META[k])return '#607090';if(ALCHEMY[k])return ALCHEMY[k].color||'#607090';return '#607090';}
   function chip(key,qty,qtyStr){const color=getMatColor(key),name=getMatName(key),qs=qtyStr||(qty!=null?fmtQty(qty):'');return `<span class="mat-chip-flow" style="--chip-color:${color}"><span class="chip-name">${name}</span><span class="chip-qty">${qs}</span></span>`;}
   const plus='<span class="flow-plus">+</span>';
@@ -846,7 +851,7 @@ function renderOptResult({ planEntries, finalAnalysis, workInv, totalRev, totalV
         const name=fa2.name.replace(/★+\s*/g,'').replace(/\s*★+/g,'').trim();
         html+=`<div style="${lStyle}">`;
         html+=`<span style="${chipB};background:${color2}18;border:1.5px solid ${color2};min-width:100px"><span style="color:${color2}">${name}</span></span>`;
-        html+=`<span style="font-size:12px;color:var(--muted);flex-shrink:0">${fmtQty(cnt)}개</span>`;
+        html+=`<span style="font-size:12px;color:var(--muted);flex-shrink:0">${fmtQty(cnt)}</span>`;
         html+=`<span style="font-size:12px;color:var(--txt);font-weight:900;flex-shrink:0">${f(rev)}원</span>`;
         html+=`<span style="font-size:11px;color:${netColor2};margin-left:auto;flex-shrink:0">${netSign2}${f(netTot)}원</span>`;
         html+=`</div>`;
@@ -1054,7 +1059,7 @@ function renderOptResult({ planEntries, finalAnalysis, workInv, totalRev, totalV
         const name=fa2.name.replace(/★+\s*/g,'').replace(/\s*★+/g,'').trim();
         html+=`<div style="${lStyle}">`;
         html+=`<span style="${chipB};background:${color2}18;border:1.5px solid ${color2};min-width:100px"><span style="color:${color2}">${name}</span></span>`;
-        html+=`<span style="font-size:12px;color:var(--muted);flex-shrink:0">${fmtQty(qty)}개</span>`;
+        html+=`<span style="font-size:12px;color:var(--muted);flex-shrink:0">${fmtQty(qty)}</span>`;
         html+=`<span style="font-size:12px;color:var(--txt);font-weight:900;flex-shrink:0">${f(rev)}원</span>`;
         html+=`<span style="font-size:11px;color:${netColor2};margin-left:auto;flex-shrink:0">${netSign2}${f(netTot)}원</span>`;
         html+=`</div>`;
