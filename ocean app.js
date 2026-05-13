@@ -683,7 +683,7 @@ function renderOptResult({ planEntries, finalAnalysis, workInv, totalRev, totalV
     spruce_leaf:'가문비 잎', dark_oak_leaf:'짙참 잎',
   };
   function getMatName(k){return SHORT_NAMES[k]||getSFName(k)||VANILLA_META[k]?.name||ALCHEMY[k]?.name||k;}
-  function getMatColor(k){const m=getSFMatch(k);if(m)return sfColors[m[1]];if(VANILLA_META[k])return '#607090';if(ALCHEMY[k])return ALCHEMY[k].color||'#607090';return '#607090';}
+  function getMatColor(k){const m=getSFMatch(k);if(m)return sfColors[m[1]];if(compoundColors[k])return compoundColors[k];if(VANILLA_META[k])return '#607090';if(ALCHEMY[k])return ALCHEMY[k].color||'#607090';return '#607090';}
   function chip(key,qty,qtyStr){const color=getMatColor(key),name=getMatName(key),qs=qtyStr||(qty!=null?fmtQty(qty):'');return `<span class="mat-chip-flow" style="--chip-color:${color}"><span class="chip-name">${name}</span><span class="chip-qty">${qs}</span></span>`;}
   const plus='<span class="flow-plus">+</span>';
   const arrow='<span class="flow-arrow">→</span>';
@@ -851,7 +851,7 @@ function renderOptResult({ planEntries, finalAnalysis, workInv, totalRev, totalV
         const name=fa2.name.replace(/★+\s*/g,'').replace(/\s*★+/g,'').trim();
         html+=`<div style="${lStyle}">`;
         html+=`<span style="${chipB};background:${color2}18;border:1.5px solid ${color2};min-width:100px"><span style="color:${color2}">${name}</span></span>`;
-        html+=`<span style="font-size:12px;color:var(--muted);flex-shrink:0">${fmtQty(cnt)}</span>`;
+        html+=`<span style="font-size:12px;color:var(--muted);flex-shrink:0">${fmtQty(cnt)}개</span>`;
         html+=`<span style="font-size:12px;color:var(--txt);font-weight:900;flex-shrink:0">${f(rev)}원</span>`;
         html+=`<span style="font-size:11px;color:${netColor2};margin-left:auto;flex-shrink:0">${netSign2}${f(netTot)}원</span>`;
         html+=`</div>`;
@@ -979,11 +979,9 @@ function renderOptResult({ planEntries, finalAnalysis, workInv, totalRev, totalV
             if(isPA){
               totalQ = mq*qty;
             } else {
-              const batch = output>1 ? Math.floor(qty/output) : qty;
+              // ceil 배치: 실제 제작 시 투입되는 재료량
+              const batch = output>1 ? Math.ceil(qty/output) : qty;
               totalQ = mq*batch;
-              // 재고 초과 시 클램프
-              const stock = inv[mk]||0;
-              if(stock>0 && totalQ > stock) totalQ = stock;
             }
             const col=getMatColor(mk);
             const nm=getMatName(mk).replace(/\s*★+/g,'').trim();
@@ -991,14 +989,8 @@ function renderOptResult({ planEntries, finalAnalysis, workInv, totalRev, totalV
           }).join(' ');
 
         s+=`<div style="${lStyle}">`;
-        // 에센스/정수(output:2): floor 배치 기준, 재료 재고도 초과 안 되게
-        let makeableBatch = output>1 ? Math.floor(qty/output) : qty;
-        if(!isPA && rec?.materials){
-          for(const[mk,mq]of Object.entries(rec.materials)){
-            const stock=inv[mk]||0;
-            if(stock>0) makeableBatch=Math.min(makeableBatch, Math.floor(stock/mq));
-          }
-        }
+        // 정수/에센스(output:2): ceil 배치로 실제 생산량 표시 (잉여 최대 1개 발생 가능)
+        const makeableBatch = output>1 ? Math.ceil(qty/output) : qty;
         const makeableQty = isPA ? qty : makeableBatch*output;
         const effectiveSaved = saved > 0 ? saved : 0;
         const totalQty = makeableQty + effectiveSaved;
@@ -1059,7 +1051,7 @@ function renderOptResult({ planEntries, finalAnalysis, workInv, totalRev, totalV
         const name=fa2.name.replace(/★+\s*/g,'').replace(/\s*★+/g,'').trim();
         html+=`<div style="${lStyle}">`;
         html+=`<span style="${chipB};background:${color2}18;border:1.5px solid ${color2};min-width:100px"><span style="color:${color2}">${name}</span></span>`;
-        html+=`<span style="font-size:12px;color:var(--muted);flex-shrink:0">${fmtQty(qty)}</span>`;
+        html+=`<span style="font-size:12px;color:var(--muted);flex-shrink:0">${fmtQty(qty)}개</span>`;
         html+=`<span style="font-size:12px;color:var(--txt);font-weight:900;flex-shrink:0">${f(rev)}원</span>`;
         html+=`<span style="font-size:11px;color:${netColor2};margin-left:auto;flex-shrink:0">${netSign2}${f(netTot)}원</span>`;
         html+=`</div>`;
