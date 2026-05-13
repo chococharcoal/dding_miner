@@ -1167,6 +1167,53 @@ function splitQtyHtml(id,color){
     +'<div style="display:flex;flex-direction:column;flex:1"><span style="font-size:8px;font-weight:700;color:'+color+';text-align:center;padding:2px 0;border-bottom:1px solid var(--bdr);background:var(--surf)">개</span><input id="'+id+'_ea" type="number" inputmode="numeric" placeholder="0" min="0" oninput="onSFQtyInput(\''+id+'\')" style="border:none;outline:none;background:transparent;width:100%;text-align:center;font-size:13px!important;font-weight:700!important;color:var(--txt);padding:5px 2px"></div>'
     +'</div><div id="'+id+'_p" style="font-size:10px;color:'+color+';min-height:13px;font-weight:700;text-align:right;margin-top:1px"></div>';
 }
+// 중간재료 카탈로그 (그룹별, 각 재료 색상 포함)
+const INTERM_GROUPS = [
+  { label:'1차 정수', color:'#3d6fd4', items:[
+    {key:'essence_guardian1', name:'수호의 정수', color:'#3d6fd4'},
+    {key:'essence_wave1',     name:'파동의 정수', color:'#c89c00'},
+    {key:'essence_chaos1',    name:'혼란의 정수', color:'#7c52c8'},
+    {key:'essence_life1',     name:'생명의 정수', color:'#d94f3d'},
+    {key:'essence_corrosion1',name:'부식의 정수', color:'#3a9e68'},
+  ]},
+  { label:'1차 핵', color:'#4db8e8', items:[
+    {key:'core_guard',    name:'물결 수호의 핵', color:'#4db8e8'},
+    {key:'core_wave',     name:'파동 오염의 핵', color:'#f0853a'},
+    {key:'core_chaos',    name:'질서 파괴의 핵', color:'#9060c8'},
+    {key:'core_life',     name:'활력 붕괴의 핵', color:'#c03040'},
+    {key:'core_corrosion',name:'침식 방어의 핵', color:'#48c070'},
+  ]},
+  { label:'2차 에센스', color:'#6090e8', items:[
+    {key:'essence_guardian2', name:'수호 에센스',  color:'#3d6fd4'},
+    {key:'essence_wave2',     name:'파동 에센스',  color:'#c89c00'},
+    {key:'essence_chaos2',    name:'혼란 에센스',  color:'#7c52c8'},
+    {key:'essence_life2',     name:'생명 에센스',  color:'#d94f3d'},
+    {key:'essence_corrosion2',name:'부식 에센스',  color:'#3a9e68'},
+  ]},
+  { label:'2차 결정', color:'#4db8e8', items:[
+    {key:'crystal_vitality',name:'활기 보존의 결정', color:'#4db8e8'},
+    {key:'crystal_erosion', name:'파도 침식의 결정', color:'#f0853a'},
+    {key:'crystal_defense', name:'방어 오염의 결정', color:'#9060c8'},
+    {key:'crystal_torrent', name:'격류 재생의 결정', color:'#c03040'},
+    {key:'crystal_poison',  name:'맹독 혼란의 결정', color:'#48c070'},
+  ]},
+  { label:'3차 엘릭서', color:'#9070d4', items:[
+    {key:'elixir_guardian', name:'수호의 엘릭서', color:'#3d6fd4'},
+    {key:'elixir_wave',     name:'파동의 엘릭서', color:'#c89c00'},
+    {key:'elixir_chaos',    name:'혼란의 엘릭서', color:'#7c52c8'},
+    {key:'elixir_life',     name:'생명의 엘릭서', color:'#d94f3d'},
+    {key:'elixir_corrosion',name:'부식의 엘릭서', color:'#3a9e68'},
+  ]},
+  { label:'3차 영약', color:'#c82828', items:[
+    {key:'potion_immortal',name:'불멸 재생의 영약', color:'#4db8e8'},
+    {key:'potion_barrier', name:'파동 장벽의 영약', color:'#f0853a'},
+    {key:'potion_corrupt', name:'타락 침식의 영약', color:'#9060c8'},
+    {key:'potion_frenzy',  name:'생명 광란의 영약', color:'#c03040'},
+    {key:'potion_venom',   name:'맹독 파동의 영약', color:'#48c070'},
+  ]},
+];
+const INTERM_BY_KEY = Object.fromEntries(INTERM_GROUPS.flatMap(g=>g.items.map(it=>[it.key,it])));
+
 function makeIntermOptions(){
   const groups=[
     {label:'── 1차 정수 ──',   keys:['essence_guardian1','essence_wave1','essence_chaos1','essence_life1','essence_corrosion1']},
@@ -1180,6 +1227,53 @@ function makeIntermOptions(){
   for(const{label,keys}of groups){opts+='<optgroup label="'+label+'">';for(const k of keys){const rec=ALCHEMY[k];if(!rec)continue;opts+='<option value="'+k+'">'+rec.name+'</option>';}opts+='</optgroup>';}
   return opts;
 }
+
+// 중간재료 선택 팝업 UI
+window.showIntermPicker = function(rid) {
+  // 기존 팝업 제거
+  document.querySelectorAll('.interm-picker-popup').forEach(el=>el.remove());
+
+  const popup = document.createElement('div');
+  popup.className = 'interm-picker-popup';
+  popup.style.cssText = 'position:fixed;inset:0;z-index:9999;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.4)';
+
+  let html = '<div style="background:var(--surf);border:1.5px solid var(--bdr2);border-radius:var(--r);padding:16px;width:min(520px,94vw);max-height:80vh;overflow-y:auto;box-shadow:0 8px 32px rgba(0,0,0,.25)">';
+  html += '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">';
+  html += '<div style="font-family:\'Jua\',sans-serif;font-size:14px;color:var(--txt)">중간재료 선택</div>';
+  html += '<button onclick="this.closest(\'.interm-picker-popup\').remove()" style="border:none;background:none;font-size:18px;cursor:pointer;color:var(--muted);line-height:1">✕</button>';
+  html += '</div>';
+
+  for(const grp of INTERM_GROUPS){
+    html += '<div style="margin-bottom:10px">';
+    html += '<div style="font-size:10px;font-weight:700;color:var(--muted);letter-spacing:.4px;margin-bottom:5px;padding-bottom:3px;border-bottom:1px dashed var(--bdr2)">';
+    html += `<span style="color:${grp.color}">${grp.label}</span></div>`;
+    html += '<div style="display:grid;grid-template-columns:repeat(5,1fr);gap:5px">';
+    for(const it of grp.items){
+      html += `<button onclick="selectIntermItem('${rid}','${it.key}')" style="padding:5px 4px;border-radius:8px;border:1.5px solid ${it.color}44;background:${it.color}12;color:${it.color};font-size:10px;font-weight:700;cursor:pointer;text-align:center;line-height:1.4;transition:all .12s;word-break:keep-all" onmouseover="this.style.background='${it.color}30'" onmouseout="this.style.background='${it.color}12'">${it.name.replace(/의 /g,'의\n').replace(/★+/g,'')}</button>`;
+    }
+    html += '</div></div>';
+  }
+  html += '</div>';
+  popup.innerHTML = html;
+  popup.addEventListener('click', e => { if(e.target===popup) popup.remove(); });
+  document.body.appendChild(popup);
+};
+
+window.selectIntermItem = function(rid, key) {
+  document.querySelectorAll('.interm-picker-popup').forEach(el=>el.remove());
+  const it = INTERM_BY_KEY[key]; if(!it) return;
+  // hidden input에 key 저장, 라벨 버튼 업데이트
+  const hiddenSel = document.getElementById('isel_'+rid);
+  if(hiddenSel){ hiddenSel.value = key; }
+  const lbl = document.getElementById('isel_lbl_'+rid);
+  if(lbl){
+    lbl.textContent = it.name;
+    lbl.style.color = it.color;
+    lbl.style.borderColor = it.color+'88';
+    lbl.style.background = it.color+'18';
+  }
+  onIntermSelChange();
+};
 const COMPOUND_KEYS = new Set(['core_guard','core_wave','core_chaos','core_life','core_corrosion','crystal_vitality','crystal_erosion','crystal_defense','crystal_torrent','crystal_poison','potion_immortal','potion_barrier','potion_corrupt','potion_frenzy','potion_venom']);
 
 window.updateIntermWarning = function() {
@@ -1199,11 +1293,12 @@ window.addIntermRow=()=>{
   row.className='interm-row';row.id='irow_'+rid;
 
   row.innerHTML=
-    '<div class="interm-sel-wrap"><select class="interm-sel" id="isel_'+rid+'" onchange="onIntermSelChange()">'+makeIntermOptions()+'</select></div>'
+    `<button id="isel_lbl_${rid}" onclick="showIntermPicker('${rid}')" style="flex-shrink:0;padding:5px 10px;border-radius:8px;border:1.5px solid var(--bdr2);background:var(--bg);color:var(--muted);font-family:'Jua',sans-serif!important;font-size:11px;cursor:pointer;white-space:nowrap;transition:all .12s;min-width:80px;text-align:center">(선택)</button>`
+    +`<select class="interm-sel" id="isel_${rid}" style="display:none" onchange="onIntermSelChange()"><option value="">선택</option></select>`
     +'<div style="flex:1;min-width:0">'
     +splitQtyHtml('iqty_'+rid,'var(--acc)')
     +'</div>'
-    +'<button class="del-btn" onclick="document.getElementById(\'irow_'+rid+'\').remove();updateIntermWarning();saveAll()">✕</button>';
+    +`<button class="del-btn" onclick="document.getElementById('irow_${rid}').remove();updateIntermWarning();saveAll()">✕</button>`;
   // splitQtyHtml 입력 이벤트를 saveAll로 연결
   ['_box','_set','_ea'].forEach(s=>{
     const el=document.getElementById('iqty_'+rid+s);
@@ -1214,7 +1309,6 @@ window.addIntermRow=()=>{
       saveAll();
     });
   });
-  initOneCdd(row.querySelector('select'));
   list.appendChild(row);
   saveAll();
 };
@@ -1288,18 +1382,17 @@ function loadAll(){
     SF_TYPES.forEach(sf=>SF_TIERS.forEach(t=>{const id='have_'+sf+'_'+t,p=document.getElementById(id+'_p'),n=readSplitQty(id);if(p&&n>0)p.textContent='총 '+f(n)+'개';}));
     if(Array.isArray(d.__irows)){d.__irows.forEach(({key,box,set,ea,qty})=>{
       addIntermRow();
-      const list=document.getElementById('intermList'),row=list?.lastElementChild;if(!row)return;
-      const rid=row.id.replace('irow_','');
-      const sel=row.querySelector('select.interm-sel');
-      if(sel&&key){sel.value=key;const cdd=sel.previousElementSibling;if(cdd?.classList.contains('cdd')){const lbl=cdd.querySelector('.cdd-label');if(lbl)lbl.textContent=sel.options[sel.selectedIndex]?.text||'';cdd.querySelectorAll('.cdd-item').forEach(item=>item.classList.toggle('selected',item.dataset.value===key));}}
-      // 분리 입력 복원 (이전 qty 단일 입력도 호환)
+      const list2=document.getElementById('intermList'),row2=list2?.lastElementChild;if(!row2)return;
+      const rid=row2.id.replace('irow_','');
+      // 칩 방식으로 재료 복원
+      if(key) selectIntermItem(rid, key);
       const bEl=document.getElementById('iqty_'+rid+'_box');
       const sEl=document.getElementById('iqty_'+rid+'_set');
       const eEl=document.getElementById('iqty_'+rid+'_ea');
       if(box!==undefined&&bEl)bEl.value=box;
       if(set!==undefined&&sEl)sEl.value=set;
       if(ea!==undefined&&eEl)eEl.value=ea;
-      else if(qty&&eEl)eEl.value=qty; // 구버전 호환
+      else if(qty&&eEl)eEl.value=qty;
       const n=readSplitQty('iqty_'+rid);
       const p=document.getElementById('iqty_'+rid+'_p');
       if(p&&n>0)p.textContent='총 '+f(n)+'개';
