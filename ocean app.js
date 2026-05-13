@@ -967,20 +967,17 @@ function renderOptResult({ planEntries, finalAnalysis, workInv, totalRev, totalV
         }
 
         const output=(rec?.output)||1;
-        // 배치 수: ceil(qty/output), 재료는 배치수*mq
-        // 단, 재료가 어패류(SF)인 경우 실제 inv 재고를 초과하지 않도록 조정
-        const batchNeeded=isPA ? qty : Math.ceil(qty/output);
         const matSource=isPA?PRECISION_ALCHEMY[key]?.materials:rec?.materials;
         const matParts=Object.entries(matSource||{}).filter(([,v])=>v>0)
           .map(([mk,mq])=>{
-            let totalQ=isPA ? mq*qty : mq*batchNeeded;
-            // 어패류 재료이고 재고 초과 시 내림 배치 사용
-            if(!isPA && SF_KEYS.includes(mk)){
-              const stockQ = inv[mk]||0;
-              if(totalQ > stockQ){
-                const floorBatch = Math.floor(qty/output);
-                totalQ = mq*floorBatch;
-              }
+            let totalQ;
+            if(isPA){
+              totalQ = mq*qty;
+            } else {
+              // output:2(에센스): floor(qty/2)배치만 확실히 만들 수 있음
+              // output:1(핵/결정/영약): qty배치 = qty개
+              const batch = output>1 ? Math.floor(qty/output) : qty;
+              totalQ = mq*batch;
             }
             const col=getMatColor(mk);
             const nm=getMatName(mk).replace(/\s*★+/g,'').trim();
@@ -988,8 +985,9 @@ function renderOptResult({ planEntries, finalAnalysis, workInv, totalRev, totalV
           }).join(' ');
 
         s+=`<div style="${lStyle}">`;
-        // 정수/에센스: 총량(제작+보유) 표시, 재료 뒤에 보유분 별도 칩
-        const totalQty = qty + saved;
+        // 에센스(output:2): 실제 만들 수 있는 짝수로 내림 후 보유분 더해 표시
+        const makeableQty = output>1 ? Math.floor(qty/output)*output : qty;
+        const totalQty = makeableQty + saved;
         let qtyDisplay = fmtQty(totalQty);
         if(isPA && totalQty > 50){
           const parts=[];let rem=totalQty;
@@ -1401,8 +1399,25 @@ function loadAll(){
       addIntermRow();
       const list2=document.getElementById('intermList'),row2=list2?.lastElementChild;if(!row2)return;
       const rid=row2.id.replace('irow_','');
-      // 칩 방식으로 재료 복원
-      if(key) selectIntermItem(rid, key);
+      // 재료 종류 복원: saveAll 호출 없이 라벨과 hidden select만 업데이트
+      if(key){
+        const it=INTERM_BY_KEY[key];
+        const hiddenSel=document.getElementById('isel_'+rid);
+        if(hiddenSel&&it){
+          const opt=document.createElement('option');
+          opt.value=key;opt.textContent=it.name;
+          hiddenSel.appendChild(opt);
+          hiddenSel.value=key;
+        }
+        const lbl=document.getElementById('isel_lbl_'+rid);
+        if(lbl&&it){
+          lbl.textContent=it.name;
+          lbl.style.color=it.color;
+          lbl.style.borderColor=it.color+'88';
+          lbl.style.background=it.color+'18';
+        }
+      }
+      // 수량 복원
       const bEl=document.getElementById('iqty_'+rid+'_box');
       const sEl=document.getElementById('iqty_'+rid+'_set');
       const eEl=document.getElementById('iqty_'+rid+'_ea');
@@ -1414,6 +1429,7 @@ function loadAll(){
       const p=document.getElementById('iqty_'+rid+'_p');
       if(p&&n>0)p.textContent='총 '+f(n)+'개';
     });}
+    updateIntermWarning();
   }catch(e){}
 }
 
