@@ -974,10 +974,11 @@ function renderOptResult({ planEntries, finalAnalysis, workInv, totalRev, totalV
             if(isPA){
               totalQ = mq*qty;
             } else {
-              // output:2(에센스): floor(qty/2)배치만 확실히 만들 수 있음
-              // output:1(핵/결정/영약): qty배치 = qty개
               const batch = output>1 ? Math.floor(qty/output) : qty;
               totalQ = mq*batch;
+              // 재고 초과 시 클램프
+              const stock = inv[mk]||0;
+              if(stock>0 && totalQ > stock) totalQ = stock;
             }
             const col=getMatColor(mk);
             const nm=getMatName(mk).replace(/\s*★+/g,'').trim();
@@ -985,9 +986,17 @@ function renderOptResult({ planEntries, finalAnalysis, workInv, totalRev, totalV
           }).join(' ');
 
         s+=`<div style="${lStyle}">`;
-        // 에센스(output:2): 실제 만들 수 있는 짝수로 내림 후 보유분 더해 표시
-        const makeableQty = output>1 ? Math.floor(qty/output)*output : qty;
-        const totalQty = makeableQty + saved;
+        // 에센스/정수(output:2): floor 배치 기준, 재료 재고도 초과 안 되게
+        let makeableBatch = output>1 ? Math.floor(qty/output) : qty;
+        if(!isPA && rec?.materials){
+          for(const[mk,mq]of Object.entries(rec.materials)){
+            const stock=inv[mk]||0;
+            if(stock>0) makeableBatch=Math.min(makeableBatch, Math.floor(stock/mq));
+          }
+        }
+        const makeableQty = isPA ? qty : makeableBatch*output;
+        const effectiveSaved = saved > 0 ? saved : 0;
+        const totalQty = makeableQty + effectiveSaved;
         let qtyDisplay = fmtQty(totalQty);
         if(isPA && totalQty > 50){
           const parts=[];let rem=totalQty;
@@ -997,8 +1006,8 @@ function renderOptResult({ planEntries, finalAnalysis, workInv, totalRev, totalV
         s+=`<span style="${chipB};background:${color2}18;border:1.5px solid ${color2}"><span style="color:${color2}">${name}</span> <span style="color:${color2}">${qtyDisplay}</span></span>`;
         s+=`<span style="color:var(--bdr2);font-size:13px;font-weight:900;flex-shrink:0">·</span>`;
         s+=matParts;
-        if(!isPA && saved>0){
-          s+=`<span style="${chipB};background:var(--bg);border:1.5px dashed var(--bdr2)"><span style="color:var(--muted)">보유</span> <span style="color:var(--muted)">${fmtQty(saved)}</span></span>`;
+        if(!isPA && effectiveSaved>0){
+          s+=`<span style="${chipB};background:var(--bg);border:1.5px dashed var(--bdr2)"><span style="color:var(--muted)">보유</span> <span style="color:var(--muted)">${fmtQty(effectiveSaved)}</span></span>`;
         }
         if(!isPA&&itemSec>0){
           s+=`<span style="margin-left:auto;font-size:10px;color:var(--muted);flex-shrink:0">⏱️ ${fmtTime(itemSec)}</span>`;
@@ -1122,17 +1131,41 @@ function renderOptResult({ planEntries, finalAnalysis, workInv, totalRev, totalV
 
   html+=`<div class="result-box" style="margin-top:12px">`;
   if(remEntries.length || Object.keys(leftoverInterm).length){
-    html+=`<div style="margin-bottom:8px;padding-bottom:8px;border-bottom:1px dashed var(--bdr2);font-size:11px;color:var(--muted)">남은 재료: `;
-    const parts=[];
-    for(const[k,v]of remEntries) parts.push(`<span style="color:${getMatColor(k)}">${getMatName(k)} ${fmtQty(v)}</span>`);
+    html+=`<div style="margin-bottom:8px;padding-bottom:8px;border-bottom:1px dashed var(--bdr2);font-size:11px;color:var(--muted)">남은 재료:</div>`;
+
+    // 잉여 중간재료 분류
+    const intermByGroup={sf:[],ess1:[],core:[],ess2:[],crys:[],ess3:[],poti:[]};
+    for(const[k,v]of remEntries) intermByGroup.sf.push([k,v]);
     for(const[k,v]of Object.entries(leftoverInterm)){
       if(v<=0)continue;
-      const rec=ALCHEMY[k];
-      const name=rec?.name||k;
-      const color=rec?.color||'var(--muted)';
-      parts.push(`<span style="color:${color}">${name} ${fmtQty(v)}</span>`);
+      const rec=ALCHEMY[k]; if(!rec) continue;
+      if(rec.type==='essence'&&rec.tier===1) intermByGroup.ess1.push([k,v]);
+      else if(rec.type==='compound'&&rec.tier===1) intermByGroup.core.push([k,v]);
+      else if(rec.type==='essence'&&rec.tier===2) intermByGroup.ess2.push([k,v]);
+      else if(rec.type==='compound'&&rec.tier===2) intermByGroup.crys.push([k,v]);
+      else if(rec.type==='essence'&&rec.tier===3) intermByGroup.ess3.push([k,v]);
+      else if(rec.type==='compound'&&rec.tier===3) intermByGroup.poti.push([k,v]);
     }
-    html+=parts.join(' · ');
+
+    const rowStyle='margin-bottom:4px;font-size:11px;color:var(--muted)';
+    function renderRow(pairs, label){
+      if(!pairs.length) return '';
+      const chips=pairs.map(([k,v])=>{
+        const rec=ALCHEMY[k]; const col=rec?.color||getMatColor(k);
+        const name=rec?.name||getMatName(k);
+        return `<span style="color:${col}">${name} ${fmtQty(v)}</span>`;
+      }).join(' · ');
+      return `<div style="${rowStyle}">${chips}</div>`;
+    }
+
+    html+=`<div style="margin-bottom:8px;padding-bottom:8px;border-bottom:1px dashed var(--bdr2)">`;
+    if(intermByGroup.sf.length){
+      const chips=intermByGroup.sf.map(([k,v])=>`<span style="color:${getMatColor(k)}">${getMatName(k)} ${fmtQty(v)}</span>`).join(' · ');
+      html+=`<div style="${rowStyle}">${chips}</div>`;
+    }
+    html+=renderRow(intermByGroup.ess1.concat(intermByGroup.core),'');
+    html+=renderRow(intermByGroup.ess2.concat(intermByGroup.crys),'');
+    html+=renderRow(intermByGroup.ess3.concat(intermByGroup.poti),'');
     html+=`</div>`;
   }
   html+=`<div style="display:flex;gap:0;align-items:stretch">`;
