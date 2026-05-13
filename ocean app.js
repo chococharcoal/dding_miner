@@ -1110,8 +1110,12 @@ function renderOptResult({ planEntries, finalAnalysis, workInv, totalRev, totalV
     const rec = ALCHEMY[key]; if (!rec) continue;
     const output = rec.output || 1;
     if (output <= 1) continue;
-    const batches = Math.ceil(needed / output);
-    const leftover = batches * output - needed;
+    // 보유분 차감 후 실제 제작 필요량 기준으로 잉여 계산
+    const haveQty = intermHave[key] || 0;
+    const netNeeded = Math.max(0, needed - haveQty);
+    if (netNeeded <= 0) continue; // 보유분으로 전부 충당 → 잉여 없음
+    const batches = Math.ceil(netNeeded / output);
+    const leftover = batches * output - netNeeded;
     if (leftover > 0) leftoverInterm[key] = leftover;
   }
 
