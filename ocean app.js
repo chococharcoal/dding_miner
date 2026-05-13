@@ -967,11 +967,21 @@ function renderOptResult({ planEntries, finalAnalysis, workInv, totalRev, totalV
         }
 
         const output=(rec?.output)||1;
+        // 배치 수: ceil(qty/output), 재료는 배치수*mq
+        // 단, 재료가 어패류(SF)인 경우 실제 inv 재고를 초과하지 않도록 조정
         const batchNeeded=isPA ? qty : Math.ceil(qty/output);
         const matSource=isPA?PRECISION_ALCHEMY[key]?.materials:rec?.materials;
         const matParts=Object.entries(matSource||{}).filter(([,v])=>v>0)
           .map(([mk,mq])=>{
-            const totalQ=isPA ? mq*qty : mq*batchNeeded;
+            let totalQ=isPA ? mq*qty : mq*batchNeeded;
+            // 어패류 재료이고 재고 초과 시 내림 배치 사용
+            if(!isPA && SF_KEYS.includes(mk)){
+              const stockQ = inv[mk]||0;
+              if(totalQ > stockQ){
+                const floorBatch = Math.floor(qty/output);
+                totalQ = mq*floorBatch;
+              }
+            }
             const col=getMatColor(mk);
             const nm=getMatName(mk).replace(/\s*★+/g,'').trim();
             return `<span style="${chipB};background:var(--bg);border:1.5px solid ${col}44"><span style="color:${col}">${nm}</span> <span style="color:var(--txt)">${fmtQty(totalQ)}</span></span>`;
@@ -1262,9 +1272,16 @@ window.showIntermPicker = function(rid) {
 window.selectIntermItem = function(rid, key) {
   document.querySelectorAll('.interm-picker-popup').forEach(el=>el.remove());
   const it = INTERM_BY_KEY[key]; if(!it) return;
-  // hidden input에 key 저장, 라벨 버튼 업데이트
   const hiddenSel = document.getElementById('isel_'+rid);
-  if(hiddenSel){ hiddenSel.value = key; }
+  if(hiddenSel){
+    // 옵션이 없으면 추가
+    if(!hiddenSel.querySelector(`option[value="${key}"]`)){
+      const opt = document.createElement('option');
+      opt.value = key; opt.textContent = it.name;
+      hiddenSel.appendChild(opt);
+    }
+    hiddenSel.value = key;
+  }
   const lbl = document.getElementById('isel_lbl_'+rid);
   if(lbl){
     lbl.textContent = it.name;
