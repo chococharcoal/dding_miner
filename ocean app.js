@@ -846,7 +846,7 @@ function renderOptResult({ planEntries, finalAnalysis, workInv, totalRev, totalV
         const name=fa2.name.replace(/★+\s*/g,'').replace(/\s*★+/g,'').trim();
         html+=`<div style="${lStyle}">`;
         html+=`<span style="${chipB};background:${color2}18;border:1.5px solid ${color2};min-width:100px"><span style="color:${color2}">${name}</span></span>`;
-        html+=`<span style="font-size:12px;color:var(--muted);flex-shrink:0">${fmtQty(cnt)}</span>`;
+        html+=`<span style="font-size:12px;color:var(--muted);flex-shrink:0">${fmtQty(cnt)}개</span>`;
         html+=`<span style="font-size:12px;color:var(--txt);font-weight:900;flex-shrink:0">${f(rev)}원</span>`;
         html+=`<span style="font-size:11px;color:${netColor2};margin-left:auto;flex-shrink:0">${netSign2}${f(netTot)}원</span>`;
         html+=`</div>`;
@@ -898,12 +898,11 @@ function renderOptResult({ planEntries, finalAnalysis, workInv, totalRev, totalV
           const netMk2=totalMk2-useComp; // 실제로 만들어야 하는 양
           agg[slotKey][mk2]=(agg[slotKey][mk2]||0)+netMk2;
           timeSec[slotKey]+=netMk2*(rec2.craftTimeSec||0);
-          // compound 하위 essence 집계 (netMk2 기준)
-          const batchesOfComp=Math.ceil(netMk2/(rec2.output||1));
+          // compound 하위 essence 집계: compound output은 항상 1이므로 netMk2가 곧 배치수
           for(const[mk3,mq3]of Object.entries(rec2.materials)){
             const rec3=ALCHEMY[mk3];if(!rec3||rec3.type!=='essence')continue;
             const essKey=rec3.tier===1?'ess1':rec3.tier===2?'ess2':'ess3';
-            let needEss=mq3*batchesOfComp;
+            const needEss=mq3*netMk2; // output:1이므로 배치수=netMk2
             // 보유 essence 차감
             const haveEss=aggRemain[mk3]||0;
             const useEss=Math.min(haveEss,needEss);
@@ -912,8 +911,10 @@ function renderOptResult({ planEntries, finalAnalysis, workInv, totalRev, totalV
               aggSaved[essKey][mk3]=(aggSaved[essKey][mk3]||0)+useEss;
             }
             const netEss=needEss-useEss;
-            agg[essKey][mk3]=(agg[essKey][mk3]||0)+netEss;
-            timeSec[essKey]+=Math.ceil(netEss/(rec3.output||1))*(rec3.craftTimeSec||0);
+            // output:2인 에센스는 배치 단위(짝수)로만 제작 가능 → floor 처리
+            const netEssFloored = rec3.output>1 ? Math.floor(netEss/rec3.output)*rec3.output : netEss;
+            agg[essKey][mk3]=(agg[essKey][mk3]||0)+netEssFloored;
+            timeSec[essKey]+=Math.floor(netEssFloored/(rec3.output||1))*(rec3.craftTimeSec||0);
           }
         } else if(rec2.type==='essence'){
           const essKey=rec2.tier===1?'ess1':rec2.tier===2?'ess2':'ess3';
@@ -925,8 +926,10 @@ function renderOptResult({ planEntries, finalAnalysis, workInv, totalRev, totalV
             aggSaved[essKey][mk2]=(aggSaved[essKey][mk2]||0)+useEss;
           }
           const netEss=totalMk2-useEss;
-          agg[essKey][mk2]=(agg[essKey][mk2]||0)+netEss;
-          timeSec[essKey]+=Math.ceil(netEss/(rec2.output||1))*(rec2.craftTimeSec||0);
+          // output:2인 에센스는 배치 단위(짝수)로만 제작 가능 → floor 처리
+          const netEssFloored = rec2.output>1 ? Math.floor(netEss/rec2.output)*rec2.output : netEss;
+          agg[essKey][mk2]=(agg[essKey][mk2]||0)+netEssFloored;
+          timeSec[essKey]+=Math.floor(netEssFloored/(rec2.output||1))*(rec2.craftTimeSec||0);
         }
       }
     }
@@ -965,11 +968,15 @@ function renderOptResult({ planEntries, finalAnalysis, workInv, totalRev, totalV
           itemSec=batchN*(recAlch.craftTimeSec||0)*(1-fr);
         }
 
-        const batchNeeded=Math.ceil(qty/((rec?.output)||1));
+        const output=(rec?.output)||1;
+        // agg qty = 필요한 산출물 총 개수
+        // output:2인 에센스: floor(qty/2)배치만 가능, 재료는 floor(qty/output)*mq
+        // output:1인 핵/결정/영약 및 완성품: qty * mq 그대로
+        const batchNeeded=isPA ? qty : Math.floor(qty/output);
         const matSource=isPA?PRECISION_ALCHEMY[key]?.materials:rec?.materials;
         const matParts=Object.entries(matSource||{}).filter(([,v])=>v>0)
           .map(([mk,mq])=>{
-            const totalQ=isPA?mq*qty:Math.ceil(mq*batchNeeded);
+            const totalQ=isPA ? mq*qty : mq*batchNeeded;
             const col=getMatColor(mk);
             const nm=getMatName(mk).replace(/\s*★+/g,'').trim();
             return `<span style="${chipB};background:var(--bg);border:1.5px solid ${col}44"><span style="color:${col}">${nm}</span> <span style="color:var(--txt)">${fmtQty(totalQ)}</span></span>`;
@@ -1035,7 +1042,7 @@ function renderOptResult({ planEntries, finalAnalysis, workInv, totalRev, totalV
         const name=fa2.name.replace(/★+\s*/g,'').replace(/\s*★+/g,'').trim();
         html+=`<div style="${lStyle}">`;
         html+=`<span style="${chipB};background:${color2}18;border:1.5px solid ${color2};min-width:100px"><span style="color:${color2}">${name}</span></span>`;
-        html+=`<span style="font-size:12px;color:var(--muted);flex-shrink:0">${fmtQty(qty)}</span>`;
+        html+=`<span style="font-size:12px;color:var(--muted);flex-shrink:0">${fmtQty(qty)}개</span>`;
         html+=`<span style="font-size:12px;color:var(--txt);font-weight:900;flex-shrink:0">${f(rev)}원</span>`;
         html+=`<span style="font-size:11px;color:${netColor2};margin-left:auto;flex-shrink:0">${netSign2}${f(netTot)}원</span>`;
         html+=`</div>`;
