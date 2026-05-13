@@ -911,14 +911,11 @@ function renderOptResult({ planEntries, finalAnalysis, workInv, totalRev, totalV
               aggSaved[essKey][mk3]=(aggSaved[essKey][mk3]||0)+useEss;
             }
             const netEss=needEss-useEss;
-            // output:2인 에센스는 배치 단위(짝수)로만 제작 가능 → floor 처리
-            const netEssFloored = rec3.output>1 ? Math.floor(netEss/rec3.output)*rec3.output : netEss;
-            agg[essKey][mk3]=(agg[essKey][mk3]||0)+netEssFloored;
-            timeSec[essKey]+=Math.floor(netEssFloored/(rec3.output||1))*(rec3.craftTimeSec||0);
+            agg[essKey][mk3]=(agg[essKey][mk3]||0)+netEss;
+            timeSec[essKey]+=Math.ceil(netEss/(rec3.output||1))*(rec3.craftTimeSec||0);
           }
         } else if(rec2.type==='essence'){
           const essKey=rec2.tier===1?'ess1':rec2.tier===2?'ess2':'ess3';
-          // 보유 essence 차감
           const haveEss=aggRemain[mk2]||0;
           const useEss=Math.min(haveEss,totalMk2);
           if(useEss>0){
@@ -926,13 +923,14 @@ function renderOptResult({ planEntries, finalAnalysis, workInv, totalRev, totalV
             aggSaved[essKey][mk2]=(aggSaved[essKey][mk2]||0)+useEss;
           }
           const netEss=totalMk2-useEss;
-          // output:2인 에센스는 배치 단위(짝수)로만 제작 가능 → floor 처리
-          const netEssFloored = rec2.output>1 ? Math.floor(netEss/rec2.output)*rec2.output : netEss;
-          agg[essKey][mk2]=(agg[essKey][mk2]||0)+netEssFloored;
-          timeSec[essKey]+=Math.floor(netEssFloored/(rec2.output||1))*(rec2.craftTimeSec||0);
+          agg[essKey][mk2]=(agg[essKey][mk2]||0)+netEss;
+          timeSec[essKey]+=Math.ceil(netEss/(rec2.output||1))*(rec2.craftTimeSec||0);
         }
       }
     }
+    console.log('[DEBUG] planEntries:', JSON.stringify(Object.fromEntries(planEntries)));
+    console.log('[DEBUG] agg.ess1:', JSON.stringify(agg.ess1));
+    console.log('[DEBUG] agg.core:', JSON.stringify(agg.core));
 
     function stageSection(label,emoji,aggMap,secKey,accentColor,orderArr){
       const entries=sortedEntries(aggMap,orderArr);
@@ -969,10 +967,7 @@ function renderOptResult({ planEntries, finalAnalysis, workInv, totalRev, totalV
         }
 
         const output=(rec?.output)||1;
-        // agg qty = 필요한 산출물 총 개수
-        // output:2인 에센스: floor(qty/2)배치만 가능, 재료는 floor(qty/output)*mq
-        // output:1인 핵/결정/영약 및 완성품: qty * mq 그대로
-        const batchNeeded=isPA ? qty : Math.floor(qty/output);
+        const batchNeeded=isPA ? qty : Math.ceil(qty/output);
         const matSource=isPA?PRECISION_ALCHEMY[key]?.materials:rec?.materials;
         const matParts=Object.entries(matSource||{}).filter(([,v])=>v>0)
           .map(([mk,mq])=>{
