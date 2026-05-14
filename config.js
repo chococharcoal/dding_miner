@@ -373,9 +373,9 @@ export const PRECIOUS = {
     ROYAL: { pct:10, label:'황실인증'  },
   },
   ITEMS: {
-    TOPAZ_BOX:       { name:'토파즈 보석함',   recipe:'TOPAZ_BOX',       ingotType:'corum',  prices:{ LOW:295000, GOOD:413000, ROYAL:590000 } },
-    SAPPHIRE_STATUE: { name:'사파이어 조각상', recipe:'SAPPHIRE_STATUE', ingotType:'rifton', prices:{ LOW:297500, GOOD:416500, ROYAL:595000 } },
-    PLATINUM_CROWN:  { name:'플레티넘 왕관',   recipe:'PLATINUM_CROWN',  ingotType:'serent', prices:{ LOW:300000, GOOD:420000, ROYAL:600000 } },
+    TOPAZ_BOX:       { name:'토파즈 보석함',   recipe:'TOPAZ_BOX',       ingotType:'corum',  prices:{ LOW:324500, GOOD:454300, ROYAL:649000 } },
+    SAPPHIRE_STATUE: { name:'사파이어 조각상', recipe:'SAPPHIRE_STATUE', ingotType:'rifton', prices:{ LOW:327250, GOOD:458150, ROYAL:654500 } },
+    PLATINUM_CROWN:  { name:'플레티넘 왕관',   recipe:'PLATINUM_CROWN',  ingotType:'serent', prices:{ LOW:330000, GOOD:462000, ROYAL:660000 } },
   },
   DOC_PRICE: 10000,
 };

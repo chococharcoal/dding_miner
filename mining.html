@@ -311,6 +311,7 @@ input[type=number]{-moz-appearance:textfield;appearance:textfield}
     <div class="tab on" onclick="sw(0,this)">⛏ 채굴 수익</div>
     <div class="tab"    onclick="sw(1,this)">🔥 강화 횃불</div>
     <div class="tab"    onclick="sw(2,this)">⚖ 수익 최적화</div>
+    <div class="tab" onclick="sw(3,this)">💰 판매가 계산기</div>
     <div style="margin-left:auto;display:flex;gap:6px;align-items:center">
       <button class="autofill-btn" onclick="autoFillPrices()">시세 자동채우기</button>
       <button class="reset-btn"    onclick="resetAll()">🗑 초기화</button>
@@ -487,6 +488,77 @@ input[type=number]{-moz-appearance:textfield;appearance:textfield}
     </div>
   </div>
 
+
+
+  <!-- TAB 3: 판매가 계산기 
+  <div id="t3" class="panel" style="display:none">
+
+     대리판매 토글 
+    <label class="swap-toggle-wrap">
+      <input type="checkbox" id="saleProxyToggle" onchange="onSaleToggle()" class="swap-toggle-input">
+      <span class="swap-toggle-track"><span class="swap-toggle-thumb"></span></span>
+      <span class="swap-toggle-label">🤝 대리판매 모드</span>
+      <span class="swap-toggle-desc">판매 스킬 높은 유저에게 대리 판매 의뢰</span>
+    </label>
+
+     직접판매 섹션 
+    <div class="card" id="saleDirectCard">
+      <div class="card-title">💰 판매할 물건</div>
+      <div class="g2">
+        <div class="field">
+          <label>물건 종류</label>
+          <select id="saleItemType" onchange="calcSale()">
+            <option value="ingot_c">코룸 주괴</option>
+            <option value="ingot_r">리프톤 주괴</option>
+            <option value="ingot_s">세렌트 주괴</option>
+            <option value="gem_c">코룸 보석</option>
+            <option value="gem_r">리프톤 보석</option>
+            <option value="gem_s">세렌트 보석</option>
+            <option value="custom">직접 입력</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>기본 판매가 (원/개) <span class="opt">선택</span></label>
+          <input id="saleBasePrice" type="number" inputmode="numeric" placeholder="자동 참조" oninput="calcSale()">
+          <div class="fnote" id="saleBasePriceNote" style="color:var(--acc)"></div>
+        </div>
+      </div>
+      <div class="field" style="margin-top:8px">
+        <label>수량</label>
+        <div class="split-qty-wrap">
+          <div><span class="sq-label">상자</span><input id="saleQty_box" type="number" inputmode="numeric" placeholder="0" min="0" oninput="calcSale()" class="sq-input"></div>
+          <div><span class="sq-label">세트</span><input id="saleQty_set" type="number" inputmode="numeric" placeholder="0" min="0" oninput="calcSale()" class="sq-input"></div>
+          <div><span class="sq-label">개</span><input id="saleQty_ea"  type="number" inputmode="numeric" placeholder="0" min="0" oninput="calcSale()" class="sq-input"></div>
+        </div>
+        <div id="saleQtyParsed" class="sq-parsed" style="color:var(--acc)"></div>
+      </div>
+    </div>
+
+     대리판매 추가 설정 (토글 시 표시)
+    <div class="card" id="saleProxyCard" style="display:none">
+      <div class="card-title">🤝 대리판매 설정</div>
+      <div class="g2">
+        <div class="field">
+          <label>판매자(대리인) 스킬%</label>
+          <input id="saleSellerSkillPct" type="number" inputmode="numeric" placeholder="예: 150" oninput="calcSale()">
+          <div class="fnote">대리인의 판매가 증가 스킬 합산 %</div>
+        </div>
+        <div class="field">
+          <label>약정 기준 (기본가의 %)</label>
+          <input id="saleAgreePct" type="number" inputmode="numeric" placeholder="예: 135" oninput="calcSale()">
+          <div class="fnote">의뢰인이 받기로 약속한 기본가의 %</div>
+        </div>
+      </div>
+      <div class="fnote" style="margin-top:4px;color:var(--ylw)">💡 판매자 이익 없이 수수료만 제외할때는 판매 대리인의 스킬%를 입력해주세요</div>
+    </div>
+
+    결과 
+    <div class="card">
+      <div class="card-title">📊 계산 결과</div>
+      <div id="saleRes"><div class="empty-msg">값을 입력하면 계산됩니다</div></div>
+    </div>
+  </div> -->
+  
 </div><!-- /main -->
 </div><!-- /layout -->
 </div><!-- /page -->
@@ -508,6 +580,8 @@ input[type=number]{-moz-appearance:textfield;appearance:textfield}
   window.onEngravingChange= onEngravingChange;
   window.autoFillPrices   = autoFillPrices;
   window.init             = init;
+  window.calcSale     = calcSale;
+  window.onSaleToggle = onSaleToggle;
 
   const SAVE_IDS = [
     'skillGemSell','skillPrecious','skillFurnace',
@@ -526,6 +600,9 @@ input[type=number]{-moz-appearance:textfield;appearance:textfield}
     'vTopaz','vSapphire','vPlatinum','vDiorite','vTuff','vAndesite',
     'tCharcoalPrice','tWoodPrice','tSellPrice',
     'tWantCount_box','tWantCount_set','tWantCount_ea',
+    'saleItemType','saleBasePrice',
+    'saleQty_box','saleQty_set','saleQty_ea',
+    'saleProxyToggle','saleSellerSkillPct','saleAgreePct',
   ];
   const KEY = 'miner_calc_v5';
 

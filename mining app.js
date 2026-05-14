@@ -8,6 +8,7 @@ import {
 } from './config.js';
 
 
+
 const { SET_SIZE, BOX_SIZE } = UNITS;
 const COBBY_DROP_RATE = 0.5;
 
@@ -91,7 +92,7 @@ function matChipQty(matKey, totalQty) {
   return `<span class="mat-chip" style="background:${m.color}18;color:${m.color};border-color:${m.color}55">${m.name} ${fmtQty(totalQty)}</span>`;
 }
 
-const TAB_TITLES = ['채굴 수익','강화횃불 제작','수익 최적화'];
+const TAB_TITLES = ['채굴 수익','강화횃불 제작','수익 최적화','판매가 계산기'];
 
 export function sw(i, el) {
   document.querySelectorAll('.tab').forEach(t => t.classList.remove('on'));
@@ -848,6 +849,198 @@ export function co() {
     +'<div class="rb-label">최적 제작 예상 수익</div>'
     +'<div class="rb-value" style="color:var(--grn)">'+f(winRev)+'원</div>'
   +'</div>';
+}
+
+/* ══════════════════════════════════════════════════════
+   판매가 계산기 (TAB 3)
+   - 직접판매: 내 스킬% × 기본가 × 수량
+   - 대리판매: 판매자 스킬%로 판매 후
+               의뢰인에게 약정%(기본가 기준) 송금
+               수수료 = ceil(n × 0.05), 올림 처리
+══════════════════════════════════════════════════════ */
+
+// 판매 아이템 타입별 기본가 참조
+function getSaleBasePrice(itemType) {
+  const ingotC = gi('ingotPriceC') || gi('oCo') || 0;
+  const ingotR = gi('ingotPriceR') || gi('oRi') || 0;
+  const ingotS = gi('ingotPriceS') || gi('oSe') || 0;
+  const gemC   = gi('gemPriceC') || 0;
+  const gemR   = gi('gemPriceR') || 0;
+  const gemS   = gi('gemPriceS') || 0;
+  switch(itemType) {
+    case 'ingot_c': return { price: ingotC, label: '코룸 주괴',   isGem: false };
+    case 'ingot_r': return { price: ingotR, label: '리프톤 주괴', isGem: false };
+    case 'ingot_s': return { price: ingotS, label: '세렌트 주괴', isGem: false };
+    case 'gem_c':   return { price: gemC,   label: '코룸 보석',   isGem: true  };
+    case 'gem_r':   return { price: gemR,   label: '리프톤 보석', isGem: true  };
+    case 'gem_s':   return { price: gemS,   label: '세렌트 보석', isGem: true  };
+    default:        return { price: 0,      label: '직접 입력',   isGem: false };
+  }
+}
+
+// 내 판매 스킬% 계산 (스킬 보너스 반영)
+function getMySkillPct(isGem) {
+  const sk = getSK();
+  if (isGem) return 100 + sk.gb * 100;  // 보석 판매 보너스
+  return 100;  // 주괴는 판매 보너스 없음
+}
+
+// n + ceil(n × 0.05) = target 에서 n 역산
+function calcTransferAmount(target) {
+  // n을 1씩 줄여가며 찾기 (target이 작으니 반복 가능)
+  // n + ceil(n * 0.05) = target
+  // n ≒ target / 1.05 에서 시작
+  let n = Math.floor(target / 1.05);
+  while (n + Math.ceil(n * 0.05) < target) n++;
+  while (n + Math.ceil(n * 0.05) > target) n--;
+  // 최종 검증
+  if (n + Math.ceil(n * 0.05) !== target) {
+    // 딱 맞는 n이 없는 경우 → 올림 처리 (의뢰인이 약간 더 받도록)
+    n = Math.ceil(target / 1.05);
+  }
+  return n;
+}
+
+export function onSaleToggle() {
+  const isProxy = document.getElementById('saleProxyToggle')?.checked ?? false;
+  const proxyCard = document.getElementById('saleProxyCard');
+  if (proxyCard) proxyCard.style.display = isProxy ? '' : 'none';
+  calcSale();
+}
+
+export function calcSale() {
+  const BOX_SIZE = 1728, SET_SIZE = 64;
+  const box = parseInt(document.getElementById('saleQty_box')?.value||'0')||0;
+  const set = parseInt(document.getElementById('saleQty_set')?.value||'0')||0;
+  const ea  = parseInt(document.getElementById('saleQty_ea') ?.value||'0')||0;
+  const qty = box * BOX_SIZE + set * SET_SIZE + ea;
+
+  const parsedEl = document.getElementById('saleQtyParsed');
+  if (parsedEl) {
+    let t = 0;
+    if (box) t += box * BOX_SIZE;
+    if (set) t += set * SET_SIZE;
+    if (ea)  t += ea;
+    parsedEl.textContent = t > 0 ? `총 ${t.toLocaleString('ko-KR')}개` : '';
+  }
+
+  const itemType = document.getElementById('saleItemType')?.value || 'ingot_c';
+  const ref = getSaleBasePrice(itemType);
+
+  // 기본가: 직접 입력 우선, 없으면 참조값
+  const manualPrice = parseInt(document.getElementById('saleBasePrice')?.value||'0')||0;
+  const basePrice   = manualPrice > 0 ? manualPrice : ref.price;
+
+  // 기본가 참조 안내
+  const noteEl = document.getElementById('saleBasePriceNote');
+  if (noteEl) {
+    if (itemType !== 'custom' && ref.price > 0 && manualPrice === 0)
+      noteEl.textContent = `→ ${ref.label} 입력가 ${ref.price.toLocaleString('ko-KR')}원 자동 참조`;
+    else if (ref.price === 0 && manualPrice === 0)
+      noteEl.textContent = '→ 시세 탭에서 가격을 먼저 입력해주세요';
+    else
+      noteEl.textContent = '';
+  }
+
+  const isProxy = document.getElementById('saleProxyToggle')?.checked ?? false;
+  const mySkillPct = getMySkillPct(ref.isGem);
+
+  const resEl = document.getElementById('saleRes');
+  if (!resEl) return;
+
+  if (!basePrice || !qty) {
+    resEl.innerHTML = '<div class="empty-msg">기본가와 수량을 입력하면 계산됩니다</div>';
+    return;
+  }
+
+  // 내 직접 판매 수령액
+  const myDirectTotal = Math.round(basePrice * (mySkillPct / 100) * qty);
+
+  const fk = n => Math.round(n).toLocaleString('ko-KR');
+  const row = (l, v, vc='') =>
+    `<div class="rrow"><span class="rl">${l}</span><span class="rv ${vc}">${v}</span></div>`;
+
+  if (!isProxy) {
+    // ── 직접판매 결과 ──
+    resEl.innerHTML = `
+    <div class="rsec">
+      <div class="rsec-title">💰 직접 판매</div>
+      ${row('기본가', `${fk(basePrice)}원/개`)}
+      ${row('내 판매 스킬%', `${mySkillPct}%${ref.isGem ? ' (보석 보너스 포함)' : ''}`)}
+      ${row('수량', `${qty.toLocaleString('ko-KR')}개`)}
+    </div>
+    <div class="result-box">
+      <div class="rb-label">총 수령액</div>
+      <div class="rb-value" style="color:var(--grn)">${fk(myDirectTotal)}원</div>
+      <div class="rb-sub">개당 ${fk(Math.round(basePrice * mySkillPct / 100))}원 × ${qty.toLocaleString('ko-KR')}개</div>
+    </div>`;
+    return;
+  }
+
+  // ── 대리판매 계산 ──
+  const sellerSkillPct = parseFloat(document.getElementById('saleSellerSkillPct')?.value||'0')||0;
+  const agreePct       = parseFloat(document.getElementById('saleAgreePct')?.value||'0')||0;
+
+  if (!sellerSkillPct || !agreePct) {
+    resEl.innerHTML = '<div class="empty-msg">판매자 스킬%와 약정%를 입력하세요</div>';
+    return;
+  }
+
+  // 판매자 총 수령액
+  const sellerTotal = Math.round(basePrice * (sellerSkillPct / 100) * qty);
+
+  // 의뢰인이 받을 약정 총액 (기본가의 약정% × 수량)
+  const agreeTotal = Math.round(basePrice * (agreePct / 100) * qty);
+
+  // 송금액 n 역산: n + ceil(n × 0.05) = agreeTotal
+  const transferN  = calcTransferAmount(agreeTotal);
+  const fee        = Math.ceil(transferN * 0.05);
+  const actualDeduct = transferN + fee; // 실제 차감액
+
+  // 의뢰인이 실제 받는 금액 = n
+  const clientReceives = transferN;
+
+  // 판매자 이익
+  const sellerProfit = sellerTotal - actualDeduct;
+
+  // 대리판매 vs 직접판매 이득
+  const proxyGain = clientReceives - myDirectTotal;
+
+  const gainColor = proxyGain >= 0 ? 'var(--grn)' : 'var(--red)';
+  const gainSign  = proxyGain >= 0 ? '+' : '';
+  const profitColor = sellerProfit >= 0 ? 'var(--grn)' : 'var(--red)';
+
+  resEl.innerHTML = `
+  <div class="rsec">
+    <div class="rsec-title">👤 의뢰인 (나)</div>
+    ${row('직접 판매 시 수령액', `${fk(myDirectTotal)}원`, 'muted')}
+    ${row('대리판매 수령액', `<b style="color:var(--grn)">${fk(clientReceives)}원</b>`)}
+    <div class="rrow"><span class="rl">직접 대비 이득</span><span class="rv" style="color:${gainColor};font-weight:900">${gainSign}${fk(proxyGain)}원</span></div>
+  </div>
+  <div class="rsec">
+    <div class="rsec-title">🤝 판매자 (대리인)</div>
+    ${row('판매 총 수령액', `${fk(sellerTotal)}원`)}
+    ${row('송금할 금액', `<b>${fk(transferN)}원</b> <small style="color:var(--muted)">(의뢰인 수령액)</small>`)}
+    ${row('송금 수수료 (올림)', `${fk(fee)}원`)}
+    ${row('실제 차감 총액', `${fk(actualDeduct)}원`)}
+    <div class="rrow rrow-strong"><span class="rl" style="color:var(--txt)">판매자 이익</span><span class="rv" style="color:${profitColor};font-weight:900">${fk(sellerProfit)}원</span></div>
+  </div>
+  <div class="result-box">
+    <div style="display:flex;gap:0;align-items:stretch">
+      <div style="flex:1;text-align:center;padding:4px 8px">
+        <div class="rb-label">의뢰인 수령</div>
+        <div class="rb-value" style="color:var(--grn);font-size:20px">${fk(clientReceives)}원</div>
+      </div>
+      <div style="width:1px;background:var(--bdr2);margin:4px 0"></div>
+      <div style="flex:1;text-align:center;padding:4px 8px">
+        <div class="rb-label">판매자 이익</div>
+        <div class="rb-value" style="color:${profitColor};font-size:20px">${fk(sellerProfit)}원</div>
+      </div>
+    </div>
+    <div style="text-align:center;margin-top:6px;padding-top:6px;border-top:1px dashed var(--bdr2);font-size:11px;color:var(--muted)">
+      송금: ${fk(transferN)}원 + 수수료 ${fk(fee)}원 = 총 ${fk(actualDeduct)}원 차감
+    </div>
+  </div>`;
 }
 
 
