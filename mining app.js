@@ -888,14 +888,14 @@ export function co() {
    ══════════════════════════════════════════════════════════════════ */
 
 /* ── 스킬 테이블 (config MINING_SKILLS 참조) ── */
-const SALE_GEM_BONUS  = MINING_SKILLS.GEM_SELL.bonusPct;   // 반짝반짝 눈이 부셔
-const SALE_PREC_BONUS = MINING_SKILLS.PRECIOUS.bonusPct;   // 귀하신 몸값
+const SALE_GEM_BONUS  = SKILLS.GEM_SELL.bonusPct;   // 반짝반짝 눈이 부셔
+const SALE_PREC_BONUS = SKILLS.PRECIOUS.bonusPct;   // 귀하신 몸값
 
 /* ── 가격표: config에서 직접 참조 ── */
 const SALE_GEM_REF = {
-  C: { label:'코룸 보석',   price: MINING_DEFAULT_PRICES.gem.corum,  color:'#e07b2a' },
-  R: { label:'리프톤 보석', price: MINING_DEFAULT_PRICES.gem.rifton, color:'#3a9e68' },
-  S: { label:'세렌트 보석', price: MINING_DEFAULT_PRICES.gem.serent, color:'#d94f3d' },
+  C: { label:'코룸 보석',   price: DEFAULT_PRICES.gem.corum,  color:'#e07b2a' },
+  R: { label:'리프톤 보석', price: DEFAULT_PRICES.gem.rifton, color:'#3a9e68' },
+  S: { label:'세렌트 보석', price: DEFAULT_PRICES.gem.serent, color:'#d94f3d' },
 };
 const SALE_PREC_REF = {
   Topaz:    { label:'토파즈 보석함',   prices: PRECIOUS.ITEMS.TOPAZ_BOX.prices,       color:'#c8960a' },
