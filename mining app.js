@@ -964,7 +964,7 @@ function _sProxyCalc({ sellerTotal, agreeTotal, feeSeller }) {
 }
 
 /* ── 서브탭 전환 ── */
-function onSaleSubTab(i, el) {
+export function onSaleSubTab(i, el) {
   _sel('saleSubTabBar').querySelectorAll('.tab').forEach(t => t.classList.remove('on'));
   el.classList.add('on');
   _sel('salePanelGem').style.display  = i===0 ? '' : 'none';
@@ -974,26 +974,26 @@ function onSaleSubTab(i, el) {
 /* ════════════════════════════════
    보석 섹션
 ════════════════════════════════ */
-function onSaleGemToggle() {
+export function onSaleGemToggle() {
   const on = _sel('saleGemProxyToggle')?.checked ?? false;
   _sel('saleGemProxyCard').style.display = on ? '' : 'none';
   calcSaleGem();
 }
 
-function onSaleGemFeeChange() {
+export function onSaleGemFeeChange() {
   const feeSeller = _sel('saleGemFeeSeller')?.checked ?? true;
   _sel('saleGemSliderWrap').style.display = feeSeller ? '' : 'none';
   calcSaleGem();
 }
 
-function onSaleGemRatioChange() {
+export function onSaleGemRatioChange() {
   const v = _sgi('saleGemRatioSlider') || 135;
   const lbl = _sel('saleGemRatioLabel');
   if (lbl) lbl.textContent = v + '%';
   calcSaleGem();
 }
 
-function calcSaleGem() {
+export function calcSaleGem() {
   const BOX = typeof UNITS !== 'undefined' ? UNITS.BOX_SIZE : 1728;
   const SET = typeof UNITS !== 'undefined' ? UNITS.SET_SIZE : 64;
 
@@ -1136,26 +1136,26 @@ function calcSaleGem() {
 /* ════════════════════════════════
    귀중품 섹션
 ════════════════════════════════ */
-function onSalePrecToggle() {
+export function onSalePrecToggle() {
   const on = _sel('salePrecProxyToggle')?.checked ?? false;
   _sel('salePrecProxyCard').style.display = on ? '' : 'none';
   calcSalePrec();
 }
 
-function onSalePrecFeeChange() {
+export function onSalePrecFeeChange() {
   const feeSeller = _sel('salePrecFeeSeller')?.checked ?? true;
   _sel('salePrecSliderWrap').style.display = feeSeller ? '' : 'none';
   calcSalePrec();
 }
 
-function onSalePrecRatioChange() {
+export function onSalePrecRatioChange() {
   const v = _sgi('salePrecRatioSlider') || 135;
   const lbl = _sel('salePrecRatioLabel');
   if (lbl) lbl.textContent = v + '%';
   calcSalePrec();
 }
 
-function calcSalePrec() {
+export function calcSalePrec() {
   /* 종류×등급별 수량 읽기 */
   const items = [
     { key:'Topaz',    grades:{ low: _sgi('salePrecTopaz_low'),    good: _sgi('salePrecTopaz_good'),    royal: _sgi('salePrecTopaz_royal')    } },

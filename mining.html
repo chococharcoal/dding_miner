@@ -723,6 +723,10 @@ input[type=number]{-moz-appearance:textfield;appearance:textfield}
     sw, cs, ct, co,
     onSkillChange, onEngravingChange,
     autoFillPrices, init,
+
+    onSaleSubTab,
+    onSaleGemToggle, onSaleGemFeeChange, onSaleGemRatioChange, calcSaleGem,
+    onSalePrecToggle, onSalePrecFeeChange, onSalePrecRatioChange, calcSalePrec,
   } from './mining%20app.js';
 
   /* 전역 노출 (HTML onclick에서 호출) */
@@ -742,6 +746,9 @@ input[type=number]{-moz-appearance:textfield;appearance:textfield}
   window.onSalePrecToggle    = onSalePrecToggle;
   window.onSalePrecRatioChange=onSalePrecRatioChange;
   window.calcSalePrec        = calcSalePrec;
+  window.onSaleGemFeeChange    = onSaleGemFeeChange;
+  window.onSalePrecFeeChange   = onSalePrecFeeChange;
+
 
 
   const SAVE_IDS = [
