@@ -1047,7 +1047,7 @@ export function calcSaleGem() {
     ].join('');
     resEl.innerHTML = `
     <div class="rsec">
-      <div class="rsec-title">💎 직접판매 — 반짝반짝 눈이 부셔 Lv${myLv} +${myBonus}%</div>
+      <div class="rsec-title">💎 직접판매</div>
       ${detailRows}
     </div>
     <div class="result-box">
@@ -1097,13 +1097,13 @@ export function calcSaleGem() {
   const { clientGet, sellerProfit, fee } = _sProxyCalc({ sellerTotal, agreeTotal, feeSeller });
   const feeNote = feeSeller
     ? `${_sfk(agreeTotal)}원 × 5% 수수료 = ${_sfk(fee)}원 (판매자 부담)`
-    : `${_sfk(clientGet)}원 × 5% 수수료 = ${_sfk(fee)}원 (의뢰인 차감)`;
+    : `${_sfk(clientGet)}원 × 5% 수수료 = ${_sfk(fee)}원 (의뢰인 부담)`;
   const extraGain = clientGet - myTotal;
 
   if (myBetter) {
     resEl.innerHTML = `
     <div style="background:var(--blu-bg);border:1.5px solid var(--blu);border-radius:var(--rs);padding:8px 12px;margin-bottom:8px;font-size:12px;color:var(--blu);font-weight:700">
-      내 스킬(Lv${myLv} +${myBonus}%)이 상대방(Lv${otherLv} +${otherBonus}%)보다 높아요
+      내 스킬(Lv${myLv} +${myBonus}%)이 상대방보다 높아요
     </div>
     <div class="rsec">
       <div class="rsec-title">내가 대신 판매</div>
@@ -1115,7 +1115,7 @@ export function calcSaleGem() {
     ${_sResultBox('상대방 받는 금액', _sfk(clientGet)+'원', 'var(--txt)',
         '내 이득', (sellerProfit>=0?'+':'')+_sfk(sellerProfit)+'원',
         sellerProfit>=0?'var(--grn)':'var(--red)',
-        `총 판매 ${_sfk(sellerTotal)}원 — 약정 ${_sfk(agreeTotal)}원 — 수수료 ${_sfk(fee)}원`)}`;
+        `총 판매 ${_sfk(sellerTotal)}원 — 송금 ${_sfk(agreeTotal)}원 — 수수료 ${_sfk(fee)}원`)}`;
   } else {
     resEl.innerHTML = `
     <div style="background:var(--grn-bg);border:1.5px solid var(--grn);border-radius:var(--rs);padding:8px 12px;margin-bottom:8px;font-size:12px;color:var(--grn);font-weight:700">
@@ -1270,7 +1270,7 @@ export function calcSalePrec() {
 
   const { clientGet, sellerProfit, fee } = _sProxyCalc({ sellerTotal, agreeTotal, feeSeller });
   const feeNote = feeSeller
-    ? `약정액 ${_sfk(agreeTotal)}원 × 5% 올림 = ${_sfk(fee)}원 (판매자 부담)`
+    ? `송금액 ${_sfk(agreeTotal)}원 × 5% 올림 = ${_sfk(fee)}원 (판매자 부담)`
     : `송금액 ${_sfk(clientGet)}원 × 5% 올림 = ${_sfk(fee)}원 (의뢰인 차감)`;
   const extraGain = clientGet - myTotal;
 
@@ -1286,17 +1286,17 @@ export function calcSalePrec() {
       ${_srrow('수수료', feeNote)}
       ${_srrow('송금해야 할 금액', `<b>${_sfk(clientGet)}원</b>`)}
     </div>
-    ${_sResultBox('상대방 받는 금액', _sfk(clientGet)+'원', 'var(--txt)',
+    ${_sResultBox('상대방이 받는 금액', _sfk(clientGet)+'원', 'var(--txt)',
         '내 이득', (sellerProfit>=0?'+':'')+_sfk(sellerProfit)+'원',
         sellerProfit>=0?'var(--grn)':'var(--red)',
-        `총 판매 ${_sfk(sellerTotal)}원 — 약정 ${_sfk(agreeTotal)}원 — 수수료 ${_sfk(fee)}원`)}`;
+        `총 판매 ${_sfk(sellerTotal)}원 — 송금 ${_sfk(agreeTotal)}원 — 수수료 ${_sfk(fee)}원`)}`;
   } else {
     resEl.innerHTML = `
     <div style="background:var(--grn-bg);border:1.5px solid var(--grn);border-radius:var(--rs);padding:8px 12px;margin-bottom:8px;font-size:12px;color:var(--grn);font-weight:700">
-      ⬆️ 상대방 스킬(Lv${otherLv} +${otherBonus}%)이 더 높아요 — 상대방이 대신 팔아줌
+      ⬆️ 상대방 스킬(Lv${otherLv} +${otherBonus}%)이 더 높아요
     </div>
     <div class="rsec">
-      <div class="rsec-title">상대방이 대신 판매 — 귀하신 몸값 Lv${otherLv} +${otherBonus}%</div>
+      <div class="rsec-title">상대방이 대신 판매</div>
       ${_srrow('총 판매가', `<b>${_sfk(sellerTotal)}원</b>`)}
       ${feeSeller ? _srrow(`판매 퍼센트 (기본가 × ${ratioPct}% 합산)`, `${_sfk(agreeTotal)}원`) : ''}
       ${_srrow('수수료', feeNote)}
