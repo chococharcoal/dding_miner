@@ -1,5 +1,4 @@
-import {
-  MINING_SKILLS,      
+import {    
   MINING_DEFAULT_PRICES,
   MINING_SKILLS as SKILLS, 
   MINING_ENGRAVING as ENGRAVING, 
@@ -98,7 +97,7 @@ const TAB_TITLES = ['채굴 수익','강화횃불 제작','수익 최적화','�
 
 export function sw(i, el) {
   document.querySelectorAll('.tab').forEach(t => t.classList.remove('on'));
-  for (let k = 0; k < 3; k++) {
+  for (let k = 0; k < 4; k++) {
     const p = document.getElementById('t' + k);
     if (p) p.style.display = 'none';
   }
