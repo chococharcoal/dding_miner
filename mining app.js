@@ -964,7 +964,7 @@ function _sProxyCalc({ sellerTotal, agreeTotal, feeSeller }) {
 }
 
 /* ── 서브탭 전환 ── */
-export function onSaleSubTab(i, el) {
+function onSaleSubTab(i, el) {
   _sel('saleSubTabBar').querySelectorAll('.tab').forEach(t => t.classList.remove('on'));
   el.classList.add('on');
   _sel('salePanelGem').style.display  = i===0 ? '' : 'none';
@@ -974,28 +974,34 @@ export function onSaleSubTab(i, el) {
 /* ════════════════════════════════
    보석 섹션
 ════════════════════════════════ */
-export function onSaleGemToggle() {
+function onSaleGemToggle() {
   const on = _sel('saleGemProxyToggle')?.checked ?? false;
   _sel('saleGemProxyCard').style.display = on ? '' : 'none';
   calcSaleGem();
 }
 
-export function onSaleGemFeeChange() {
+function onSaleGemFeeChange() {
   const feeSeller = _sel('saleGemFeeSeller')?.checked ?? true;
   _sel('saleGemSliderWrap').style.display = feeSeller ? '' : 'none';
   calcSaleGem();
 }
 
-export function onSaleGemRatioChange() {
+function onSaleGemRatioChange() {
   const v = _sgi('saleGemRatioSlider') || 135;
   const lbl = _sel('saleGemRatioLabel');
   if (lbl) lbl.textContent = v + '%';
   calcSaleGem();
 }
 
-export function calcSaleGem() {
+function calcSaleGem() {
   const BOX = typeof UNITS !== 'undefined' ? UNITS.BOX_SIZE : 1728;
   const SET = typeof UNITS !== 'undefined' ? UNITS.SET_SIZE : 64;
+
+  /* 내 스킬 뱃지 */
+  const _myGemLv = _sgi('skillGemSell');
+  const _myGemBonus = SALE_GEM_BONUS[_myGemLv] ?? 0;
+  const gemBadgeEl = _sel('saleGemMySkillVal');
+  if (gemBadgeEl) gemBadgeEl.textContent = _myGemLv === 0 ? '0레벨 (기본)' : `Lv${_myGemLv} +${_myGemBonus}%`;
 
   /* 종류별 수량 */
   const qtyC = _sGemQty('C');
@@ -1136,26 +1142,32 @@ export function calcSaleGem() {
 /* ════════════════════════════════
    귀중품 섹션
 ════════════════════════════════ */
-export function onSalePrecToggle() {
+function onSalePrecToggle() {
   const on = _sel('salePrecProxyToggle')?.checked ?? false;
   _sel('salePrecProxyCard').style.display = on ? '' : 'none';
   calcSalePrec();
 }
 
-export function onSalePrecFeeChange() {
+function onSalePrecFeeChange() {
   const feeSeller = _sel('salePrecFeeSeller')?.checked ?? true;
   _sel('salePrecSliderWrap').style.display = feeSeller ? '' : 'none';
   calcSalePrec();
 }
 
-export function onSalePrecRatioChange() {
+function onSalePrecRatioChange() {
   const v = _sgi('salePrecRatioSlider') || 135;
   const lbl = _sel('salePrecRatioLabel');
   if (lbl) lbl.textContent = v + '%';
   calcSalePrec();
 }
 
-export function calcSalePrec() {
+function calcSalePrec() {
+  /* 내 스킬 뱃지 */
+  const _myPrecLv = _sgi('skillPrecious');
+  const _myPrecBonus = SALE_PREC_BONUS[_myPrecLv] ?? 0;
+  const precBadgeEl = _sel('salePrecMySkillVal');
+  if (precBadgeEl) precBadgeEl.textContent = _myPrecLv === 0 ? '0레벨 (기본)' : `Lv${_myPrecLv} +${_myPrecBonus}%`;
+
   /* 종류×등급별 수량 읽기 */
   const items = [
     { key:'Topaz',    grades:{ low: _sgi('salePrecTopaz_low'),    good: _sgi('salePrecTopaz_good'),    royal: _sgi('salePrecTopaz_royal')    } },
