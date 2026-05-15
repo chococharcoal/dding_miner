@@ -1,4 +1,6 @@
 import {
+  MINING_SKILLS,      
+  MINING_DEFAULT_PRICES,
   MINING_SKILLS as SKILLS, 
   MINING_ENGRAVING as ENGRAVING, 
   MINING_DEFAULT_PRICES as DEFAULT_PRICES, 
@@ -851,198 +853,409 @@ export function co() {
   +'</div>';
 }
 
-/* ══════════════════════════════════════════════════════
-   판매가 계산기 (TAB 3)
-   - 직접판매: 내 스킬% × 기본가 × 수량
-   - 대리판매: 판매자 스킬%로 판매 후
-               의뢰인에게 약정%(기본가 기준) 송금
-               수수료 = ceil(n × 0.05), 올림 처리
-══════════════════════════════════════════════════════ */
+/* ══════════════════════════════════════════════════════════════════
+   판매가 계산기 (TAB 3)   mining app.js 맨 끝에 붙여넣기
 
-// 판매 아이템 타입별 기본가 참조
-function getSaleBasePrice(itemType) {
-  const ingotC = gi('ingotPriceC') || gi('oCo') || 0;
-  const ingotR = gi('ingotPriceR') || gi('oRi') || 0;
-  const ingotS = gi('ingotPriceS') || gi('oSe') || 0;
-  const gemC   = gi('gemPriceC') || 0;
-  const gemR   = gi('gemPriceR') || 0;
-  const gemS   = gi('gemPriceS') || 0;
-  switch(itemType) {
-    case 'ingot_c': return { price: ingotC, label: '코룸 주괴',   isGem: false };
-    case 'ingot_r': return { price: ingotR, label: '리프톤 주괴', isGem: false };
-    case 'ingot_s': return { price: ingotS, label: '세렌트 주괴', isGem: false };
-    case 'gem_c':   return { price: gemC,   label: '코룸 보석',   isGem: true  };
-    case 'gem_r':   return { price: gemR,   label: '리프톤 보석', isGem: true  };
-    case 'gem_s':   return { price: gemS,   label: '세렌트 보석', isGem: true  };
-    default:        return { price: 0,      label: '직접 입력',   isGem: false };
-  }
-}
+   export 붙일 함수:
+     export function onSaleSubTab()
+     export function onSaleGemToggle()
+     export function onSaleGemFeeChange()
+     export function onSaleGemRatioChange()
+     export function calcSaleGem()
+     export function onSalePrecToggle()
+     export function onSalePrecFeeChange()
+     export function onSalePrecRatioChange()
+     export function calcSalePrec()
 
-// 내 판매 스킬% 계산 (스킬 보너스 반영)
-function getMySkillPct(isGem) {
-  const sk = getSK();
-  if (isGem) return 100 + sk.gb * 100;  // 보석 판매 보너스
-  return 100;  // 주괴는 판매 보너스 없음
-}
+   window 노출 (mining.html script 블록에 추가):
+     window.onSaleSubTab         = onSaleSubTab;
+     window.onSaleGemToggle      = onSaleGemToggle;
+     window.onSaleGemFeeChange   = onSaleGemFeeChange;
+     window.onSaleGemRatioChange = onSaleGemRatioChange;
+     window.calcSaleGem          = calcSaleGem;
+     window.onSalePrecToggle     = onSalePrecToggle;
+     window.onSalePrecFeeChange  = onSalePrecFeeChange;
+     window.onSalePrecRatioChange= onSalePrecRatioChange;
+     window.calcSalePrec         = calcSalePrec;
 
-// n + ceil(n × 0.05) = target 에서 n 역산
-function calcTransferAmount(target) {
-  // n을 1씩 줄여가며 찾기 (target이 작으니 반복 가능)
-  // n + ceil(n * 0.05) = target
-  // n ≒ target / 1.05 에서 시작
+   SAVE_IDS에 추가:
+     'saleGemType','saleGemQty_box','saleGemQty_set','saleGemQty_ea',
+     'saleGemOtherLv','saleGemRatioSlider',
+     'salePrecType','salePrecGrade','salePrecQty_set','salePrecQty_ea',
+     'salePrecOtherLv','salePrecRatioSlider',
+   ══════════════════════════════════════════════════════════════════ */
+
+/* ── 스킬 테이블 (config MINING_SKILLS 참조) ── */
+const SALE_GEM_BONUS  = MINING_SKILLS.GEM_SELL.bonusPct;   // 반짝반짝 눈이 부셔
+const SALE_PREC_BONUS = MINING_SKILLS.PRECIOUS.bonusPct;   // 귀하신 몸값
+
+/* ── 가격표: config에서 직접 참조 ── */
+const SALE_GEM_REF = {
+  gem_c: { label:'코룸 보석',   price: MINING_DEFAULT_PRICES.gem.corum   },
+  gem_r: { label:'리프톤 보석', price: MINING_DEFAULT_PRICES.gem.rifton  },
+  gem_s: { label:'세렌트 보석', price: MINING_DEFAULT_PRICES.gem.serent  },
+};
+const SALE_PREC_PRICES = {
+  prec_topaz:    { label: PRECIOUS.ITEMS.TOPAZ_BOX.name,       prices: PRECIOUS.ITEMS.TOPAZ_BOX.prices       },
+  prec_sapphire: { label: PRECIOUS.ITEMS.SAPPHIRE_STATUE.name, prices: PRECIOUS.ITEMS.SAPPHIRE_STATUE.prices },
+  prec_platinum: { label: PRECIOUS.ITEMS.PLATINUM_CROWN.name,  prices: PRECIOUS.ITEMS.PLATINUM_CROWN.prices  },
+};
+
+/* ── 유틸 ── */
+const _sfk   = n => Math.round(n).toLocaleString('ko-KR');
+const _sel   = id => document.getElementById(id);
+const _sgi   = id => { const e=_sel(id); return e ? Math.max(0,+e.value||0) : 0; };
+const _sgv   = id => { const e=_sel(id); return e ? e.value : ''; };
+const _srrow = (l, v, style='') =>
+  `<div class="rrow"><span class="rl">${l}</span><span class="rv"${style?` style="${style}"`:''}>${v}</span></div>`;
+
+/* n + ceil(n×0.05) = target → n 역산 */
+function _sCalcN(target) {
+  if (target <= 0) return 0;
   let n = Math.floor(target / 1.05);
   while (n + Math.ceil(n * 0.05) < target) n++;
-  while (n + Math.ceil(n * 0.05) > target) n--;
-  // 최종 검증
-  if (n + Math.ceil(n * 0.05) !== target) {
-    // 딱 맞는 n이 없는 경우 → 올림 처리 (의뢰인이 약간 더 받도록)
-    n = Math.ceil(target / 1.05);
-  }
-  return n;
+  return (n + Math.ceil(n * 0.05) === target) ? n : n + 1;
 }
 
-export function onSaleToggle() {
-  const isProxy = document.getElementById('saleProxyToggle')?.checked ?? false;
-  const proxyCard = document.getElementById('saleProxyCard');
-  if (proxyCard) proxyCard.style.display = isProxy ? '' : 'none';
-  calcSale();
+/* 수량 읽기 */
+function _sQty(prefix) {
+  const BOX = typeof UNITS !== 'undefined' ? UNITS.BOX_SIZE : 1728;
+  const SET = typeof UNITS !== 'undefined' ? UNITS.SET_SIZE : 64;
+  return _sgi(prefix+'_box')*BOX + _sgi(prefix+'_set')*SET + _sgi(prefix+'_ea');
 }
 
-export function calcSale() {
-  const BOX_SIZE = 1728, SET_SIZE = 64;
-  const box = parseInt(document.getElementById('saleQty_box')?.value||'0')||0;
-  const set = parseInt(document.getElementById('saleQty_set')?.value||'0')||0;
-  const ea  = parseInt(document.getElementById('saleQty_ea') ?.value||'0')||0;
-  const qty = box * BOX_SIZE + set * SET_SIZE + ea;
+/* 결과 박스 공통 */
+function _sResultBox(leftLabel, leftVal, leftColor, rightLabel, rightVal, rightColor, footer='') {
+  return `<div class="result-box">
+    <div style="display:flex;gap:0;align-items:stretch">
+      <div style="flex:1;text-align:center;padding:4px 8px">
+        <div class="rb-label">${leftLabel}</div>
+        <div class="rb-value" style="color:${leftColor};font-size:18px">${leftVal}</div>
+      </div>
+      <div style="width:1px;background:var(--bdr2);margin:4px 0"></div>
+      <div style="flex:1;text-align:center;padding:4px 8px">
+        <div class="rb-label">${rightLabel}</div>
+        <div class="rb-value" style="color:${rightColor};font-size:18px">${rightVal}</div>
+      </div>
+    </div>
+    ${footer ? `<div style="text-align:center;margin-top:6px;padding-top:6px;border-top:1px dashed var(--bdr2);font-size:11px;color:var(--muted)">${footer}</div>` : ''}
+  </div>`;
+}
 
-  const parsedEl = document.getElementById('saleQtyParsed');
-  if (parsedEl) {
-    let t = 0;
-    if (box) t += box * BOX_SIZE;
-    if (set) t += set * SET_SIZE;
-    if (ea)  t += ea;
-    parsedEl.textContent = t > 0 ? `총 ${t.toLocaleString('ko-KR')}개` : '';
+/* 대리판매 공통 계산 */
+function _sProxyCalc({ sellerTotal, agreeTotal, feeSeller }) {
+  let clientGet, sellerProfit, fee;
+  if (feeSeller) {
+    fee          = Math.ceil(agreeTotal * 0.05);
+    clientGet    = agreeTotal;
+    sellerProfit = sellerTotal - agreeTotal - fee;
+  } else {
+    const n      = _sCalcN(agreeTotal);
+    fee          = Math.ceil(n * 0.05);
+    clientGet    = n;
+    sellerProfit = sellerTotal - agreeTotal;
   }
+  return { clientGet, sellerProfit, fee };
+}
 
-  const itemType = document.getElementById('saleItemType')?.value || 'ingot_c';
-  const ref = getSaleBasePrice(itemType);
+/* ── 서브탭 전환 ── */
+function onSaleSubTab(i, el) {
+  document.querySelectorAll('#t3 .tabbar .tab').forEach(t => t.classList.remove('on'));
+  el.classList.add('on');
+  _sel('salePanelGem').style.display  = i===0 ? '' : 'none';
+  _sel('salePanelPrec').style.display = i===1 ? '' : 'none';
+}
 
-  // 기본가: 직접 입력 우선, 없으면 참조값
-  const manualPrice = parseInt(document.getElementById('saleBasePrice')?.value||'0')||0;
-  const basePrice   = manualPrice > 0 ? manualPrice : ref.price;
+/* ════════════════════════════════
+   보석 섹션
+════════════════════════════════ */
+function onSaleGemToggle() {
+  const on = _sel('saleGemProxyToggle')?.checked ?? false;
+  _sel('saleGemProxyCard').style.display = on ? '' : 'none';
+  calcSaleGem();
+}
 
-  // 기본가 참조 안내
-  const noteEl = document.getElementById('saleBasePriceNote');
+function onSaleGemFeeChange() {
+  const feeSeller = _sel('saleGemFeeSeller')?.checked ?? true;
+  _sel('saleGemSliderWrap').style.display = feeSeller ? '' : 'none';
+  calcSaleGem();
+}
+
+function onSaleGemRatioChange() {
+  const v = _sgi('saleGemRatioSlider') || 135;
+  const lbl = _sel('saleGemRatioLabel');
+  if (lbl) lbl.textContent = v + '%';
+  calcSaleGem();
+}
+
+function calcSaleGem() {
+  const itemType  = _sgv('saleGemType') || 'gem_c';
+  const itemLabel = { gem_c:'코룸 보석', gem_r:'리프톤 보석', gem_s:'세렌트 보석' }[itemType] || '';
+  const qty       = _sQty('saleGemQty');
+  const parsedEl  = _sel('saleGemQtyParsed');
+  if (parsedEl) parsedEl.textContent = qty > 0 ? `총 ${qty.toLocaleString('ko-KR')}개` : '';
+
+  /* 기본 시세 표시 */
+  const configRef = SALE_GEM_REF[itemType]?.price ?? 0;
+  const tabInput  = _sgi({ gem_c:'gemPriceC', gem_r:'gemPriceR', gem_s:'gemPriceS' }[itemType]);
+  const basePrice = tabInput > 0 ? tabInput : configRef;
+  const noteEl    = _sel('saleGemBasePriceNote');
   if (noteEl) {
-    if (itemType !== 'custom' && ref.price > 0 && manualPrice === 0)
-      noteEl.textContent = `→ ${ref.label} 입력가 ${ref.price.toLocaleString('ko-KR')}원 자동 참조`;
-    else if (ref.price === 0 && manualPrice === 0)
-      noteEl.textContent = '→ 시세 탭에서 가격을 먼저 입력해주세요';
-    else
-      noteEl.textContent = '';
+    noteEl.textContent = tabInput > 0
+      ? `채굴 수익 탭 입력가 ${_sfk(tabInput)}원 사용`
+      : `기본 시세 ${_sfk(configRef)}원 사용`;
   }
 
-  const isProxy = document.getElementById('saleProxyToggle')?.checked ?? false;
-  const mySkillPct = getMySkillPct(ref.isGem);
+  const resEl = _sel('saleGemRes'); if (!resEl) return;
+  if (!qty) { resEl.innerHTML='<div class="empty-msg">수량을 입력하면 계산됩니다</div>'; return; }
+  if (!basePrice) { resEl.innerHTML='<div class="empty-msg">기본가를 불러올 수 없습니다</div>'; return; }
 
-  const resEl = document.getElementById('saleRes');
-  if (!resEl) return;
+  /* 내 스킬 (사이드바 skillGemSell) */
+  const myLv    = _sgi('skillGemSell');
+  const myBonus = SALE_GEM_BONUS[myLv] ?? 0;
+  const myUnit  = Math.round(basePrice * (100 + myBonus) / 100);
+  const myTotal = myUnit * qty;
 
-  if (!basePrice || !qty) {
-    resEl.innerHTML = '<div class="empty-msg">기본가와 수량을 입력하면 계산됩니다</div>';
-    return;
-  }
+  const isProxy = _sel('saleGemProxyToggle')?.checked ?? false;
 
-  // 내 직접 판매 수령액
-  const myDirectTotal = Math.round(basePrice * (mySkillPct / 100) * qty);
-
-  const fk = n => Math.round(n).toLocaleString('ko-KR');
-  const row = (l, v, vc='') =>
-    `<div class="rrow"><span class="rl">${l}</span><span class="rv ${vc}">${v}</span></div>`;
-
+  /* 직접판매 */
   if (!isProxy) {
-    // ── 직접판매 결과 ──
     resEl.innerHTML = `
     <div class="rsec">
-      <div class="rsec-title">💰 직접 판매</div>
-      ${row('기본가', `${fk(basePrice)}원/개`)}
-      ${row('내 판매 스킬%', `${mySkillPct}%${ref.isGem ? ' (보석 보너스 포함)' : ''}`)}
-      ${row('수량', `${qty.toLocaleString('ko-KR')}개`)}
+      <div class="rsec-title">💎 직접판매</div>
+      ${_srrow('종류', itemLabel)}
+      ${_srrow('기본가', `${_sfk(basePrice)}원/개`)}
+      ${_srrow('반짝반짝 눈이 부셔', `Lv${myLv} +${myBonus}%`)}
+      ${_srrow('판매 단가', `${_sfk(myUnit)}원/개`)}
+      ${_srrow('수량', `${qty.toLocaleString('ko-KR')}개`)}
     </div>
     <div class="result-box">
       <div class="rb-label">총 수령액</div>
-      <div class="rb-value" style="color:var(--grn)">${fk(myDirectTotal)}원</div>
-      <div class="rb-sub">개당 ${fk(Math.round(basePrice * mySkillPct / 100))}원 × ${qty.toLocaleString('ko-KR')}개</div>
+      <div class="rb-value" style="color:var(--grn)">${_sfk(myTotal)}원</div>
+      <div class="rb-sub">개당 ${_sfk(myUnit)}원 × ${qty.toLocaleString('ko-KR')}개</div>
     </div>`;
     return;
   }
 
-  // ── 대리판매 계산 ──
-  const sellerSkillPct = parseFloat(document.getElementById('saleSellerSkillPct')?.value||'0')||0;
-  const agreePct       = parseFloat(document.getElementById('saleAgreePct')?.value||'0')||0;
+  /* 대리판매 */
+  const otherLv    = _sgi('saleGemOtherLv');
+  const otherBonus = SALE_GEM_BONUS[otherLv] ?? 0;
+  const myBetter   = myBonus > otherBonus;
+  const samePct    = myBonus === otherBonus;
 
-  if (!sellerSkillPct || !agreePct) {
-    resEl.innerHTML = '<div class="empty-msg">판매자 스킬%와 약정%를 입력하세요</div>';
+  if (samePct) {
+    resEl.innerHTML = `
+    <div class="rsec">
+      ${_srrow('내 스킬',   `반짝반짝 Lv${myLv} +${myBonus}%`)}
+      ${_srrow('상대 스킬', `반짝반짝 Lv${otherLv} +${otherBonus}%`)}
+    </div>
+    <div style="background:var(--ylw-bg);border:1.5px solid var(--ylw);border-radius:var(--rs);padding:10px 12px;text-align:center;font-size:13px;color:var(--ylw)">
+      두 스킬이 동일해서 대리판매로 추가 이득이 없어요
+    </div>`; return;
+  }
+
+  const sellerBonus = myBetter ? myBonus : otherBonus;
+  const sellerUnit  = Math.round(basePrice * (100 + sellerBonus) / 100);
+  const sellerTotal = sellerUnit * qty;
+
+  const feeSeller   = _sel('saleGemFeeSeller')?.checked ?? true;
+
+  /* 의뢰인 부담: 약정액 = 판매자 총액 그대로 (슬라이더 없음) */
+  const ratioPct    = feeSeller ? (_sgi('saleGemRatioSlider') || 135) : null;
+  const agreeTotal  = feeSeller
+    ? Math.round(basePrice * ratioPct / 100) * qty
+    : sellerTotal;
+
+  const ratioNoteEl = _sel('saleGemRatioNote');
+  if (ratioNoteEl && feeSeller) {
+    ratioNoteEl.textContent =
+      `기본가 ${_sfk(basePrice)}원의 ${ratioPct}% = 개당 ${_sfk(Math.round(basePrice*ratioPct/100))}원`;
+  }
+
+  const { clientGet, sellerProfit, fee } = _sProxyCalc({ sellerTotal, agreeTotal, feeSeller });
+  const feeNote = feeSeller
+    ? `${_sfk(agreeTotal)}원 × 5% 수수료 = ${_sfk(fee)}원 (판매자 부담)`
+    : `${_sfk(clientGet)}원 × 5% 수수료 = ${_sfk(fee)}원 (의뢰인 차감)`;
+  const extraGain = clientGet - myTotal;
+
+  if (myBetter) {
+    resEl.innerHTML = `
+    <div style="background:var(--blu-bg);border:1.5px solid var(--blu);border-radius:var(--rs);padding:8px 12px;margin-bottom:8px;font-size:12px;color:var(--blu);font-weight:700">
+      내 스킬(Lv${myLv} +${myBonus}%)이 상대방(Lv${otherLv} +${otherBonus}%)보다 높아요
+    </div>
+    <div class="rsec">
+      <div class="rsec-title">내가 대신 판매</div>
+      ${_srrow('내 스킬 적용 총 판매가', `<b>${_sfk(sellerTotal)}원</b>`, 'color:var(--grn)')}
+      ${feeSeller ? _srrow('판매 퍼센트 (기본가 × '+ratioPct+'%)', `${_sfk(agreeTotal)}원`) : ''}
+      ${_srrow('수수료', feeNote)}
+      ${_srrow('송금해야 할 금액', `<b>${_sfk(clientGet)}원</b>`)}
+    </div>
+    ${_sResultBox('상대방 받는 금액', _sfk(clientGet)+'원', 'var(--txt)',
+        '내 이득', (sellerProfit>=0?'+':'')+_sfk(sellerProfit)+'원',
+        sellerProfit>=0?'var(--grn)':'var(--red)',
+        `총 판매 ${_sfk(sellerTotal)}원 — 약정 ${_sfk(agreeTotal)}원 — 수수료 ${_sfk(fee)}원`)}`;
+  } else {
+    resEl.innerHTML = `
+    <div style="background:var(--grn-bg);border:1.5px solid var(--grn);border-radius:var(--rs);padding:8px 12px;margin-bottom:8px;font-size:12px;color:var(--grn);font-weight:700">
+      상대방 스킬(Lv${otherLv} +${otherBonus}%)이 더 높아요
+    </div>
+    <div class="rsec">
+      <div class="rsec-title">상대방이 대신 판매</div>
+      ${_srrow('상대방 스킬 적용 총 판매가', `<b>${_sfk(sellerTotal)}원</b>`)}
+      ${feeSeller ? _srrow('(기본가 × '+ratioPct+'%)', `${_sfk(agreeTotal)}원`) : ''}
+      ${_srrow('수수료', feeNote)}
+      ${_srrow('내가 받는 금액', `<b>${_sfk(clientGet)}원</b>`, 'color:var(--grn)')}
+      <div style="border-top:1px dashed var(--bdr2);margin-top:4px;padding-top:5px">
+        ${_srrow('내가 직접판매 시', `${_sfk(myTotal)}원 (Lv${myLv} +${myBonus}%)`, 'color:var(--muted)')}
+      </div>
+    </div>
+    ${_sResultBox('내가 받는 금액', _sfk(clientGet)+'원', 'var(--grn)',
+        '대리판매 추가수익', (extraGain>=0?'+':'')+_sfk(extraGain)+'원',
+        extraGain>=0?'var(--grn)':'var(--red)')}`;
+  }
+}
+
+/* ════════════════════════════════
+   귀중품 섹션
+════════════════════════════════ */
+function onSalePrecToggle() {
+  const on = _sel('salePrecProxyToggle')?.checked ?? false;
+  _sel('salePrecProxyCard').style.display = on ? '' : 'none';
+  calcSalePrec();
+}
+
+function onSalePrecFeeChange() {
+  const feeSeller = _sel('salePrecFeeSeller')?.checked ?? true;
+  _sel('salePrecSliderWrap').style.display = feeSeller ? '' : 'none';
+  calcSalePrec();
+}
+
+function onSalePrecRatioChange() {
+  const v = _sgi('salePrecRatioSlider') || 135;
+  const lbl = _sel('salePrecRatioLabel');
+  if (lbl) lbl.textContent = v + '%';
+  calcSalePrec();
+}
+
+function calcSalePrec() {
+  const itemType = _sgv('salePrecType') || 'prec_topaz';
+  const grade    = _sgv('salePrecGrade') || 'LOW';
+  const data     = SALE_PREC_PRICES[itemType];
+  const basePrice= data?.prices[grade] ?? 0;
+  const itemLabel= `${data?.label} (${({LOW:'낮은 품질',GOOD:'우수',ROYAL:'황실인증'})[grade]})`;
+
+  const qty      = _sQty('salePrecQty');
+  const parsedEl = _sel('salePrecQtyParsed');
+  if (parsedEl) parsedEl.textContent = qty > 0 ? `총 ${qty.toLocaleString('ko-KR')}개` : '';
+
+  const resEl = _sel('salePrecRes'); if (!resEl) return;
+  if (!qty) { resEl.innerHTML='<div class="empty-msg">수량을 입력하면 계산됩니다</div>'; return; }
+  if (!basePrice) { resEl.innerHTML='<div class="empty-msg">가격 데이터가 없습니다</div>'; return; }
+
+  /* 내 스킬 (사이드바 skillPrecious) */
+  const myLv    = _sgi('skillPrecious');
+  const myBonus = SALE_PREC_BONUS[myLv] ?? 0;
+  const myUnit  = Math.round(basePrice * (100 + myBonus) / 100);
+  const myTotal = myUnit * qty;
+
+  const isProxy = _sel('salePrecProxyToggle')?.checked ?? false;
+
+  /* 직접판매 */
+  if (!isProxy) {
+    resEl.innerHTML = `
+    <div class="rsec">
+      <div class="rsec-title">👑 직접판매</div>
+      ${_srrow('종류', itemLabel)}
+      ${_srrow('기준가', `${_sfk(basePrice)}원/개`)}
+      ${_srrow('귀하신 몸값', `Lv${myLv} +${myBonus}%`)}
+      ${_srrow('판매 단가', `${_sfk(myUnit)}원/개`)}
+      ${_srrow('수량', `${qty.toLocaleString('ko-KR')}개`)}
+    </div>
+    <div class="result-box">
+      <div class="rb-label">총 수령액</div>
+      <div class="rb-value" style="color:var(--grn)">${_sfk(myTotal)}원</div>
+      <div class="rb-sub">개당 ${_sfk(myUnit)}원 × ${qty.toLocaleString('ko-KR')}개</div>
+    </div>`;
     return;
   }
 
-  // 판매자 총 수령액
-  const sellerTotal = Math.round(basePrice * (sellerSkillPct / 100) * qty);
+  /* 대리판매 */
+  const otherLv    = _sgi('salePrecOtherLv');
+  const otherBonus = SALE_PREC_BONUS[otherLv] ?? 0;
+  const myBetter   = myBonus > otherBonus;
+  const samePct    = myBonus === otherBonus;
 
-  // 의뢰인이 받을 약정 총액 (기본가의 약정% × 수량)
-  const agreeTotal = Math.round(basePrice * (agreePct / 100) * qty);
+  if (samePct) {
+    resEl.innerHTML = `
+    <div class="rsec">
+      ${_srrow('내 스킬',   `귀하신 몸값 Lv${myLv} +${myBonus}%`)}
+      ${_srrow('상대 스킬', `귀하신 몸값 Lv${otherLv} +${otherBonus}%`)}
+    </div>
+    <div style="background:var(--ylw-bg);border:1.5px solid var(--ylw);border-radius:var(--rs);padding:10px 12px;text-align:center;font-size:13px;color:var(--ylw)">
+      두 스킬이 동일해서 대리판매로 추가 이득이 없어요
+    </div>`; return;
+  }
 
-  // 송금액 n 역산: n + ceil(n × 0.05) = agreeTotal
-  const transferN  = calcTransferAmount(agreeTotal);
-  const fee        = Math.ceil(transferN * 0.05);
-  const actualDeduct = transferN + fee; // 실제 차감액
+  const sellerBonus = myBetter ? myBonus : otherBonus;
+  const sellerUnit  = Math.round(basePrice * (100 + sellerBonus) / 100);
+  const sellerTotal = sellerUnit * qty;
 
-  // 의뢰인이 실제 받는 금액 = n
-  const clientReceives = transferN;
+  const feeSeller   = _sel('salePrecFeeSeller')?.checked ?? true;
 
-  // 판매자 이익
-  const sellerProfit = sellerTotal - actualDeduct;
+  /* 의뢰인 부담: 약정액 = 판매자 총액 그대로 (슬라이더 없음) */
+  const ratioPct    = feeSeller ? (_sgi('salePrecRatioSlider') || 135) : null;
+  const agreeTotal  = feeSeller
+    ? Math.round(basePrice * ratioPct / 100) * qty
+    : sellerTotal;
 
-  // 대리판매 vs 직접판매 이득
-  const proxyGain = clientReceives - myDirectTotal;
+  const ratioNoteEl = _sel('salePrecRatioNote');
+  if (ratioNoteEl && feeSeller) {
+    ratioNoteEl.textContent =
+      `기준가 ${_sfk(basePrice)}원의 ${ratioPct}% = 개당 ${_sfk(Math.round(basePrice*ratioPct/100))}원 약정`;
+  }
 
-  const gainColor = proxyGain >= 0 ? 'var(--grn)' : 'var(--red)';
-  const gainSign  = proxyGain >= 0 ? '+' : '';
-  const profitColor = sellerProfit >= 0 ? 'var(--grn)' : 'var(--red)';
+  const { clientGet, sellerProfit, fee } = _sProxyCalc({ sellerTotal, agreeTotal, feeSeller });
+  const feeNote = feeSeller
+    ? `약정액 ${_sfk(agreeTotal)}원 × 5% 올림 = ${_sfk(fee)}원 (판매자 부담)`
+    : `송금액 ${_sfk(clientGet)}원 × 5% 올림 = ${_sfk(fee)}원 (의뢰인 부담)`;
+  const extraGain = clientGet - myTotal;
 
-  resEl.innerHTML = `
-  <div class="rsec">
-    <div class="rsec-title">👤 의뢰인 (나)</div>
-    ${row('직접 판매 시 수령액', `${fk(myDirectTotal)}원`, 'muted')}
-    ${row('대리판매 수령액', `<b style="color:var(--grn)">${fk(clientReceives)}원</b>`)}
-    <div class="rrow"><span class="rl">직접 대비 이득</span><span class="rv" style="color:${gainColor};font-weight:900">${gainSign}${fk(proxyGain)}원</span></div>
-  </div>
-  <div class="rsec">
-    <div class="rsec-title">🤝 판매자 (대리인)</div>
-    ${row('판매 총 수령액', `${fk(sellerTotal)}원`)}
-    ${row('송금할 금액', `<b>${fk(transferN)}원</b> <small style="color:var(--muted)">(의뢰인 수령액)</small>`)}
-    ${row('송금 수수료 (올림)', `${fk(fee)}원`)}
-    ${row('실제 차감 총액', `${fk(actualDeduct)}원`)}
-    <div class="rrow rrow-strong"><span class="rl" style="color:var(--txt)">판매자 이익</span><span class="rv" style="color:${profitColor};font-weight:900">${fk(sellerProfit)}원</span></div>
-  </div>
-  <div class="result-box">
-    <div style="display:flex;gap:0;align-items:stretch">
-      <div style="flex:1;text-align:center;padding:4px 8px">
-        <div class="rb-label">의뢰인 수령</div>
-        <div class="rb-value" style="color:var(--grn);font-size:20px">${fk(clientReceives)}원</div>
-      </div>
-      <div style="width:1px;background:var(--bdr2);margin:4px 0"></div>
-      <div style="flex:1;text-align:center;padding:4px 8px">
-        <div class="rb-label">판매자 이익</div>
-        <div class="rb-value" style="color:${profitColor};font-size:20px">${fk(sellerProfit)}원</div>
+  if (myBetter) {
+    resEl.innerHTML = `
+    <div style="background:var(--blu-bg);border:1.5px solid var(--blu);border-radius:var(--rs);padding:8px 12px;margin-bottom:8px;font-size:12px;color:var(--blu);font-weight:700">
+      내 스킬(Lv${myLv} +${myBonus}%)이 상대방 보다 높아요
+    </div>
+    <div class="rsec">
+      <div class="rsec-title">내가 판매 대행</div>
+      ${_srrow('내 스킬 적용 총 판매가', `<b>${_sfk(sellerTotal)}원</b>`, 'color:var(--grn)')}
+      ${feeSeller ? _srrow('약정액 (기준가 × '+ratioPct+'%)', `${_sfk(agreeTotal)}원`) : ''}
+      ${_srrow('수수료', feeNote)}
+      ${_srrow('송금해야 할 금액', `<b>${_sfk(clientGet)}원</b>`)}
+    </div>
+    ${_sResultBox('상대방 받는 금액', _sfk(clientGet)+'원', 'var(--txt)',
+        '내 이득', (sellerProfit>=0?'+':'')+_sfk(sellerProfit)+'원',
+        sellerProfit>=0?'var(--grn)':'var(--red)',
+        `총 판매 ${_sfk(sellerTotal)}원 — 약정 ${_sfk(agreeTotal)}원 — 수수료 ${_sfk(fee)}원`)}`;
+  } else {
+    resEl.innerHTML = `
+    <div style="background:var(--grn-bg);border:1.5px solid var(--grn);border-radius:var(--rs);padding:8px 12px;margin-bottom:8px;font-size:12px;color:var(--grn);font-weight:700">
+      상대방 스킬(Lv${otherLv} +${otherBonus}%)이 더 높아요
+    </div>
+    <div class="rsec">
+      <div class="rsec-title">상대방이 대신 판매</div>
+      ${_srrow('상대방 스킬 적용 총 판매가', `<b>${_sfk(sellerTotal)}원</b>`)}
+      ${feeSeller ? _srrow('약정액 (기준가 × '+ratioPct+'%)', `${_sfk(agreeTotal)}원`) : ''}
+      ${_srrow('수수료', feeNote)}
+      ${_srrow('내가 받는 금액', `<b>${_sfk(clientGet)}원</b>`, 'color:var(--grn)')}
+      <div style="border-top:1px dashed var(--bdr2);margin-top:4px;padding-top:5px">
+        ${_srrow('직접판매 시', `${_sfk(myTotal)}원 (Lv${myLv} +${myBonus}%)`, 'color:var(--muted)')}
       </div>
     </div>
-    <div style="text-align:center;margin-top:6px;padding-top:6px;border-top:1px dashed var(--bdr2);font-size:11px;color:var(--muted)">
-      송금: ${fk(transferN)}원 + 수수료 ${fk(fee)}원 = 총 ${fk(actualDeduct)}원 차감
-    </div>
-  </div>`;
+    ${_sResultBox('내가 받는 금액', _sfk(clientGet)+'원', 'var(--grn)',
+        '대리판매 추가수익', (extraGain>=0?'+':'')+_sfk(extraGain)+'원',
+        extraGain>=0?'var(--grn)':'var(--red)')}`;
+  }
 }
-
 
 export function init() {
   const titleEl = document.getElementById('pageTabTitle');

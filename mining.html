@@ -490,74 +490,215 @@ input[type=number]{-moz-appearance:textfield;appearance:textfield}
 
 
 
-  <!-- TAB 3: 판매가 계산기 
+  <!-- TAB 3: 판매가 계산기 -->
   <div id="t3" class="panel" style="display:none">
 
-     대리판매 토글 
-    <label class="swap-toggle-wrap">
-      <input type="checkbox" id="saleProxyToggle" onchange="onSaleToggle()" class="swap-toggle-input">
-      <span class="swap-toggle-track"><span class="swap-toggle-thumb"></span></span>
-      <span class="swap-toggle-label">🤝 대리판매 모드</span>
-      <span class="swap-toggle-desc">판매 스킬 높은 유저에게 대리 판매 의뢰</span>
-    </label>
+    <!-- 서브탭 -->
+    <div class="tabbar" style="margin-bottom:8px">
+      <div class="tab on" id="saleSubTab0" onclick="onSaleSubTab(0,this)">💎 보석</div>
+      <div class="tab"    id="saleSubTab1" onclick="onSaleSubTab(1,this)">👑 귀중품</div>
+    </div>
 
-     직접판매 섹션 
-    <div class="card" id="saleDirectCard">
-      <div class="card-title">💰 판매할 물건</div>
-      <div class="g2">
-        <div class="field">
-          <label>물건 종류</label>
-          <select id="saleItemType" onchange="calcSale()">
-            <option value="ingot_c">코룸 주괴</option>
-            <option value="ingot_r">리프톤 주괴</option>
-            <option value="ingot_s">세렌트 주괴</option>
-            <option value="gem_c">코룸 보석</option>
-            <option value="gem_r">리프톤 보석</option>
-            <option value="gem_s">세렌트 보석</option>
-            <option value="custom">직접 입력</option>
-          </select>
+    <!-- ══════════ 보석 패널 ══════════ -->
+    <div id="salePanelGem">
+
+      <div class="card">
+        <div class="card-title">💎 보석 판매</div>
+        <div class="g2">
+          <div class="field">
+            <label>보석 종류</label>
+            <select id="saleGemType" onchange="calcSaleGem()">
+              <option value="gem_c">코룸 보석</option>
+              <option value="gem_r">리프톤 보석</option>
+              <option value="gem_s">세렌트 보석</option>
+            </select>
+          </div>
+          <div class="field">
+            <label style="color:var(--muted)">기본가</label>
+            <div class="fnote" id="saleGemBasePriceNote" style="color:var(--acc);padding:7px 0"></div>
+          </div>
         </div>
-        <div class="field">
-          <label>기본 판매가 (원/개) <span class="opt">선택</span></label>
-          <input id="saleBasePrice" type="number" inputmode="numeric" placeholder="자동 참조" oninput="calcSale()">
-          <div class="fnote" id="saleBasePriceNote" style="color:var(--acc)"></div>
+        <div class="field" style="margin-top:8px">
+          <label>수량</label>
+          <div class="split-qty-wrap">
+            <div><span class="sq-label">상자</span><input id="saleGemQty_box" type="number" inputmode="numeric" placeholder="0" min="0" oninput="calcSaleGem()" class="sq-input"></div>
+            <div><span class="sq-label">세트</span><input id="saleGemQty_set" type="number" inputmode="numeric" placeholder="0" min="0" oninput="calcSaleGem()" class="sq-input"></div>
+            <div><span class="sq-label">개</span>  <input id="saleGemQty_ea"  type="number" inputmode="numeric" placeholder="0" min="0" oninput="calcSaleGem()" class="sq-input"></div>
+          </div>
+          <div id="saleGemQtyParsed" class="sq-parsed" style="color:var(--acc)"></div>
         </div>
       </div>
-      <div class="field" style="margin-top:8px">
-        <label>수량</label>
-        <div class="split-qty-wrap">
-          <div><span class="sq-label">상자</span><input id="saleQty_box" type="number" inputmode="numeric" placeholder="0" min="0" oninput="calcSale()" class="sq-input"></div>
-          <div><span class="sq-label">세트</span><input id="saleQty_set" type="number" inputmode="numeric" placeholder="0" min="0" oninput="calcSale()" class="sq-input"></div>
-          <div><span class="sq-label">개</span><input id="saleQty_ea"  type="number" inputmode="numeric" placeholder="0" min="0" oninput="calcSale()" class="sq-input"></div>
+
+      <!-- 대리판매 토글 -->
+      <label class="swap-toggle-wrap">
+        <input type="checkbox" id="saleGemProxyToggle" onchange="onSaleGemToggle()" class="swap-toggle-input">
+        <span class="swap-toggle-track"><span class="swap-toggle-thumb"></span></span>
+        <span class="swap-toggle-label">대리판매 모드</span>
+        <span class="swap-toggle-desc">스킬 차이로 서로 이득 보는 금액 계산</span>
+      </label>
+
+      <!-- 대리판매 설정 -->
+      <div id="saleGemProxyCard" style="display:none">
+        <div class="card">
+          <div class="card-title">👤 상대방 스킬</div>
+          <div class="skgrid">
+            <div class="skrow">
+              <span class="skname">✨ 반짝반짝 눈이 부셔</span>
+              <select id="saleGemOtherLv" onchange="calcSaleGem()">
+                <option value="0">0레벨 — 기본</option>
+                <option value="1">1레벨 — +5%</option>
+                <option value="2">2레벨 — +7%</option>
+                <option value="3">3레벨 — +10%</option>
+                <option value="4">4레벨 — +20%</option>
+                <option value="5">5레벨 — +30%</option>
+                <option value="6">6레벨 — +50%</option>
+              </select>
+            </div>
+          </div>
         </div>
-        <div id="saleQtyParsed" class="sq-parsed" style="color:var(--acc)"></div>
+        <div class="card">
+          <div class="card-title">📊 판매 방식</div>
+          <div style="display:flex;flex-direction:column;gap:6px;margin-bottom:10px">
+            <label style="display:flex;align-items:flex-start;gap:8px;cursor:pointer;padding:8px 10px;border:1.5px solid var(--bdr);border-radius:var(--rs);background:var(--bg)">
+              <input type="radio" name="saleGemFeeMode" id="saleGemFeeSeller" value="seller" checked
+                style="margin-top:2px;accent-color:var(--acc)" onchange="onSaleGemFeeChange()">
+              <div>
+                <div style="font-size:12px;font-weight:700;color:var(--txt)">판매자 부담</div>
+                <div style="font-size:10px;color:var(--muted);font-weight:500;margin-top:1px">기본가의 n% 송금. 남은 차액은 판매자가 이익으로 가져가는 방식</div>
+              </div>
+            </label>
+            <label style="display:flex;align-items:flex-start;gap:8px;cursor:pointer;padding:8px 10px;border:1.5px solid var(--bdr);border-radius:var(--rs);background:var(--bg)">
+              <input type="radio" name="saleGemFeeMode" id="saleGemFeeClient" value="client"
+                style="margin-top:2px;accent-color:var(--acc)" onchange="onSaleGemFeeChange()">
+              <div>
+                <div style="font-size:12px;font-weight:700;color:var(--txt)">의뢰인 부담</div>
+                <div style="font-size:10px;color:var(--muted);font-weight:500;margin-top:1px">판매자의 이익 없이 판매만 도와주는 방식</div>
+              </div>
+            </label>
+          </div>
+          <!-- 판매자 부담일 때만 표시 -->
+          <div id="saleGemSliderWrap">
+            <div style="font-size:11px;font-weight:700;color:var(--muted);margin-bottom:6px">판매 퍼센트</div>
+            <div style="display:flex;align-items:center;gap:12px;margin-bottom:4px">
+              <span style="font-size:12px;color:var(--muted);white-space:nowrap;flex-shrink:0">기본가의</span>
+              <input type="range" id="saleGemRatioSlider" min="100" max="150" step="5" value="135"
+                oninput="onSaleGemRatioChange()" style="flex:1;accent-color:var(--acc);cursor:pointer">
+              <span id="saleGemRatioLabel"
+                style="font-family:'Jua',sans-serif!important;font-size:20px;color:var(--acc);min-width:52px;text-align:right">135%</span>
+            </div>
+            <div class="fnote" id="saleGemRatioNote"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">📊 계산 결과</div>
+        <div id="saleGemRes"><div class="empty-msg">값을 입력하면 계산됩니다</div></div>
       </div>
     </div>
 
-     대리판매 추가 설정 (토글 시 표시)
-    <div class="card" id="saleProxyCard" style="display:none">
-      <div class="card-title">🤝 대리판매 설정</div>
-      <div class="g2">
-        <div class="field">
-          <label>판매자(대리인) 스킬%</label>
-          <input id="saleSellerSkillPct" type="number" inputmode="numeric" placeholder="예: 150" oninput="calcSale()">
-          <div class="fnote">대리인의 판매가 증가 스킬 합산 %</div>
+    <!-- ══════════ 귀중품 패널 ══════════ -->
+    <div id="salePanelPrec" style="display:none">
+
+      <div class="card">
+        <div class="card-title">👑 귀중품 판매</div>
+        <div class="g2">
+          <div class="field">
+            <label>귀중품 종류</label>
+            <select id="salePrecType" onchange="calcSalePrec()">
+              <option value="prec_topaz">토파즈 보석함</option>
+              <option value="prec_sapphire">사파이어 조각상</option>
+              <option value="prec_platinum">플레티넘 왕관</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>귀중품 등급</label>
+            <select id="salePrecGrade" onchange="calcSalePrec()">
+              <option value="LOW">낮은 품질</option>
+              <option value="GOOD">우수</option>
+              <option value="ROYAL">황실인증</option>
+            </select>
+          </div>
         </div>
-        <div class="field">
-          <label>약정 기준 (기본가의 %)</label>
-          <input id="saleAgreePct" type="number" inputmode="numeric" placeholder="예: 135" oninput="calcSale()">
-          <div class="fnote">의뢰인이 받기로 약속한 기본가의 %</div>
+        <div class="field" style="margin-top:8px">
+          <label>수량</label>
+          <div class="split-qty-wrap">
+            <div><span class="sq-label">세트</span><input id="salePrecQty_set" type="number" inputmode="numeric" placeholder="0" min="0" oninput="calcSalePrec()" class="sq-input"></div>
+            <div><span class="sq-label">개</span>  <input id="salePrecQty_ea"  type="number" inputmode="numeric" placeholder="0" min="0" oninput="calcSalePrec()" class="sq-input"></div>
+          </div>
+          <div id="salePrecQtyParsed" class="sq-parsed" style="color:var(--acc)"></div>
         </div>
       </div>
-      <div class="fnote" style="margin-top:4px;color:var(--ylw)">💡 판매자 이익 없이 수수료만 제외할때는 판매 대리인의 스킬%를 입력해주세요</div>
+
+      <!-- 대리판매 토글 -->
+      <label class="swap-toggle-wrap">
+        <input type="checkbox" id="salePrecProxyToggle" onchange="onSalePrecToggle()" class="swap-toggle-input">
+        <span class="swap-toggle-track"><span class="swap-toggle-thumb"></span></span>
+        <span class="swap-toggle-label">대리판매 모드</span>
+        <span class="swap-toggle-desc">스킬 차이로 서로 이득 보는 금액 계산</span>
+      </label>
+
+      <!-- 대리판매 설정 -->
+      <div id="salePrecProxyCard" style="display:none">
+        <div class="card">
+          <div class="card-title">👤 상대방 스킬</div>
+          <div class="skgrid">
+            <div class="skrow">
+              <span class="skname">👑 귀하신 몸값</span>
+              <select id="salePrecOtherLv" onchange="calcSalePrec()">
+                <option value="0">0레벨 — 기본</option>
+                <option value="1">1레벨 — +5%</option>
+                <option value="2">2레벨 — +7%</option>
+                <option value="3">3레벨 — +10%</option>
+                <option value="4">4레벨 — +15%</option>
+                <option value="5">5레벨 — +20%</option>
+                <option value="6">6레벨 — +30%</option>
+              </select>
+            </div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-title">📊 판매 방식</div>
+          <div style="display:flex;flex-direction:column;gap:6px;margin-bottom:10px">
+            <label style="display:flex;align-items:flex-start;gap:8px;cursor:pointer;padding:8px 10px;border:1.5px solid var(--bdr);border-radius:var(--rs);background:var(--bg)">
+              <input type="radio" name="salePrecFeeMode" id="salePrecFeeSeller" value="seller" checked
+                style="margin-top:2px;accent-color:var(--acc)" onchange="onSalePrecFeeChange()">
+              <div>
+                <div style="font-size:12px;font-weight:700;color:var(--txt)">판매자 부담</div>
+                <div style="font-size:10px;color:var(--muted);font-weight:500;margin-top:1px">기본가의 n% 송금. 남은 차액은 판매자가 이익으로 가져가는 방식</div>
+              </div>
+            </label>
+            <label style="display:flex;align-items:flex-start;gap:8px;cursor:pointer;padding:8px 10px;border:1.5px solid var(--bdr);border-radius:var(--rs);background:var(--bg)">
+              <input type="radio" name="salePrecFeeMode" id="salePrecFeeClient" value="client"
+                style="margin-top:2px;accent-color:var(--acc)" onchange="onSalePrecFeeChange()">
+              <div>
+                <div style="font-size:12px;font-weight:700;color:var(--txt)">의뢰인 부담</div>
+                <div style="font-size:10px;color:var(--muted);font-weight:500;margin-top:1px">판매자의 이익 없이 판매만 도와주는 방식</div>
+              </div>
+            </label>
+          </div>
+          <!-- 판매자 부담일 때만 표시 -->
+          <div id="salePrecSliderWrap">
+            <div style="font-size:11px;font-weight:700;color:var(--muted);margin-bottom:6px">판매 퍼센트</div>
+            <div style="display:flex;align-items:center;gap:12px;margin-bottom:4px">
+              <span style="font-size:12px;color:var(--muted);white-space:nowrap;flex-shrink:0">기본가의</span>
+              <input type="range" id="salePrecRatioSlider" min="100" max="150" step="5" value="135"
+                oninput="onSalePrecRatioChange()" style="flex:1;accent-color:var(--acc);cursor:pointer">
+              <span id="salePrecRatioLabel"
+                style="font-family:'Jua',sans-serif!important;font-size:20px;color:var(--acc);min-width:52px;text-align:right">135%</span>
+            </div>
+            <div class="fnote" id="salePrecRatioNote"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">📊 계산 결과</div>
+        <div id="salePrecRes"><div class="empty-msg">값을 입력하면 계산됩니다</div></div>
+      </div>
     </div>
 
-    결과 
-    <div class="card">
-      <div class="card-title">📊 계산 결과</div>
-      <div id="saleRes"><div class="empty-msg">값을 입력하면 계산됩니다</div></div>
-    </div>
-  </div> -->
+  </div>
   
 </div><!-- /main -->
 </div><!-- /layout -->
@@ -580,8 +721,15 @@ input[type=number]{-moz-appearance:textfield;appearance:textfield}
   window.onEngravingChange= onEngravingChange;
   window.autoFillPrices   = autoFillPrices;
   window.init             = init;
-  window.calcSale     = calcSale;
-  window.onSaleToggle = onSaleToggle;
+
+  window.onSaleSubTab        = onSaleSubTab;
+  window.onSaleGemToggle     = onSaleGemToggle;
+  window.onSaleGemRatioChange= onSaleGemRatioChange;
+  window.calcSaleGem         = calcSaleGem;
+  window.onSalePrecToggle    = onSalePrecToggle;
+  window.onSalePrecRatioChange=onSalePrecRatioChange;
+  window.calcSalePrec        = calcSalePrec;
+
 
   const SAVE_IDS = [
     'skillGemSell','skillPrecious','skillFurnace',
@@ -600,9 +748,11 @@ input[type=number]{-moz-appearance:textfield;appearance:textfield}
     'vTopaz','vSapphire','vPlatinum','vDiorite','vTuff','vAndesite',
     'tCharcoalPrice','tWoodPrice','tSellPrice',
     'tWantCount_box','tWantCount_set','tWantCount_ea',
-    'saleItemType','saleBasePrice',
+    'saleItemType','saleGrade','saleBasePrice',
     'saleQty_box','saleQty_set','saleQty_ea',
     'saleProxyToggle','saleSellerSkillPct','saleAgreePct',
+    'saleOtherIngotSellLv','saleOtherGemSellLv','saleOtherPreciousSellLv',
+    'saleRatioSlider',
   ];
   const KEY = 'miner_calc_v5';
 
