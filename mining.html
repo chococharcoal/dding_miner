@@ -494,9 +494,9 @@ input[type=number]{-moz-appearance:textfield;appearance:textfield}
   <div id="t3" class="panel" style="display:none">
 
     <!-- 서브탭 -->
-    <div class="tabbar" style="margin-bottom:8px">
-      <div class="tab on" id="saleSubTab0" onclick="onSaleSubTab(0,this)">💎 보석</div>
-      <div class="tab"    id="saleSubTab1" onclick="onSaleSubTab(1,this)">👑 귀중품</div>
+    <div class="tabbar" id="saleSubTabBar" style="margin-bottom:8px">
+      <div class="tab on" onclick="onSaleSubTab(0,this)">💎 보석</div>
+      <div class="tab"    onclick="onSaleSubTab(1,this)">👑 귀중품</div>
     </div>
 
     <!-- ══════════ 보석 패널 ══════════ -->
@@ -504,29 +504,38 @@ input[type=number]{-moz-appearance:textfield;appearance:textfield}
 
       <div class="card">
         <div class="card-title">💎 보석 판매</div>
-        <div class="g2">
-          <div class="field">
-            <label>보석 종류</label>
-            <select id="saleGemType" onchange="calcSaleGem()">
-              <option value="gem_c">코룸 보석</option>
-              <option value="gem_r">리프톤 보석</option>
-              <option value="gem_s">세렌트 보석</option>
-            </select>
+        <!-- 3종 동시 입력: 코룸/리프톤/세렌트 각각 상자·세트·개 -->
+        <div style="display:flex;flex-direction:column;gap:6px">
+          <!-- 헤더 -->
+          <div style="display:grid;grid-template-columns:80px 1fr 1fr 1fr;gap:4px;align-items:center">
+            <div></div>
+            <div class="sq-label" style="text-align:center;background:none;border:none;padding:2px 0">상자</div>
+            <div class="sq-label" style="text-align:center;background:none;border:none;padding:2px 0">세트</div>
+            <div class="sq-label" style="text-align:center;background:none;border:none;padding:2px 0">개</div>
           </div>
-          <div class="field">
-            <label style="color:var(--muted)">기본가</label>
-            <div class="fnote" id="saleGemBasePriceNote" style="color:var(--acc);padding:7px 0"></div>
+          <!-- 코룸 -->
+          <div style="display:grid;grid-template-columns:80px 1fr 1fr 1fr;gap:4px;align-items:center">
+            <span style="font-size:12px;font-weight:700;color:#e07b2a">코룸</span>
+            <input id="saleGemC_box" type="number" inputmode="numeric" placeholder="0" min="0" oninput="calcSaleGem()" class="sq-input" style="border:1.5px solid var(--bdr);border-radius:var(--rs);text-align:center">
+            <input id="saleGemC_set" type="number" inputmode="numeric" placeholder="0" min="0" oninput="calcSaleGem()" class="sq-input" style="border:1.5px solid var(--bdr);border-radius:var(--rs);text-align:center">
+            <input id="saleGemC_ea"  type="number" inputmode="numeric" placeholder="0" min="0" oninput="calcSaleGem()" class="sq-input" style="border:1.5px solid var(--bdr);border-radius:var(--rs);text-align:center">
+          </div>
+          <!-- 리프톤 -->
+          <div style="display:grid;grid-template-columns:80px 1fr 1fr 1fr;gap:4px;align-items:center">
+            <span style="font-size:12px;font-weight:700;color:#3a9e68">리프톤</span>
+            <input id="saleGemR_box" type="number" inputmode="numeric" placeholder="0" min="0" oninput="calcSaleGem()" class="sq-input" style="border:1.5px solid var(--bdr);border-radius:var(--rs);text-align:center">
+            <input id="saleGemR_set" type="number" inputmode="numeric" placeholder="0" min="0" oninput="calcSaleGem()" class="sq-input" style="border:1.5px solid var(--bdr);border-radius:var(--rs);text-align:center">
+            <input id="saleGemR_ea"  type="number" inputmode="numeric" placeholder="0" min="0" oninput="calcSaleGem()" class="sq-input" style="border:1.5px solid var(--bdr);border-radius:var(--rs);text-align:center">
+          </div>
+          <!-- 세렌트 -->
+          <div style="display:grid;grid-template-columns:80px 1fr 1fr 1fr;gap:4px;align-items:center">
+            <span style="font-size:12px;font-weight:700;color:#d94f3d">세렌트</span>
+            <input id="saleGemS_box" type="number" inputmode="numeric" placeholder="0" min="0" oninput="calcSaleGem()" class="sq-input" style="border:1.5px solid var(--bdr);border-radius:var(--rs);text-align:center">
+            <input id="saleGemS_set" type="number" inputmode="numeric" placeholder="0" min="0" oninput="calcSaleGem()" class="sq-input" style="border:1.5px solid var(--bdr);border-radius:var(--rs);text-align:center">
+            <input id="saleGemS_ea"  type="number" inputmode="numeric" placeholder="0" min="0" oninput="calcSaleGem()" class="sq-input" style="border:1.5px solid var(--bdr);border-radius:var(--rs);text-align:center">
           </div>
         </div>
-        <div class="field" style="margin-top:8px">
-          <label>수량</label>
-          <div class="split-qty-wrap">
-            <div><span class="sq-label">상자</span><input id="saleGemQty_box" type="number" inputmode="numeric" placeholder="0" min="0" oninput="calcSaleGem()" class="sq-input"></div>
-            <div><span class="sq-label">세트</span><input id="saleGemQty_set" type="number" inputmode="numeric" placeholder="0" min="0" oninput="calcSaleGem()" class="sq-input"></div>
-            <div><span class="sq-label">개</span>  <input id="saleGemQty_ea"  type="number" inputmode="numeric" placeholder="0" min="0" oninput="calcSaleGem()" class="sq-input"></div>
-          </div>
-          <div id="saleGemQtyParsed" class="sq-parsed" style="color:var(--acc)"></div>
-        </div>
+        <div id="saleGemQtyParsed" class="sq-parsed" style="color:var(--acc);margin-top:4px"></div>
       </div>
 
       <!-- 대리판매 토글 -->
@@ -576,7 +585,6 @@ input[type=number]{-moz-appearance:textfield;appearance:textfield}
               </div>
             </label>
           </div>
-          <!-- 판매자 부담일 때만 표시 -->
           <div id="saleGemSliderWrap">
             <div style="font-size:11px;font-weight:700;color:var(--muted);margin-bottom:6px">판매 퍼센트</div>
             <div style="display:flex;align-items:center;gap:12px;margin-bottom:4px">
@@ -601,33 +609,39 @@ input[type=number]{-moz-appearance:textfield;appearance:textfield}
     <div id="salePanelPrec" style="display:none">
 
       <div class="card">
-        <div class="card-title">👑 귀중품 판매</div>
-        <div class="g2">
-          <div class="field">
-            <label>귀중품 종류</label>
-            <select id="salePrecType" onchange="calcSalePrec()">
-              <option value="prec_topaz">토파즈 보석함</option>
-              <option value="prec_sapphire">사파이어 조각상</option>
-              <option value="prec_platinum">플레티넘 왕관</option>
-            </select>
+        <div class="card-title">👑 귀중품 판매 (개 단위)</div>
+        <!-- 3종 × 3등급 → 각각 개 단위 입력 -->
+        <div style="display:flex;flex-direction:column;gap:6px">
+          <!-- 헤더 -->
+          <div style="display:grid;grid-template-columns:80px 1fr 1fr 1fr;gap:4px;align-items:center">
+            <div></div>
+            <div class="sq-label" style="text-align:center;background:none;border:none;padding:2px 0">낮은 품질</div>
+            <div class="sq-label" style="text-align:center;background:none;border:none;padding:2px 0">우수</div>
+            <div class="sq-label" style="text-align:center;background:none;border:none;padding:2px 0">황실인증</div>
           </div>
-          <div class="field">
-            <label>귀중품 등급</label>
-            <select id="salePrecGrade" onchange="calcSalePrec()">
-              <option value="LOW">낮은 품질</option>
-              <option value="GOOD">우수</option>
-              <option value="ROYAL">황실인증</option>
-            </select>
+          <!-- 토파즈 -->
+          <div style="display:grid;grid-template-columns:80px 1fr 1fr 1fr;gap:4px;align-items:center">
+            <span style="font-size:11px;font-weight:700;color:#c8960a">토파즈</span>
+            <input id="salePrecTopaz_low"   type="number" inputmode="numeric" placeholder="0" min="0" oninput="calcSalePrec()" class="sq-input" style="border:1.5px solid var(--bdr);border-radius:var(--rs);text-align:center">
+            <input id="salePrecTopaz_good"  type="number" inputmode="numeric" placeholder="0" min="0" oninput="calcSalePrec()" class="sq-input" style="border:1.5px solid var(--bdr);border-radius:var(--rs);text-align:center">
+            <input id="salePrecTopaz_royal" type="number" inputmode="numeric" placeholder="0" min="0" oninput="calcSalePrec()" class="sq-input" style="border:1.5px solid var(--bdr);border-radius:var(--rs);text-align:center">
+          </div>
+          <!-- 사파이어 -->
+          <div style="display:grid;grid-template-columns:80px 1fr 1fr 1fr;gap:4px;align-items:center">
+            <span style="font-size:11px;font-weight:700;color:#1e54b0">사파이어</span>
+            <input id="salePrecSapphire_low"   type="number" inputmode="numeric" placeholder="0" min="0" oninput="calcSalePrec()" class="sq-input" style="border:1.5px solid var(--bdr);border-radius:var(--rs);text-align:center">
+            <input id="salePrecSapphire_good"  type="number" inputmode="numeric" placeholder="0" min="0" oninput="calcSalePrec()" class="sq-input" style="border:1.5px solid var(--bdr);border-radius:var(--rs);text-align:center">
+            <input id="salePrecSapphire_royal" type="number" inputmode="numeric" placeholder="0" min="0" oninput="calcSalePrec()" class="sq-input" style="border:1.5px solid var(--bdr);border-radius:var(--rs);text-align:center">
+          </div>
+          <!-- 플레티넘 -->
+          <div style="display:grid;grid-template-columns:80px 1fr 1fr 1fr;gap:4px;align-items:center">
+            <span style="font-size:11px;font-weight:700;color:#9ab0c8">플레티넘</span>
+            <input id="salePrecPlatinum_low"   type="number" inputmode="numeric" placeholder="0" min="0" oninput="calcSalePrec()" class="sq-input" style="border:1.5px solid var(--bdr);border-radius:var(--rs);text-align:center">
+            <input id="salePrecPlatinum_good"  type="number" inputmode="numeric" placeholder="0" min="0" oninput="calcSalePrec()" class="sq-input" style="border:1.5px solid var(--bdr);border-radius:var(--rs);text-align:center">
+            <input id="salePrecPlatinum_royal" type="number" inputmode="numeric" placeholder="0" min="0" oninput="calcSalePrec()" class="sq-input" style="border:1.5px solid var(--bdr);border-radius:var(--rs);text-align:center">
           </div>
         </div>
-        <div class="field" style="margin-top:8px">
-          <label>수량</label>
-          <div class="split-qty-wrap">
-            <div><span class="sq-label">세트</span><input id="salePrecQty_set" type="number" inputmode="numeric" placeholder="0" min="0" oninput="calcSalePrec()" class="sq-input"></div>
-            <div><span class="sq-label">개</span>  <input id="salePrecQty_ea"  type="number" inputmode="numeric" placeholder="0" min="0" oninput="calcSalePrec()" class="sq-input"></div>
-          </div>
-          <div id="salePrecQtyParsed" class="sq-parsed" style="color:var(--acc)"></div>
-        </div>
+        <div id="salePrecQtyParsed" class="sq-parsed" style="color:var(--acc);margin-top:4px"></div>
       </div>
 
       <!-- 대리판매 토글 -->
@@ -677,7 +691,6 @@ input[type=number]{-moz-appearance:textfield;appearance:textfield}
               </div>
             </label>
           </div>
-          <!-- 판매자 부담일 때만 표시 -->
           <div id="salePrecSliderWrap">
             <div style="font-size:11px;font-weight:700;color:var(--muted);margin-bottom:6px">판매 퍼센트</div>
             <div style="display:flex;align-items:center;gap:12px;margin-bottom:4px">
@@ -748,11 +761,14 @@ input[type=number]{-moz-appearance:textfield;appearance:textfield}
     'vTopaz','vSapphire','vPlatinum','vDiorite','vTuff','vAndesite',
     'tCharcoalPrice','tWoodPrice','tSellPrice',
     'tWantCount_box','tWantCount_set','tWantCount_ea',
-    'saleItemType','saleGrade','saleBasePrice',
-    'saleQty_box','saleQty_set','saleQty_ea',
-    'saleProxyToggle','saleSellerSkillPct','saleAgreePct',
-    'saleOtherIngotSellLv','saleOtherGemSellLv','saleOtherPreciousSellLv',
-    'saleRatioSlider',
+    'saleGemC_box','saleGemC_set','saleGemC_ea',
+    'saleGemR_box','saleGemR_set','saleGemR_ea',
+    'saleGemS_box','saleGemS_set','saleGemS_ea',
+    'saleGemOtherLv','saleGemRatioSlider',
+    'salePrecTopaz_low','salePrecTopaz_good','salePrecTopaz_royal',
+    'salePrecSapphire_low','salePrecSapphire_good','salePrecSapphire_royal',
+    'salePrecPlatinum_low','salePrecPlatinum_good','salePrecPlatinum_royal',
+    'salePrecOtherLv','salePrecRatioSlider',
   ];
   const KEY = 'miner_calc_v5';
 
