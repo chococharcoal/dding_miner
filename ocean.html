@@ -415,60 +415,80 @@ input[type=number]{-moz-appearance:textfield;appearance:textfield}
     <!-- ══════════ 연금품 패널 ══════════ -->
     <div id="oceanSalePanelAlch">
       <div class="card">
-        <div class="card-title">⚗️ 연금품 수량 입력 (개 단위)</div>
+        <div class="card-title">⚗️ 연금품 수량 입력</div>
 
-        <!-- 내 스킬 뱃지 -->
         <div id="oceanAlchMySkillBadge" class="my-skill-badge" style="margin-bottom:10px">
           ⚗️ 연금술 보너스 — <span id="oceanAlchMySkillVal">로딩중</span>
         </div>
 
-        <!-- 0성 -->
-        <div class="slabel">🔬 0성</div>
-        <div class="g3" style="margin-bottom:8px">
-          <div class="field"><label style="color:#c8920a">추출된 희석액</label>
-            <input id="oSale_DILUTED_EXTRACT" type="number" inputmode="numeric" placeholder="0" min="0" onwheel="return false" oninput="calcOceanSaleAlch()" class="sq-input" style="border:1.5px solid var(--bdr);border-radius:var(--rs);text-align:center;width:100%;font-size:13px!important;font-weight:700!important;padding:6px 4px">
+        <!-- 헤더 -->
+        <div style="display:flex;flex-direction:column;gap:0;border:1.5px solid var(--bdr);border-radius:var(--rs);overflow:hidden">
+          <div style="display:grid;grid-template-columns:1fr 80px 80px;background:var(--surf);border-bottom:1.5px solid var(--bdr)">
+            <div style="padding:6px 10px;border-right:1px solid var(--bdr);font-size:11px;font-weight:700"></div>
+            <div style="padding:6px 4px;text-align:center;font-size:11px;font-weight:700;border-right:1px solid var(--bdr)">세트</div>
+            <div style="padding:6px 4px;text-align:center;font-size:11px;font-weight:700">개</div>
           </div>
-        </div>
 
-        <!-- 1성 -->
-        <div class="slabel">★ 1성</div>
-        <div class="g3" style="margin-bottom:8px">
-          <div class="field"><label style="color:#1e9e58">아쿠티스</label>
-            <input id="oSale_AQUTIS" type="number" inputmode="numeric" placeholder="0" min="0" onwheel="return false" oninput="calcOceanSaleAlch()" class="sq-input" style="border:1.5px solid var(--bdr);border-radius:var(--rs);text-align:center;width:100%;font-size:13px!important;font-weight:700!important;padding:6px 4px">
+          <!-- 0성 -->
+          <div style="padding:4px 10px;background:var(--bg);border-bottom:1px solid var(--bdr);font-size:10px;font-weight:700;color:#c8920a;letter-spacing:.3px">🔬 0성</div>
+          <div style="display:grid;grid-template-columns:1fr 80px 80px;border-bottom:1px solid var(--bdr)">
+            <div style="padding:7px 10px;border-right:1px solid var(--bdr);background:var(--bg);font-size:11px;font-weight:700;display:flex;align-items:center;color:#c8920a">추출된 희석액</div>
+            <div style="border-right:1px solid var(--bdr);display:flex;align-items:center"><input id="oSale_DILUTED_EXTRACT_set" type="number" inputmode="numeric" placeholder="0" min="0" onwheel="return false" oninput="calcOceanSaleAlch()" style="border:none;outline:none;background:var(--bg);width:100%;text-align:center;font-size:13px!important;font-weight:700!important;padding:6px 4px"></div>
+            <div style="display:flex;align-items:center"><input id="oSale_DILUTED_EXTRACT_ea"  type="number" inputmode="numeric" placeholder="0" min="0" onwheel="return false" oninput="calcOceanSaleAlch()" style="border:none;outline:none;background:var(--bg);width:100%;text-align:center;font-size:13px!important;font-weight:700!important;padding:6px 4px"></div>
           </div>
-          <div class="field"><label style="color:#1e9e58">광란체</label>
-            <input id="oSale_KRAKEN" type="number" inputmode="numeric" placeholder="0" min="0" onwheel="return false" oninput="calcOceanSaleAlch()" class="sq-input" style="border:1.5px solid var(--bdr);border-radius:var(--rs);text-align:center;width:100%;font-size:13px!important;font-weight:700!important;padding:6px 4px">
-          </div>
-          <div class="field"><label style="color:#1e9e58">깃털</label>
-            <input id="oSale_LEVIATHAN" type="number" inputmode="numeric" placeholder="0" min="0" onwheel="return false" oninput="calcOceanSaleAlch()" class="sq-input" style="border:1.5px solid var(--bdr);border-radius:var(--rs);text-align:center;width:100%;font-size:13px!important;font-weight:700!important;padding:6px 4px">
-          </div>
-        </div>
 
-        <!-- 2성 -->
-        <div class="slabel">★★ 2성</div>
-        <div class="g3" style="margin-bottom:8px">
-          <div class="field"><label style="color:#2060c8">코어</label>
-            <input id="oSale_WAVE_CORE" type="number" inputmode="numeric" placeholder="0" min="0" onwheel="return false" oninput="calcOceanSaleAlch()" class="sq-input" style="border:1.5px solid var(--bdr);border-radius:var(--rs);text-align:center;width:100%;font-size:13px!important;font-weight:700!important;padding:6px 4px">
+          <!-- 1성 -->
+          <div style="padding:4px 10px;background:var(--bg);border-bottom:1px solid var(--bdr);font-size:10px;font-weight:700;color:#1e9e58;letter-spacing:.3px">★ 1성</div>
+          <div style="display:grid;grid-template-columns:1fr 80px 80px;border-bottom:1px solid var(--bdr)">
+            <div style="padding:7px 10px;border-right:1px solid var(--bdr);background:var(--bg);font-size:11px;font-weight:700;display:flex;align-items:center;color:#1e9e58">영생의 아쿠티스</div>
+            <div style="border-right:1px solid var(--bdr);display:flex;align-items:center"><input id="oSale_AQUTIS_set" type="number" inputmode="numeric" placeholder="0" min="0" onwheel="return false" oninput="calcOceanSaleAlch()" style="border:none;outline:none;background:var(--bg);width:100%;text-align:center;font-size:13px!important;font-weight:700!important;padding:6px 4px"></div>
+            <div style="display:flex;align-items:center"><input id="oSale_AQUTIS_ea"  type="number" inputmode="numeric" placeholder="0" min="0" onwheel="return false" oninput="calcOceanSaleAlch()" style="border:none;outline:none;background:var(--bg);width:100%;text-align:center;font-size:13px!important;font-weight:700!important;padding:6px 4px"></div>
           </div>
-          <div class="field"><label style="color:#2060c8">비약</label>
-            <input id="oSale_DEEP_VIAL" type="number" inputmode="numeric" placeholder="0" min="0" onwheel="return false" oninput="calcOceanSaleAlch()" class="sq-input" style="border:1.5px solid var(--bdr);border-radius:var(--rs);text-align:center;width:100%;font-size:13px!important;font-weight:700!important;padding:6px 4px">
+          <div style="display:grid;grid-template-columns:1fr 80px 80px;border-bottom:1px solid var(--bdr)">
+            <div style="padding:7px 10px;border-right:1px solid var(--bdr);background:var(--bg);font-size:11px;font-weight:700;display:flex;align-items:center;color:#1e9e58">크라켄의 광란체</div>
+            <div style="border-right:1px solid var(--bdr);display:flex;align-items:center"><input id="oSale_KRAKEN_set" type="number" inputmode="numeric" placeholder="0" min="0" onwheel="return false" oninput="calcOceanSaleAlch()" style="border:none;outline:none;background:var(--bg);width:100%;text-align:center;font-size:13px!important;font-weight:700!important;padding:6px 4px"></div>
+            <div style="display:flex;align-items:center"><input id="oSale_KRAKEN_ea"  type="number" inputmode="numeric" placeholder="0" min="0" onwheel="return false" oninput="calcOceanSaleAlch()" style="border:none;outline:none;background:var(--bg);width:100%;text-align:center;font-size:13px!important;font-weight:700!important;padding:6px 4px"></div>
           </div>
-          <div class="field"><label style="color:#2060c8">날개</label>
-            <input id="oSale_SEA_WING" type="number" inputmode="numeric" placeholder="0" min="0" onwheel="return false" oninput="calcOceanSaleAlch()" class="sq-input" style="border:1.5px solid var(--bdr);border-radius:var(--rs);text-align:center;width:100%;font-size:13px!important;font-weight:700!important;padding:6px 4px">
+          <div style="display:grid;grid-template-columns:1fr 80px 80px;border-bottom:1px solid var(--bdr)">
+            <div style="padding:7px 10px;border-right:1px solid var(--bdr);background:var(--bg);font-size:11px;font-weight:700;display:flex;align-items:center;color:#1e9e58">리바이던의 깃털</div>
+            <div style="border-right:1px solid var(--bdr);display:flex;align-items:center"><input id="oSale_LEVIATHAN_set" type="number" inputmode="numeric" placeholder="0" min="0" onwheel="return false" oninput="calcOceanSaleAlch()" style="border:none;outline:none;background:var(--bg);width:100%;text-align:center;font-size:13px!important;font-weight:700!important;padding:6px 4px"></div>
+            <div style="display:flex;align-items:center"><input id="oSale_LEVIATHAN_ea"  type="number" inputmode="numeric" placeholder="0" min="0" onwheel="return false" oninput="calcOceanSaleAlch()" style="border:none;outline:none;background:var(--bg);width:100%;text-align:center;font-size:13px!important;font-weight:700!important;padding:6px 4px"></div>
           </div>
-        </div>
 
-        <!-- 3성 -->
-        <div class="slabel">★★★ 3성</div>
-        <div class="g3">
-          <div class="field"><label style="color:#c82828">파편</label>
-            <input id="oSale_AQUA_PULSE" type="number" inputmode="numeric" placeholder="0" min="0" onwheel="return false" oninput="calcOceanSaleAlch()" class="sq-input" style="border:1.5px solid var(--bdr);border-radius:var(--rs);text-align:center;width:100%;font-size:13px!important;font-weight:700!important;padding:6px 4px">
+          <!-- 2성 -->
+          <div style="padding:4px 10px;background:var(--bg);border-bottom:1px solid var(--bdr);font-size:10px;font-weight:700;color:#2060c8;letter-spacing:.3px">★★ 2성</div>
+          <div style="display:grid;grid-template-columns:1fr 80px 80px;border-bottom:1px solid var(--bdr)">
+            <div style="padding:7px 10px;border-right:1px solid var(--bdr);background:var(--bg);font-size:11px;font-weight:700;display:flex;align-items:center;color:#2060c8">해구 파동의 코어</div>
+            <div style="border-right:1px solid var(--bdr);display:flex;align-items:center"><input id="oSale_WAVE_CORE_set" type="number" inputmode="numeric" placeholder="0" min="0" onwheel="return false" oninput="calcOceanSaleAlch()" style="border:none;outline:none;background:var(--bg);width:100%;text-align:center;font-size:13px!important;font-weight:700!important;padding:6px 4px"></div>
+            <div style="display:flex;align-items:center"><input id="oSale_WAVE_CORE_ea"  type="number" inputmode="numeric" placeholder="0" min="0" onwheel="return false" oninput="calcOceanSaleAlch()" style="border:none;outline:none;background:var(--bg);width:100%;text-align:center;font-size:13px!important;font-weight:700!important;padding:6px 4px"></div>
           </div>
-          <div class="field"><label style="color:#c82828">손</label>
-            <input id="oSale_NAUTILUS" type="number" inputmode="numeric" placeholder="0" min="0" onwheel="return false" oninput="calcOceanSaleAlch()" class="sq-input" style="border:1.5px solid var(--bdr);border-radius:var(--rs);text-align:center;width:100%;font-size:13px!important;font-weight:700!important;padding:6px 4px">
+          <div style="display:grid;grid-template-columns:1fr 80px 80px;border-bottom:1px solid var(--bdr)">
+            <div style="padding:7px 10px;border-right:1px solid var(--bdr);background:var(--bg);font-size:11px;font-weight:700;display:flex;align-items:center;color:#2060c8">침묵의 심해 비약</div>
+            <div style="border-right:1px solid var(--bdr);display:flex;align-items:center"><input id="oSale_DEEP_VIAL_set" type="number" inputmode="numeric" placeholder="0" min="0" onwheel="return false" oninput="calcOceanSaleAlch()" style="border:none;outline:none;background:var(--bg);width:100%;text-align:center;font-size:13px!important;font-weight:700!important;padding:6px 4px"></div>
+            <div style="display:flex;align-items:center"><input id="oSale_DEEP_VIAL_ea"  type="number" inputmode="numeric" placeholder="0" min="0" onwheel="return false" oninput="calcOceanSaleAlch()" style="border:none;outline:none;background:var(--bg);width:100%;text-align:center;font-size:13px!important;font-weight:700!important;padding:6px 4px"></div>
           </div>
-          <div class="field"><label style="color:#c82828">척추</label>
-            <input id="oSale_ABYSS_SPINE" type="number" inputmode="numeric" placeholder="0" min="0" onwheel="return false" oninput="calcOceanSaleAlch()" class="sq-input" style="border:1.5px solid var(--bdr);border-radius:var(--rs);text-align:center;width:100%;font-size:13px!important;font-weight:700!important;padding:6px 4px">
+          <div style="display:grid;grid-template-columns:1fr 80px 80px;border-bottom:1px solid var(--bdr)">
+            <div style="padding:7px 10px;border-right:1px solid var(--bdr);background:var(--bg);font-size:11px;font-weight:700;display:flex;align-items:center;color:#2060c8">청해룡의 날개</div>
+            <div style="border-right:1px solid var(--bdr);display:flex;align-items:center"><input id="oSale_SEA_WING_set" type="number" inputmode="numeric" placeholder="0" min="0" onwheel="return false" oninput="calcOceanSaleAlch()" style="border:none;outline:none;background:var(--bg);width:100%;text-align:center;font-size:13px!important;font-weight:700!important;padding:6px 4px"></div>
+            <div style="display:flex;align-items:center"><input id="oSale_SEA_WING_ea"  type="number" inputmode="numeric" placeholder="0" min="0" onwheel="return false" oninput="calcOceanSaleAlch()" style="border:none;outline:none;background:var(--bg);width:100%;text-align:center;font-size:13px!important;font-weight:700!important;padding:6px 4px"></div>
+          </div>
+
+          <!-- 3성 -->
+          <div style="padding:4px 10px;background:var(--bg);border-bottom:1px solid var(--bdr);font-size:10px;font-weight:700;color:#c82828;letter-spacing:.3px">★★★ 3성</div>
+          <div style="display:grid;grid-template-columns:1fr 80px 80px;border-bottom:1px solid var(--bdr)">
+            <div style="padding:7px 10px;border-right:1px solid var(--bdr);background:var(--bg);font-size:11px;font-weight:700;display:flex;align-items:center;color:#c82828">아쿠아 펄스 파편</div>
+            <div style="border-right:1px solid var(--bdr);display:flex;align-items:center"><input id="oSale_AQUA_PULSE_set" type="number" inputmode="numeric" placeholder="0" min="0" onwheel="return false" oninput="calcOceanSaleAlch()" style="border:none;outline:none;background:var(--bg);width:100%;text-align:center;font-size:13px!important;font-weight:700!important;padding:6px 4px"></div>
+            <div style="display:flex;align-items:center"><input id="oSale_AQUA_PULSE_ea"  type="number" inputmode="numeric" placeholder="0" min="0" onwheel="return false" oninput="calcOceanSaleAlch()" style="border:none;outline:none;background:var(--bg);width:100%;text-align:center;font-size:13px!important;font-weight:700!important;padding:6px 4px"></div>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 80px 80px;border-bottom:1px solid var(--bdr)">
+            <div style="padding:7px 10px;border-right:1px solid var(--bdr);background:var(--bg);font-size:11px;font-weight:700;display:flex;align-items:center;color:#c82828">나우틸러스의 손</div>
+            <div style="border-right:1px solid var(--bdr);display:flex;align-items:center"><input id="oSale_NAUTILUS_set" type="number" inputmode="numeric" placeholder="0" min="0" onwheel="return false" oninput="calcOceanSaleAlch()" style="border:none;outline:none;background:var(--bg);width:100%;text-align:center;font-size:13px!important;font-weight:700!important;padding:6px 4px"></div>
+            <div style="display:flex;align-items:center"><input id="oSale_NAUTILUS_ea"  type="number" inputmode="numeric" placeholder="0" min="0" onwheel="return false" oninput="calcOceanSaleAlch()" style="border:none;outline:none;background:var(--bg);width:100%;text-align:center;font-size:13px!important;font-weight:700!important;padding:6px 4px"></div>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 80px 80px">
+            <div style="padding:7px 10px;border-right:1px solid var(--bdr);background:var(--bg);font-size:11px;font-weight:700;display:flex;align-items:center;color:#c82828">무저의 척추</div>
+            <div style="border-right:1px solid var(--bdr);display:flex;align-items:center"><input id="oSale_ABYSS_SPINE_set" type="number" inputmode="numeric" placeholder="0" min="0" onwheel="return false" oninput="calcOceanSaleAlch()" style="border:none;outline:none;background:var(--bg);width:100%;text-align:center;font-size:13px!important;font-weight:700!important;padding:6px 4px"></div>
+            <div style="display:flex;align-items:center"><input id="oSale_ABYSS_SPINE_ea"  type="number" inputmode="numeric" placeholder="0" min="0" onwheel="return false" oninput="calcOceanSaleAlch()" style="border:none;outline:none;background:var(--bg);width:100%;text-align:center;font-size:13px!important;font-weight:700!important;padding:6px 4px"></div>
           </div>
         </div>
       </div>
@@ -525,7 +545,7 @@ input[type=number]{-moz-appearance:textfield;appearance:textfield}
             <div style="font-size:11px;font-weight:700;color:var(--muted);margin-bottom:8px;letter-spacing:.3px">판매 퍼센트</div>
             <div style="display:flex;align-items:center;gap:12px;margin-bottom:6px">
               <span style="font-size:12px;color:var(--muted);white-space:nowrap;flex-shrink:0">기본가의</span>
-              <input type="range" id="oSaleAlchRatioSlider" min="100" max="150" step="5" value="115"
+              <input type="range" id="oSaleAlchRatioSlider" min="100" max="130" step="5" value="115"
                 oninput="onOceanSaleAlchRatioChange()" style="flex:1;accent-color:var(--acc);cursor:pointer;height:6px">
               <span id="oSaleAlchRatioLabel"
                 style="font-family:'Jua',sans-serif!important;font-size:22px;color:var(--acc);min-width:56px;text-align:right;line-height:1">115%</span>
@@ -546,57 +566,55 @@ input[type=number]{-moz-appearance:textfield;appearance:textfield}
       <div class="card">
         <div class="card-title">🛠️ 공예품 수량 및 가격 입력</div>
 
-        <!-- 내 스킬 뱃지 -->
         <div id="oceanCraftMySkillBadge" class="my-skill-badge" style="margin-bottom:10px">
           🛠️ 공예품 보너스 — <span id="oceanCraftMySkillVal">로딩중</span>
         </div>
 
-        <!-- 공예품 6종: 수량 + 기본가 -->
         <div style="display:flex;flex-direction:column;gap:0;border:1.5px solid var(--bdr);border-radius:var(--rs);overflow:hidden">
           <!-- 헤더 -->
-          <div style="display:grid;grid-template-columns:90px 1fr 1fr;background:var(--surf);border-bottom:1.5px solid var(--bdr)">
+          <div style="display:grid;grid-template-columns:1fr 80px 1fr;background:var(--surf);border-bottom:1.5px solid var(--bdr)">
             <div style="padding:6px 10px;border-right:1px solid var(--bdr);font-size:11px;font-weight:700"></div>
             <div style="padding:6px 4px;text-align:center;font-size:11px;font-weight:700;border-right:1px solid var(--bdr)">수량 (개)</div>
             <div style="padding:6px 4px;text-align:center;font-size:11px;font-weight:700">기본가 (원/개)</div>
           </div>
           <!-- 브로치 -->
-          <div style="display:grid;grid-template-columns:90px 1fr 1fr;border-bottom:1px solid var(--bdr)">
-            <div style="padding:6px 10px;border-right:1px solid var(--bdr);background:var(--bg);font-size:11px;font-weight:700;display:flex;align-items:center;gap:4px"><span>📿</span><span>브로치</span></div>
-            <div style="border-right:1px solid var(--bdr);display:flex;align-items:center"><input id="oSale_craft_BROOCH_qty" type="number" inputmode="numeric" placeholder="0" min="0" onwheel="return false" oninput="calcOceanSaleCraft()" style="border:none;outline:none;background:var(--bg);width:100%;text-align:center;font-size:13px!important;font-weight:700!important;padding:6px 4px"></div>
+          <div style="display:grid;grid-template-columns:1fr 80px 1fr;border-bottom:1px solid var(--bdr)">
+            <div style="padding:7px 10px;border-right:1px solid var(--bdr);background:var(--bg);font-size:11px;font-weight:700;display:flex;align-items:center;gap:4px;color:#d4a020">📿 조개껍데기 브로치</div>
+            <div style="border-right:1px solid var(--bdr);display:flex;align-items:center"><input id="oSale_craft_BROOCH_qty"   type="number" inputmode="numeric" placeholder="0"    min="0" onwheel="return false" oninput="calcOceanSaleCraft()" style="border:none;outline:none;background:var(--bg);width:100%;text-align:center;font-size:13px!important;font-weight:700!important;padding:6px 4px"></div>
             <div style="display:flex;align-items:center"><input id="oSale_craft_BROOCH_price" type="number" inputmode="numeric" placeholder="기본가" min="0" onwheel="return false" oninput="calcOceanSaleCraft()" style="border:none;outline:none;background:var(--bg);width:100%;text-align:center;font-size:12px!important;font-weight:700!important;padding:6px 4px"></div>
           </div>
           <!-- 향수병 -->
-          <div style="display:grid;grid-template-columns:90px 1fr 1fr;border-bottom:1px solid var(--bdr)">
-            <div style="padding:6px 10px;border-right:1px solid var(--bdr);background:var(--bg);font-size:11px;font-weight:700;display:flex;align-items:center;gap:4px"><span>🧴</span><span>향수병</span></div>
-            <div style="border-right:1px solid var(--bdr);display:flex;align-items:center"><input id="oSale_craft_PERFUME_qty" type="number" inputmode="numeric" placeholder="0" min="0" onwheel="return false" oninput="calcOceanSaleCraft()" style="border:none;outline:none;background:var(--bg);width:100%;text-align:center;font-size:13px!important;font-weight:700!important;padding:6px 4px"></div>
+          <div style="display:grid;grid-template-columns:1fr 80px 1fr;border-bottom:1px solid var(--bdr)">
+            <div style="padding:7px 10px;border-right:1px solid var(--bdr);background:var(--bg);font-size:11px;font-weight:700;display:flex;align-items:center;gap:4px;color:#3d6fd4">🧴 푸른 향수병</div>
+            <div style="border-right:1px solid var(--bdr);display:flex;align-items:center"><input id="oSale_craft_PERFUME_qty"   type="number" inputmode="numeric" placeholder="0"    min="0" onwheel="return false" oninput="calcOceanSaleCraft()" style="border:none;outline:none;background:var(--bg);width:100%;text-align:center;font-size:13px!important;font-weight:700!important;padding:6px 4px"></div>
             <div style="display:flex;align-items:center"><input id="oSale_craft_PERFUME_price" type="number" inputmode="numeric" placeholder="기본가" min="0" onwheel="return false" oninput="calcOceanSaleCraft()" style="border:none;outline:none;background:var(--bg);width:100%;text-align:center;font-size:12px!important;font-weight:700!important;padding:6px 4px"></div>
           </div>
           <!-- 손거울 -->
-          <div style="display:grid;grid-template-columns:90px 1fr 1fr;border-bottom:1px solid var(--bdr)">
-            <div style="padding:6px 10px;border-right:1px solid var(--bdr);background:var(--bg);font-size:11px;font-weight:700;display:flex;align-items:center;gap:4px"><span>🪞</span><span>손거울</span></div>
-            <div style="border-right:1px solid var(--bdr);display:flex;align-items:center"><input id="oSale_craft_MIRROR_qty" type="number" inputmode="numeric" placeholder="0" min="0" onwheel="return false" oninput="calcOceanSaleCraft()" style="border:none;outline:none;background:var(--bg);width:100%;text-align:center;font-size:13px!important;font-weight:700!important;padding:6px 4px"></div>
+          <div style="display:grid;grid-template-columns:1fr 80px 1fr;border-bottom:1px solid var(--bdr)">
+            <div style="padding:7px 10px;border-right:1px solid var(--bdr);background:var(--bg);font-size:11px;font-weight:700;display:flex;align-items:center;gap:4px;color:#1aacac">🪞 자개 손거울</div>
+            <div style="border-right:1px solid var(--bdr);display:flex;align-items:center"><input id="oSale_craft_MIRROR_qty"   type="number" inputmode="numeric" placeholder="0"    min="0" onwheel="return false" oninput="calcOceanSaleCraft()" style="border:none;outline:none;background:var(--bg);width:100%;text-align:center;font-size:13px!important;font-weight:700!important;padding:6px 4px"></div>
             <div style="display:flex;align-items:center"><input id="oSale_craft_MIRROR_price" type="number" inputmode="numeric" placeholder="기본가" min="0" onwheel="return false" oninput="calcOceanSaleCraft()" style="border:none;outline:none;background:var(--bg);width:100%;text-align:center;font-size:12px!important;font-weight:700!important;padding:6px 4px"></div>
           </div>
           <!-- 헤어핀 -->
-          <div style="display:grid;grid-template-columns:90px 1fr 1fr;border-bottom:1px solid var(--bdr)">
-            <div style="padding:6px 10px;border-right:1px solid var(--bdr);background:var(--bg);font-size:11px;font-weight:700;display:flex;align-items:center;gap:4px"><span>📌</span><span>헤어핀</span></div>
-            <div style="border-right:1px solid var(--bdr);display:flex;align-items:center"><input id="oSale_craft_HAIRPIN_qty" type="number" inputmode="numeric" placeholder="0" min="0" onwheel="return false" oninput="calcOceanSaleCraft()" style="border:none;outline:none;background:var(--bg);width:100%;text-align:center;font-size:13px!important;font-weight:700!important;padding:6px 4px"></div>
+          <div style="display:grid;grid-template-columns:1fr 80px 1fr;border-bottom:1px solid var(--bdr)">
+            <div style="padding:7px 10px;border-right:1px solid var(--bdr);background:var(--bg);font-size:11px;font-weight:700;display:flex;align-items:center;gap:4px;color:#d46090">📌 분홍 헤어핀</div>
+            <div style="border-right:1px solid var(--bdr);display:flex;align-items:center"><input id="oSale_craft_HAIRPIN_qty"   type="number" inputmode="numeric" placeholder="0"    min="0" onwheel="return false" oninput="calcOceanSaleCraft()" style="border:none;outline:none;background:var(--bg);width:100%;text-align:center;font-size:13px!important;font-weight:700!important;padding:6px 4px"></div>
             <div style="display:flex;align-items:center"><input id="oSale_craft_HAIRPIN_price" type="number" inputmode="numeric" placeholder="기본가" min="0" onwheel="return false" oninput="calcOceanSaleCraft()" style="border:none;outline:none;background:var(--bg);width:100%;text-align:center;font-size:12px!important;font-weight:700!important;padding:6px 4px"></div>
           </div>
           <!-- 부채 -->
-          <div style="display:grid;grid-template-columns:90px 1fr 1fr;border-bottom:1px solid var(--bdr)">
-            <div style="padding:6px 10px;border-right:1px solid var(--bdr);background:var(--bg);font-size:11px;font-weight:700;display:flex;align-items:center;gap:4px"><span>🪭</span><span>부채</span></div>
-            <div style="border-right:1px solid var(--bdr);display:flex;align-items:center"><input id="oSale_craft_FAN_qty" type="number" inputmode="numeric" placeholder="0" min="0" onwheel="return false" oninput="calcOceanSaleCraft()" style="border:none;outline:none;background:var(--bg);width:100%;text-align:center;font-size:13px!important;font-weight:700!important;padding:6px 4px"></div>
+          <div style="display:grid;grid-template-columns:1fr 80px 1fr;border-bottom:1px solid var(--bdr)">
+            <div style="padding:7px 10px;border-right:1px solid var(--bdr);background:var(--bg);font-size:11px;font-weight:700;display:flex;align-items:center;gap:4px;color:#7c52c8">🪭 자개 부채</div>
+            <div style="border-right:1px solid var(--bdr);display:flex;align-items:center"><input id="oSale_craft_FAN_qty"   type="number" inputmode="numeric" placeholder="0"    min="0" onwheel="return false" oninput="calcOceanSaleCraft()" style="border:none;outline:none;background:var(--bg);width:100%;text-align:center;font-size:13px!important;font-weight:700!important;padding:6px 4px"></div>
             <div style="display:flex;align-items:center"><input id="oSale_craft_FAN_price" type="number" inputmode="numeric" placeholder="기본가" min="0" onwheel="return false" oninput="calcOceanSaleCraft()" style="border:none;outline:none;background:var(--bg);width:100%;text-align:center;font-size:12px!important;font-weight:700!important;padding:6px 4px"></div>
           </div>
           <!-- 시계 -->
-          <div style="display:grid;grid-template-columns:90px 1fr 1fr">
-            <div style="padding:6px 10px;border-right:1px solid var(--bdr);background:var(--bg);font-size:11px;font-weight:700;display:flex;align-items:center;gap:4px"><span>⌚</span><span>흑진주 시계</span></div>
-            <div style="border-right:1px solid var(--bdr);display:flex;align-items:center"><input id="oSale_craft_WATCH_qty" type="number" inputmode="numeric" placeholder="0" min="0" onwheel="return false" oninput="calcOceanSaleCraft()" style="border:none;outline:none;background:var(--bg);width:100%;text-align:center;font-size:13px!important;font-weight:700!important;padding:6px 4px"></div>
+          <div style="display:grid;grid-template-columns:1fr 80px 1fr">
+            <div style="padding:7px 10px;border-right:1px solid var(--bdr);background:var(--bg);font-size:11px;font-weight:700;display:flex;align-items:center;gap:4px;color:#555555">⌚ 흑진주 시계</div>
+            <div style="border-right:1px solid var(--bdr);display:flex;align-items:center"><input id="oSale_craft_WATCH_qty"   type="number" inputmode="numeric" placeholder="0"    min="0" onwheel="return false" oninput="calcOceanSaleCraft()" style="border:none;outline:none;background:var(--bg);width:100%;text-align:center;font-size:13px!important;font-weight:700!important;padding:6px 4px"></div>
             <div style="display:flex;align-items:center"><input id="oSale_craft_WATCH_price" type="number" inputmode="numeric" placeholder="기본가" min="0" onwheel="return false" oninput="calcOceanSaleCraft()" style="border:none;outline:none;background:var(--bg);width:100%;text-align:center;font-size:12px!important;font-weight:700!important;padding:6px 4px"></div>
           </div>
         </div>
-        <div class="fnote" style="margin-top:4px">기본가 미입력 시 최대가(priceMax) 자동 사용</div>
+        <div class="fnote" style="margin-top:4px">기본가 미입력 시 최대가의 95%로 계산</div>
       </div>
 
       <!-- 대리판매 토글 -->
@@ -660,6 +678,14 @@ input[type=number]{-moz-appearance:textfield;appearance:textfield}
           </div>
         </div>
       </div>
+
+      <div class="card">
+        <div class="card-title">📊 계산 결과</div>
+        <div id="oSaleCraftRes"><div class="empty-msg">수량을 입력하면 계산됩니다</div></div>
+      </div>
+    </div>
+
+  </div>
 
       <div class="card">
         <div class="card-title">📊 계산 결과</div>

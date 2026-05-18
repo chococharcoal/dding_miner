@@ -1766,26 +1766,26 @@ document.addEventListener('click',e=>{if(!e.target.closest('.cdd'))document.quer
 
 /* ── 연금품 정보 ── */
 const O_ALCH_ITEMS = [
-  { key:'DILUTED_EXTRACT', name:'희석액',  color:'#c8920a', tier:0 },
-  { key:'AQUTIS',      name:'아쿠티스', color:'#1e9e58', tier:1 },
-  { key:'KRAKEN',      name:'광란체',   color:'#1e9e58', tier:1 },
-  { key:'LEVIATHAN',   name:'깃털',     color:'#1e9e58', tier:1 },
-  { key:'WAVE_CORE',   name:'코어',     color:'#2060c8', tier:2 },
-  { key:'DEEP_VIAL',   name:'비약',     color:'#2060c8', tier:2 },
-  { key:'SEA_WING',    name:'날개',     color:'#2060c8', tier:2 },
-  { key:'AQUA_PULSE',  name:'파편',     color:'#c82828', tier:3 },
-  { key:'NAUTILUS',    name:'손',       color:'#c82828', tier:3 },
-  { key:'ABYSS_SPINE', name:'척추',     color:'#c82828', tier:3 },
+  { key:'DILUTED_EXTRACT', name:'추출된 희석액',         color:'#c8920a', tier:0 },
+  { key:'AQUTIS',      name:'영생의 아쿠티스 ★',    color:'#1e9e58', tier:1 },
+  { key:'KRAKEN',      name:'크라켄의 광란체 ★',    color:'#1e9e58', tier:1 },
+  { key:'LEVIATHAN',   name:'리바이던의 깃털 ★',    color:'#1e9e58', tier:1 },
+  { key:'WAVE_CORE',   name:'해구 파동의 코어 ★★',  color:'#2060c8', tier:2 },
+  { key:'DEEP_VIAL',   name:'침묵의 심해 비약 ★★',  color:'#2060c8', tier:2 },
+  { key:'SEA_WING',    name:'청해룡의 날개 ★★',     color:'#2060c8', tier:2 },
+  { key:'AQUA_PULSE',  name:'아쿠아 펄스 파편 ★★★', color:'#c82828', tier:3 },
+  { key:'NAUTILUS',    name:'나우틸러스의 손 ★★★',  color:'#c82828', tier:3 },
+  { key:'ABYSS_SPINE', name:'무저의 척추 ★★★',      color:'#c82828', tier:3 },
 ];
 
-/* ── 공예품 정보 ── */
+/* ── 공예품 정보 (진주 색상 반영) ── */
 const O_CRAFT_ITEMS = [
-  { key:'BROOCH',  name:'브로치',     emoji:'📿', priceMax: 50000  },
-  { key:'PERFUME', name:'향수병',     emoji:'🧴', priceMax:150000  },
-  { key:'MIRROR',  name:'손거울',     emoji:'🪞', priceMax:300000  },
-  { key:'HAIRPIN', name:'헤어핀',     emoji:'📌', priceMax:500000  },
-  { key:'FAN',     name:'부채',       emoji:'🪭', priceMax:700000  },
-  { key:'WATCH',   name:'흑진주 시계',emoji:'⌚', priceMax:1000000 },
+  { key:'BROOCH',  name:'조개껍데기 브로치', emoji:'📿', priceMax: 50000,   color:'#d4a020' }, // yellow
+  { key:'PERFUME', name:'푸른 향수병',       emoji:'🧴', priceMax:150000,   color:'#3d6fd4' }, // blue
+  { key:'MIRROR',  name:'자개 손거울',       emoji:'🪞', priceMax:300000,   color:'#1aacac' }, // cyan
+  { key:'HAIRPIN', name:'분홍 헤어핀',       emoji:'📌', priceMax:500000,   color:'#d46090' }, // pink
+  { key:'FAN',     name:'자개 부채',         emoji:'🪭', priceMax:700000,   color:'#7c52c8' }, // purple
+  { key:'WATCH',   name:'흑진주 시계',       emoji:'⌚', priceMax:1000000,  color:'#555555' }, // black
 ];
 
 /* ── 스킬 테이블 ── */
@@ -1876,10 +1876,14 @@ function calcOceanSaleAlch() {
 
   const resEl = _oel('oSaleAlchRes'); if (!resEl) return;
 
-  /* 수량 읽기 */
+  /* 수량 읽기 (세트×64 + 개) */
+  const _oAlchQty = key => {
+    const SET = typeof UNITS !== 'undefined' ? UNITS.SET_SIZE : 64;
+    return _ogi('oSale_'+key+'_set')*SET + _ogi('oSale_'+key+'_ea');
+  };
   const items = O_ALCH_ITEMS.map(it => ({
     ...it,
-    qty:       _ogi('oSale_'+it.key),
+    qty:       _oAlchQty(it.key),
     basePrice: PRECISION_ALCHEMY[it.key]?.price ?? 0,
   })).filter(it => it.qty > 0);
 
@@ -2018,8 +2022,8 @@ function calcOceanSaleCraft() {
   const items = O_CRAFT_ITEMS.map(it => {
     const qty       = _ogi(`oSale_craft_${it.key}_qty`);
     const manualPx  = _ogi(`oSale_craft_${it.key}_price`);
-    const basePrice = manualPx > 0 ? manualPx : it.priceMax;
-    return { ...it, qty, basePrice };
+    const basePrice = manualPx > 0 ? manualPx : Math.round(it.priceMax * 0.95);
+    return { ...it, qty, basePrice, isDefault: manualPx === 0 };
   }).filter(it => it.qty > 0);
 
   if (!items.length) { resEl.innerHTML='<div class="empty-msg">수량을 입력하면 계산됩니다</div>'; return; }
