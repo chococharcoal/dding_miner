@@ -904,6 +904,14 @@ function renderOptResult({ planEntries, finalAnalysis, workInv, totalRev, totalV
       html+=`<span style="font-size:13px;color:var(--grn);font-weight:900;margin-left:auto">${f(totalRev)}원</span>`;
       html+=`<span style="font-size:12px;color:${netCol};font-weight:700">(${netSgn}${f(totalNet)}원)</span>`;
       html+=`</div>`;
+      if(alchSec > 0 || precSec > 0){
+        html+=`<div style="border-top:1px dashed var(--bdr2);margin-top:4px;padding-top:4px;display:flex;flex-direction:column;gap:3px">`;
+        if(alchSec > 0)
+          html+=`<div style="display:flex;justify-content:space-between;font-size:11px;font-weight:700"><span style="color:var(--muted)">⚗️ 연금 작업대</span><span style="color:var(--blu)">${fmtTime(alchSec)}</span></div>`;
+        if(precSec > 0)
+          html+=`<div style="display:flex;justify-content:space-between;font-size:11px;font-weight:700"><span style="color:var(--muted)">🔬 정밀 연금 작업대</span><span style="color:var(--blu)">${fmtTime(precSec)}</span></div>`;
+        html+=`</div>`;
+      }
       html+=`</div></div>`;
     }
 
@@ -1105,6 +1113,14 @@ function renderOptResult({ planEntries, finalAnalysis, workInv, totalRev, totalV
       html+=`<span style="font-size:13px;color:var(--grn);font-weight:900;margin-left:auto">${f(totalRev)}원</span>`;
       html+=`<span style="font-size:12px;color:${netCol};font-weight:700">(${netSgn}${f(totalNet)}원)</span>`;
       html+=`</div>`;
+      if(alchSec > 0 || precSec > 0){
+        html+=`<div style="border-top:1px dashed var(--bdr2);margin-top:4px;padding-top:4px;display:flex;flex-direction:column;gap:3px">`;
+        if(alchSec > 0)
+          html+=`<div style="display:flex;justify-content:space-between;font-size:11px;font-weight:700"><span style="color:var(--muted)">⚗️ 연금 작업대</span><span style="color:var(--blu)">${fmtTime(alchSec)}</span></div>`;
+        if(precSec > 0)
+          html+=`<div style="display:flex;justify-content:space-between;font-size:11px;font-weight:700"><span style="color:var(--muted)">🔬 정밀 연금 작업대</span><span style="color:var(--blu)">${fmtTime(precSec)}</span></div>`;
+        html+=`</div>`;
+      }
       html+=`</div></div>`;
     }
   }
@@ -1189,13 +1205,22 @@ function renderOptResult({ planEntries, finalAnalysis, workInv, totalRev, totalV
     remEntries = SF_KEYS.map(k=>[k,workInv[k]||0]).filter(([,v])=>v>0);
   }
 
-  // 총합
-  const totalSec=planEntries.reduce((s,[k,cnt])=>{
-    const fa=finalAnalysis[k];let t=cnt*(fa.craftTimeSec||0);
-    for(const[mk,mq]of Object.entries(fa.step2)){const r=ALCHEMY[mk];if(r)t+=Math.ceil((mq*cnt)/(r.output||1))*(r.craftTimeSec||0);}
-    for(const[mk,mq]of Object.entries(fa.step3)){const r=ALCHEMY[mk];if(r)t+=(mq*cnt)*(r.craftTimeSec||0);}
-    return s+t;
-  },0)*(1-fr);
+  // 총합 — 연금 작업대(step2+step3) / 정밀 연금 작업대(완성품) 분리
+  let alchSec = 0, precSec = 0;
+  for (const [k, cnt] of planEntries) {
+    const fa = finalAnalysis[k];
+    // 정밀 연금 작업대: 완성품(PRECISION_ALCHEMY)
+    precSec += cnt * (fa.craftTimeSec || 0);
+    // 연금 작업대: step2(정수/에센스/엘릭서) + step3(핵/결정/영약)
+    for (const [mk, mq] of Object.entries(fa.step2)) {
+      const r = ALCHEMY[mk]; if (r) alchSec += Math.ceil((mq*cnt)/(r.output||1)) * (r.craftTimeSec||0);
+    }
+    for (const [mk, mq] of Object.entries(fa.step3)) {
+      const r = ALCHEMY[mk]; if (r) alchSec += (mq*cnt) * (r.craftTimeSec||0);
+    }
+  }
+  alchSec *= (1-fr);
+  precSec *= (1-fr);
 
   html+=`<div class="result-box" style="margin-top:12px">`;
   if(remEntries.length || Object.keys(leftoverInterm).length){
@@ -1257,9 +1282,16 @@ function renderOptResult({ planEntries, finalAnalysis, workInv, totalRev, totalV
   const netSign2=totalNet>=0?'+':'';
   const netCol2=totalNet>=0?'var(--grn)':'var(--red)';
   html+=`<div style="flex:1;text-align:center;padding:4px 8px"><div class="rb-label">${netLabel}</div><div class="rb-value" style="color:${netCol2}">${netSign2}${f(totalNet)}원</div></div>`;
-  html+=`<div style="width:1px;background:var(--bdr2);margin:4px 0"></div>`;
-  html+=`<div style="flex:1;text-align:center;padding:4px 8px"><div class="rb-label">총 제작 시간</div><div class="rb-value" style="font-size:16px">${fmtTime(totalSec)}</div></div>`;
-  html+=`</div></div>`;
+  html+=`</div>`;
+  if(alchSec > 0 || precSec > 0){
+    html+=`<div style="border-top:1px dashed var(--bdr2);margin-top:6px;padding-top:6px;display:flex;flex-direction:column;gap:3px">`;
+    if(alchSec > 0)
+      html+=`<div style="display:flex;justify-content:space-between;font-size:11px;font-weight:700"><span style="color:var(--muted)">⚗️ 연금 작업대</span><span style="color:var(--blu)">${fmtTime(alchSec)}</span></div>`;
+    if(precSec > 0)
+      html+=`<div style="display:flex;justify-content:space-between;font-size:11px;font-weight:700"><span style="color:var(--muted)">🔬 정밀 연금 작업대</span><span style="color:var(--blu)">${fmtTime(precSec)}</span></div>`;
+    html+=`</div>`;
+  }
+  html+=`</div>`;
 
   document.getElementById('optRes').innerHTML=html;
 } // renderOptResult 끝
