@@ -351,10 +351,24 @@ async function calcOpt() {
     }
   } else {
     /* ── 1차 가공품 직접 입력 모드 ── */
+    // 1차 가공품(정수/에센스/엘릭서)을 어패류로 역산해서 inv에 추가
+    // essence_*1 (정수, output:2) → 어패류1 = 정수개수 * output/2 * materials
+    // essence_*2 (에센스, output:2) → 어패류2 = 에센스개수 * output/2 * materials
+    // elixir_* (엘릭서, output:1) → 어패류3 = 엘릭서개수 * 1 * materials
     for (const grp of PROC_GROUPS) {
       for (const it of grp.items) {
-        const v = readSplitQty('proc_'+it.key);
-        if (v > 0) inv[it.key] = (inv[it.key]||0) + v;
+        const qty = readSplitQty('proc_'+it.key);
+        if (qty <= 0) continue;
+        const rec = ALCHEMY[it.key]; if (!rec) continue;
+        // 가공품 qty개를 만들려면 필요한 어패류 = ceil(qty/output) * 재료수
+        // 역으로: qty개 보유 → ceil(qty/output)배치 분량의 어패류를 보유하는 것과 동등
+        const batches = qty / (rec.output || 1); // 소수 허용
+        for (const [mk, mq] of Object.entries(rec.materials)) {
+          const sfMatch = mk.match(/^(oyster|conch|octopus|seaweed|urchin)(\d)$/);
+          if (sfMatch) {
+            inv[mk] = (inv[mk]||0) + mq * batches;
+          }
+        }
       }
     }
     // 어패류 중간재료도 읽기 (핵·결정·영약 제작용)
@@ -1506,6 +1520,7 @@ function saveAll(){
   });
   d.__irows=irows;localStorage.setItem(KEY,JSON.stringify(d));
 }
+window.saveAll = saveAll;
 function loadAll(){
   try{
     const d=JSON.parse(localStorage.getItem(KEY)||'{}');
