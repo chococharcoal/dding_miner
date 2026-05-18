@@ -354,7 +354,7 @@ async function calcOpt() {
     // proc_* 입력값을 직접 inv에 추가 (key 그대로)
     for (const grp of PROC_GROUPS) {
       for (const it of grp.items) {
-        const v = parseInt(document.getElementById('proc_'+it.key)?.value||'0')||0;
+        const v = readSplitQty('proc_'+it.key);
         if (v > 0) inv[it.key] = (inv[it.key]||0) + v;
       }
     }
@@ -1423,9 +1423,7 @@ function buildHaveSeafoodGrid(){
     /* ── 1차 가공품 직접 입력 ── */
     const inp=(it)=>'<div class="field">'
       +'<label style="color:'+it.color+'">'+it.name+'</label>'
-      +'<input id="proc_'+it.key+'" type="number" inputmode="numeric" placeholder="0" min="0"'
-      +' style="font-size:13px!important;font-weight:700!important;border:1.5px solid var(--bdr);border-radius:var(--rs);padding:7px 10px;background:var(--bg);color:var(--txt);outline:none;width:100%"'
-      +' oninput="saveAll()">'
+      +splitQtyHtml('proc_'+it.key, it.color)
       +'</div>';
     for(const grp of PROC_GROUPS){
       html+='<div class="slabel">'+grp.label+'</div><div class="g3" style="margin-bottom:8px">';
@@ -1476,7 +1474,7 @@ const KEY='ocean_calc_v8';
 const splitSuffixes=['_box','_set','_ea'];
 function getStaticIds(){
   const sfSplitIds=SF_TYPES.flatMap(sf=>SF_TIERS.flatMap(t=>splitSuffixes.map(s=>'have_'+sf+'_'+t+s)));
-  const procIds=PROC_GROUPS.flatMap(grp=>grp.items.map(it=>'proc_'+it.key));
+  const procIds=PROC_GROUPS.flatMap(grp=>grp.items.flatMap(it=>['_box','_set','_ea'].map(s=>'proc_'+it.key+s)));
   return['skillFurnace','skillCraftBonus','skillAlchBonus','skillDeepHarvest','skillStarBonus','skillClamBonus','engClamSearch','engSeafoodLuck','engFisherRoulette','engSpiritWhale','rodLevel','totalStamina','price_sf_1','price_sf_2','price_sf_3','sfCostToggle','viewByStageToggle','excludeDilutedToggle','useProcToggle',...Object.keys(VANILLA_META).map(k=>'vprice_'+k),...sfSplitIds,...procIds];
 }
 function saveAll(){
