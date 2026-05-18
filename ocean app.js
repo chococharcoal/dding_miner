@@ -667,6 +667,22 @@ function renderOptResult({ planEntries, finalAnalysis, workInv, totalRev, totalV
     fa.netPerUnit = fa.sellPrice - fa.vanCost - (includeSFCost ? fa.sfCost : 0);
   }
 
+  // 제작 시간 — 연금 작업대 / 정밀 연금 작업대 분리 (뷰 분기 전에 계산)
+  const fr = getSK().fr;
+  let alchSec = 0, precSec = 0;
+  for (const [k, cnt] of planEntries) {
+    const fa = finalAnalysis[k];
+    precSec += cnt * (fa.craftTimeSec || 0);
+    for (const [mk, mq] of Object.entries(fa.step2)) {
+      const r = ALCHEMY[mk]; if (r) alchSec += Math.ceil((mq*cnt)/(r.output||1)) * (r.craftTimeSec||0);
+    }
+    for (const [mk, mq] of Object.entries(fa.step3)) {
+      const r = ALCHEMY[mk]; if (r) alchSec += (mq*cnt) * (r.craftTimeSec||0);
+    }
+  }
+  alchSec *= (1-fr);
+  precSec *= (1-fr);
+
   const sfColors={oyster:'#3d6fd4',conch:'#c89c00',octopus:'#7c52c8',seaweed:'#d94f3d',urchin:'#3a9e68'};
   // ── 완성품 tier 색상 (어패류 고유색과 겹치지 않는 색으로 구분) ──
   // 1성: 딥퍼플 / 라벤더 / 살구핑크
@@ -714,7 +730,6 @@ function renderOptResult({ planEntries, finalAnalysis, workInv, totalRev, totalV
     return [...ordered,...rest];
   }
   const tierLabels=['0성','★ 1성','★★ 2성','★★★ 3성'];
-  const fr=getSK().fr;
 
   function getSFMatch(k){return k.match(/^(oyster|conch|octopus|seaweed|urchin)(\d)$/);}
   function getSFName(k){const m=getSFMatch(k);if(!m)return null;return (SEAFOOD_TYPES[m[1]]?.name||m[1])+' '+'★'.repeat(+m[2]);}
@@ -1204,23 +1219,6 @@ function renderOptResult({ planEntries, finalAnalysis, workInv, totalRev, totalV
   } else {
     remEntries = SF_KEYS.map(k=>[k,workInv[k]||0]).filter(([,v])=>v>0);
   }
-
-  // 총합 — 연금 작업대(step2+step3) / 정밀 연금 작업대(완성품) 분리
-  let alchSec = 0, precSec = 0;
-  for (const [k, cnt] of planEntries) {
-    const fa = finalAnalysis[k];
-    // 정밀 연금 작업대: 완성품(PRECISION_ALCHEMY)
-    precSec += cnt * (fa.craftTimeSec || 0);
-    // 연금 작업대: step2(정수/에센스/엘릭서) + step3(핵/결정/영약)
-    for (const [mk, mq] of Object.entries(fa.step2)) {
-      const r = ALCHEMY[mk]; if (r) alchSec += Math.ceil((mq*cnt)/(r.output||1)) * (r.craftTimeSec||0);
-    }
-    for (const [mk, mq] of Object.entries(fa.step3)) {
-      const r = ALCHEMY[mk]; if (r) alchSec += (mq*cnt) * (r.craftTimeSec||0);
-    }
-  }
-  alchSec *= (1-fr);
-  precSec *= (1-fr);
 
   html+=`<div class="result-box" style="margin-top:12px">`;
   if(remEntries.length || Object.keys(leftoverInterm).length){
