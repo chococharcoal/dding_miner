@@ -357,6 +357,19 @@ async function calcOpt() {
         if (v > 0) inv[it.key] = (inv[it.key]||0) + v;
       }
     }
+    // 어패류 중간재료도 읽기 (핵·결정·영약 제작용)
+    document.querySelectorAll('#intermList .interm-row').forEach(row => {
+      const sel=row.querySelector('select.interm-sel');if(!sel)return;
+      const key=sel.value;if(!key)return;
+      const rid=row.id.replace('irow_','');
+      const qty=readSplitQty('iqty_'+rid);
+      if(qty>0)intermHave[key]=(intermHave[key]||0)+qty;
+    });
+    // 어패류는 SF_SET에 속하므로 inv에 직접 가산
+    const SF_SET2 = new Set(SF_TYPES.flatMap(sf => SF_TIERS.map(t => `${sf}${t}`)));
+    for (const [key, qty] of Object.entries(intermHave)) {
+      if (SF_SET2.has(key)) inv[key] = (inv[key]||0) + qty;
+    }
   }
 
   const SF_KEYS = SF_TYPES.flatMap(sf => SF_TIERS.map(t => `${sf}${t}`));
@@ -609,7 +622,7 @@ async function calcOpt() {
 
   if(!planEntries.length){
     _cachedOptResult = null;
-    document.getElementById('optRes').innerHTML='<div class="empty-msg">재료가 부족하여 만들 수 있는 연금품이 없습니다<br><small style="font-weight:500">어패류 보유량을 확인해주세요</small></div>';
+    document.getElementById('optRes').innerHTML=`<div class="empty-msg">재료가 부족하여 만들 수 있는 연금품이 없습니다<br><small style="font-weight:500">${useProc?'1차 가공품 보유량을 확인해주세요':'어패류 보유량을 확인해주세요'}</small></div>`;
     return;
   }
 
@@ -1429,13 +1442,17 @@ function buildHaveSeafoodGrid(){
       for(const it of grp.items) html+=inp(it);
       html+='</div>';
     }
+    // 어패류 중간재료 추가 (1차 가공품 모드에서도 사용 가능)
+    html+='<div class="slabel" style="margin-top:8px">🦀 보유 어패류 <small style="font-weight:500;font-size:9px">(선택 — 핵·결정·영약 제작에 사용)</small></div>'
+        +'<div id="intermList"></div>'
+        +'<button class="add-interm-btn" onclick="addIntermRow()">+ 어패류 추가</button>';
   }
 
   el.innerHTML=html;
   if(!useProc){ updateIntermWarning(); }
 }
 
-window.onUseProcToggle=()=>{ saveAll(); buildHaveSeafoodGrid(); };
+window.onUseProcToggle=()=>{ saveAll(); buildHaveSeafoodGrid(); loadAll(); };
 window.onSFQtyInput=(id)=>{const n=readSplitQty(id);const p=document.getElementById(id+'_p');if(p)p.textContent=n>0?'총 '+f(n)+'개':'';saveAll();};
 function buildVanillaPriceGrid(){
   const el=document.getElementById('vanillaPriceGrid');if(!el)return;
