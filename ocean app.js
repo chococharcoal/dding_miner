@@ -371,7 +371,7 @@ async function calcOpt() {
         }
       }
     }
-    // 어패류 중간재료도 읽기 (핵·결정·영약 제작용)
+    // 중간재료 읽기 (어패류 + 핵·결정·영약)
     document.querySelectorAll('#intermList .interm-row').forEach(row => {
       const sel=row.querySelector('select.interm-sel');if(!sel)return;
       const key=sel.value;if(!key)return;
@@ -379,10 +379,11 @@ async function calcOpt() {
       const qty=readSplitQty('iqty_'+rid);
       if(qty>0)intermHave[key]=(intermHave[key]||0)+qty;
     });
-    // 어패류는 SF_SET에 속하므로 inv에 직접 가산
+    // 어패류 → inv에 직접 가산 (B&B가 어패류 키로 소비)
+    // 핵/결정/영약 → inv에 ALCHEMY 키로 직접 가산 (calcSFNeedForFinal이 처리)
     const SF_SET2 = new Set(SF_TYPES.flatMap(sf => SF_TIERS.map(t => `${sf}${t}`)));
     for (const [key, qty] of Object.entries(intermHave)) {
-      if (SF_SET2.has(key)) inv[key] = (inv[key]||0) + qty;
+      if (SF_SET2.has(key) || ALCHEMY[key]) inv[key] = (inv[key]||0) + qty;
     }
   }
 
@@ -1159,8 +1160,34 @@ function renderOptResult({ planEntries, finalAnalysis, workInv, totalRev, totalV
     if (leftover > 0) leftoverInterm[key] = leftover;
   }
 
-  // 남은 재고 (어패류 + 잉여 중간재료)
-  const remEntries=SF_KEYS.map(k=>[k,workInv[k]||0]).filter(([,v])=>v>0);
+  // 남은 재고 계산
+  let remEntries;
+  if (useProc) {
+    // useProc 모드: workInv의 어패류를 다시 가공품으로 역산해서 표시
+    // oyster1 → essence_guardian1 (output:2 / 1개 → 2개 생성)
+    // conch1  → essence_wave1, octopus1 → essence_chaos1, seaweed1 → essence_life1, urchin1 → essence_corrosion1
+    // oyster2 → essence_guardian2, ... / oyster3 → elixir_guardian (output:1)
+    const sfToProc = {
+      oyster1:'essence_guardian1', conch1:'essence_wave1', octopus1:'essence_chaos1',
+      seaweed1:'essence_life1',    urchin1:'essence_corrosion1',
+      oyster2:'essence_guardian2', conch2:'essence_wave2', octopus2:'essence_chaos2',
+      seaweed2:'essence_life2',    urchin2:'essence_corrosion2',
+      oyster3:'elixir_guardian',   conch3:'elixir_wave',   octopus3:'elixir_chaos',
+      seaweed3:'elixir_life',      urchin3:'elixir_corrosion',
+    };
+    const procRem = {};
+    for (const [sfKey, sfQty] of SF_KEYS.map(k=>[k,workInv[k]||0]).filter(([,v])=>v>0)) {
+      const procKey = sfToProc[sfKey]; if (!procKey) continue;
+      const rec = ALCHEMY[procKey]; if (!rec) continue;
+      // sfQty 어패류 → floor(sfQty / 재료소비량) * output 개 가공품
+      const matQty = rec.materials[sfKey] || 1;
+      const batches = Math.floor(sfQty / matQty);
+      if (batches > 0) procRem[procKey] = (procRem[procKey]||0) + batches * (rec.output||1);
+    }
+    remEntries = Object.entries(procRem).filter(([,v])=>v>0);
+  } else {
+    remEntries = SF_KEYS.map(k=>[k,workInv[k]||0]).filter(([,v])=>v>0);
+  }
 
   // 총합
   const totalSec=planEntries.reduce((s,[k,cnt])=>{
@@ -1200,9 +1227,23 @@ function renderOptResult({ planEntries, finalAnalysis, workInv, totalRev, totalV
     }
 
     html+=`<div style="margin-bottom:8px;padding-bottom:8px;border-bottom:1px dashed var(--bdr2)">`;
-    if(intermByGroup.sf.length){
-      const chips=intermByGroup.sf.map(([k,v])=>`<span style="color:${getMatColor(k)}">${getMatName(k)} ${fmtQty(v)}</span>`).join(' · ');
-      html+=`<div style="${rowStyle}">${chips}</div>`;
+    if(remEntries.length){
+      if(useProc){
+        // 가공품으로 표시 (정수/에센스/엘릭서)
+        const procByTier={ess1:[],ess2:[],ess3:[]};
+        for(const[k,v]of remEntries){
+          const rec=ALCHEMY[k];if(!rec)continue;
+          if(rec.tier===1) procByTier.ess1.push([k,v]);
+          else if(rec.tier===2) procByTier.ess2.push([k,v]);
+          else if(rec.tier===3) procByTier.ess3.push([k,v]);
+        }
+        html+=renderRow(procByTier.ess1,'');
+        html+=renderRow(procByTier.ess2,'');
+        html+=renderRow(procByTier.ess3,'');
+      } else {
+        const chips=remEntries.map(([k,v])=>`<span style="color:${getMatColor(k)}">${getMatName(k)} ${fmtQty(v)}</span>`).join(' · ');
+        html+=`<div style="${rowStyle}">${chips}</div>`;
+      }
     }
     html+=renderRow(intermByGroup.ess1.concat(intermByGroup.core),'');
     html+=renderRow(intermByGroup.ess2.concat(intermByGroup.crys),'');
@@ -1319,22 +1360,62 @@ window.showIntermPicker = function(rid) {
   popup.className = 'interm-picker-popup';
   popup.style.cssText = 'position:fixed;inset:0;z-index:9999;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.4)';
 
+  const useProc = document.getElementById('useProcToggle')?.checked ?? false;
+
   let html = '<div style="background:var(--surf);border:1.5px solid var(--bdr2);border-radius:var(--r);padding:16px;width:min(520px,94vw);max-height:80vh;overflow-y:auto;box-shadow:0 8px 32px rgba(0,0,0,.25)">';
   html += '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">';
-  html += '<div style="font-family:\'Jua\',sans-serif;font-size:14px;color:var(--txt)">중간재료 선택</div>';
+  html += `<div style="font-family:'Jua',sans-serif;font-size:14px;color:var(--txt)">${useProc ? '어패류 / 중간재료 선택' : '중간재료 선택'}</div>`;
   html += '<button onclick="this.closest(\'.interm-picker-popup\').remove()" style="border:none;background:none;font-size:18px;cursor:pointer;color:var(--muted);line-height:1">✕</button>';
   html += '</div>';
 
-  for(const grp of INTERM_GROUPS){
-    html += '<div style="margin-bottom:10px">';
-    html += '<div style="font-size:10px;font-weight:700;color:var(--muted);letter-spacing:.4px;margin-bottom:5px;padding-bottom:3px;border-bottom:1px dashed var(--bdr2)">';
-    html += `<span style="color:${grp.color}">${grp.label}</span></div>`;
-    html += '<div style="display:grid;grid-template-columns:repeat(5,1fr);gap:5px">';
-    for(const it of grp.items){
-      html += `<button onclick="selectIntermItem('${rid}','${it.key}')" style="padding:5px 4px;border-radius:8px;border:1.5px solid ${it.color}44;background:${it.color}12;color:${it.color};font-size:10px;font-weight:700;cursor:pointer;text-align:center;line-height:1.4;transition:all .12s;word-break:keep-all" onmouseover="this.style.background='${it.color}30'" onmouseout="this.style.background='${it.color}12'">${it.name.replace(/의 /g,'의\n').replace(/★+/g,'')}</button>`;
+  if (useProc) {
+    // useProc 모드: 어패류 1~3성 + 핵/결정/영약만
+    const sfColors={oyster:'#3d6fd4',conch:'#c89c00',octopus:'#7c52c8',seaweed:'#d94f3d',urchin:'#3a9e68'};
+    const starLabels={1:'★',2:'★★',3:'★★★'};
+
+    // 어패류
+    for (const sf of SF_TYPES) {
+      const meta = SEAFOOD_TYPES[sf]; const cl = sfColors[sf];
+      html += `<div style="margin-bottom:10px">`;
+      html += `<div style="font-size:10px;font-weight:700;color:${cl};letter-spacing:.4px;margin-bottom:5px;padding-bottom:3px;border-bottom:1px dashed var(--bdr2)">${meta.name}</div>`;
+      html += '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:5px">';
+      for (const t of SF_TIERS) {
+        const key = `${sf}${t}`;
+        html += `<button onclick="selectIntermItem('${rid}','${key}')" style="padding:5px 4px;border-radius:8px;border:1.5px solid ${cl}44;background:${cl}12;color:${cl};font-size:10px;font-weight:700;cursor:pointer;text-align:center;line-height:1.4;transition:all .12s" onmouseover="this.style.background='${cl}30'" onmouseout="this.style.background='${cl}12'">${meta.name} ${starLabels[t]}</button>`;
+      }
+      html += '</div></div>';
     }
-    html += '</div></div>';
+
+    // 핵/결정/영약
+    const compGroups = [
+      { label:'💠 1차 핵', color:'#4db8e8', items: INTERM_GROUPS.find(g=>g.label==='1차 핵')?.items || [] },
+      { label:'💎 2차 결정', color:'#6090e8', items: INTERM_GROUPS.find(g=>g.label==='2차 결정')?.items || [] },
+      { label:'🧪 3차 영약', color:'#c82828', items: INTERM_GROUPS.find(g=>g.label==='3차 영약')?.items || [] },
+    ];
+    for(const grp of compGroups){
+      if(!grp.items.length) continue;
+      html += '<div style="margin-bottom:10px">';
+      html += `<div style="font-size:10px;font-weight:700;color:${grp.color};letter-spacing:.4px;margin-bottom:5px;padding-bottom:3px;border-bottom:1px dashed var(--bdr2)">${grp.label}</div>`;
+      html += '<div style="display:grid;grid-template-columns:repeat(5,1fr);gap:5px">';
+      for(const it of grp.items){
+        html += `<button onclick="selectIntermItem('${rid}','${it.key}')" style="padding:5px 4px;border-radius:8px;border:1.5px solid ${it.color}44;background:${it.color}12;color:${it.color};font-size:10px;font-weight:700;cursor:pointer;text-align:center;line-height:1.4;transition:all .12s;word-break:keep-all" onmouseover="this.style.background='${it.color}30'" onmouseout="this.style.background='${it.color}12'">${it.name.replace(/의 /g,'의\n').replace(/★+/g,'')}</button>`;
+      }
+      html += '</div></div>';
+    }
+  } else {
+    // 기존: 전체 중간재료
+    for(const grp of INTERM_GROUPS){
+      html += '<div style="margin-bottom:10px">';
+      html += '<div style="font-size:10px;font-weight:700;color:var(--muted);letter-spacing:.4px;margin-bottom:5px;padding-bottom:3px;border-bottom:1px dashed var(--bdr2)">';
+      html += `<span style="color:${grp.color}">${grp.label}</span></div>`;
+      html += '<div style="display:grid;grid-template-columns:repeat(5,1fr);gap:5px">';
+      for(const it of grp.items){
+        html += `<button onclick="selectIntermItem('${rid}','${it.key}')" style="padding:5px 4px;border-radius:8px;border:1.5px solid ${it.color}44;background:${it.color}12;color:${it.color};font-size:10px;font-weight:700;cursor:pointer;text-align:center;line-height:1.4;transition:all .12s;word-break:keep-all" onmouseover="this.style.background='${it.color}30'" onmouseout="this.style.background='${it.color}12'">${it.name.replace(/의 /g,'의\n').replace(/★+/g,'')}</button>`;
+      }
+      html += '</div></div>';
+    }
   }
+
   html += '</div>';
   popup.innerHTML = html;
   popup.addEventListener('click', e => { if(e.target===popup) popup.remove(); });
@@ -1343,23 +1424,37 @@ window.showIntermPicker = function(rid) {
 
 window.selectIntermItem = function(rid, key) {
   document.querySelectorAll('.interm-picker-popup').forEach(el=>el.remove());
-  const it = INTERM_BY_KEY[key]; if(!it) return;
+
+  // 어패류 키 또는 중간재료 키 모두 처리
+  const sfMatch = key.match(/^(oyster|conch|octopus|seaweed|urchin)(\d)$/);
+  let name, color;
+  if (sfMatch) {
+    const sfColors={oyster:'#3d6fd4',conch:'#c89c00',octopus:'#7c52c8',seaweed:'#d94f3d',urchin:'#3a9e68'};
+    const sfNames={oyster:'굴',conch:'소라',octopus:'문어',seaweed:'미역',urchin:'성게'};
+    const starLabels={1:'★',2:'★★',3:'★★★'};
+    name  = sfNames[sfMatch[1]] + ' ' + starLabels[+sfMatch[2]];
+    color = sfColors[sfMatch[1]];
+  } else {
+    const it = INTERM_BY_KEY[key]; if(!it) return;
+    name  = it.name;
+    color = it.color;
+  }
+
   const hiddenSel = document.getElementById('isel_'+rid);
   if(hiddenSel){
-    // 옵션이 없으면 추가
     if(!hiddenSel.querySelector(`option[value="${key}"]`)){
       const opt = document.createElement('option');
-      opt.value = key; opt.textContent = it.name;
+      opt.value = key; opt.textContent = name;
       hiddenSel.appendChild(opt);
     }
     hiddenSel.value = key;
   }
   const lbl = document.getElementById('isel_lbl_'+rid);
   if(lbl){
-    lbl.textContent = it.name;
-    lbl.style.color = it.color;
-    lbl.style.borderColor = it.color+'88';
-    lbl.style.background = it.color+'18';
+    lbl.textContent = name;
+    lbl.style.color = color;
+    lbl.style.borderColor = color+'88';
+    lbl.style.background = color+'18';
   }
   onIntermSelChange();
 };
@@ -1457,9 +1552,9 @@ function buildHaveSeafoodGrid(){
       html+='</div>';
     }
     // 어패류 중간재료 추가 (1차 가공품 모드에서도 사용 가능)
-    html+='<div class="slabel" style="margin-top:8px">🦀 보유 어패류 <small style="font-weight:500;font-size:9px">(선택 — 핵·결정·영약 제작에 사용)</small></div>'
+    html+='<div class="slabel" style="margin-top:8px">🦀 보유 중간재료 <small style="font-weight:500;font-size:9px">(선택 — 어패류·핵·결정·영약)</small></div>'
         +'<div id="intermList"></div>'
-        +'<button class="add-interm-btn" onclick="addIntermRow()">+ 어패류 추가</button>';
+        +'<button class="add-interm-btn" onclick="addIntermRow()">+ 중간재료 추가</button>';
   }
 
   el.innerHTML=html;
