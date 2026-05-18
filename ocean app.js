@@ -318,6 +318,7 @@ window.onViewToggle = () => {
 
 async function calcOpt() {
   const inv = {};
+  const intermHave = {};
   const useProc = document.getElementById('useProcToggle')?.checked ?? false;
 
   if (!useProc) {
@@ -328,7 +329,6 @@ async function calcOpt() {
     }
 
     // 중간재료 수집 후 하위 어패류로 전개
-    const intermHave = {};
     document.querySelectorAll('#intermList .interm-row').forEach(row => {
       const sel=row.querySelector('select.interm-sel');if(!sel)return;
       const key=sel.value;if(!key)return;
@@ -351,7 +351,6 @@ async function calcOpt() {
     }
   } else {
     /* ── 1차 가공품 직접 입력 모드 ── */
-    // proc_* 입력값을 직접 inv에 추가 (key 그대로)
     for (const grp of PROC_GROUPS) {
       for (const it of grp.items) {
         const v = readSplitQty('proc_'+it.key);
@@ -1433,7 +1432,7 @@ function buildHaveSeafoodGrid(){
   }
 
   el.innerHTML=html;
-  if(!useProc){ loadIntermRows(); updateIntermWarning(); }
+  if(!useProc){ updateIntermWarning(); }
 }
 
 window.onUseProcToggle=()=>{ saveAll(); buildHaveSeafoodGrid(); };
