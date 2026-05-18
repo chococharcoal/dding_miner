@@ -181,6 +181,16 @@ input[type=number]{-moz-appearance:textfield;appearance:textfield}
 ::-webkit-scrollbar-thumb{background:var(--bdr2);border-radius:3px}
 </style>
 </head>
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-TYFFZ1K6QG"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-TYFFZ1K6QG');
+</script>
+
 <body>
 <div class="page">
 <div class="hdr">
@@ -334,7 +344,13 @@ input[type=number]{-moz-appearance:textfield;appearance:textfield}
   <div id="t2" class="panel" style="display:none">
     <div class="card">
       <div class="card-title">📦 보유 재고 입력</div>
-      <div class="fnote" style="margin-bottom:10px">어패류, 연금품 보유량을 입력하세요</div>
+      <!-- 입력 방식 토글 -->
+      <label class="sf-tog-wrap" style="margin-bottom:12px">
+        <input type="checkbox" id="useProcToggle" style="display:none" onchange="onUseProcToggle()">
+        <span class="sf-tog-track"><span class="sf-tog-thumb"></span></span>
+        <span class="sf-tog-label">1차 가공품으로 입력</span>
+        <span class="sf-tog-desc">어패류 대신 정수·핵·에센스·결정·엘릭서·영약 직접 입력</span>
+      </label>
       <div id="haveSeafoodGrid"></div>
     </div>
 
@@ -351,7 +367,7 @@ input[type=number]{-moz-appearance:textfield;appearance:textfield}
 
       <!-- 단계별 보기 토글 -->
       <label class="sf-tog-wrap">
-        <input type="checkbox" id="viewByStageToggle" style="display:none" onchange="onViewToggle()">
+        <input type="checkbox" id="viewByStageToggle" style="display:none" onchange="onViewToggle()" checked>
         <span class="sf-tog-track"><span class="sf-tog-thumb"></span></span>
         <span class="sf-tog-label">단계별 보기</span>
         <span class="sf-tog-desc">정수→핵→완성품 순서로 단계 구분 표시</span>

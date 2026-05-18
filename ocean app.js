@@ -318,41 +318,53 @@ window.onViewToggle = () => {
 
 async function calcOpt() {
   const inv = {};
-  for (const sf of SF_TYPES) for (const t of SF_TIERS) {
-    const v = readSplitQty(`have_${sf}_${t}`);
-    if (v > 0) inv[`${sf}${t}`] = (inv[`${sf}${t}`]||0) + v;
-  }
+  const useProc = document.getElementById('useProcToggle')?.checked ?? false;
 
-  // 중간재료 수집 (ALCHEMY 키: 정수/핵/에센스/결정/엘릭서/영약)
-  const intermHave = {};
-  document.querySelectorAll('#intermList .interm-row').forEach(row => {
-    const sel=row.querySelector('select.interm-sel');if(!sel)return;
-    const key=sel.value;if(!key)return;
-    const rid=row.id.replace('irow_','');
-    const qty=readSplitQty('iqty_'+rid);
-    if(qty>0)intermHave[key]=(intermHave[key]||0)+qty;
-  });
-
-  // 중간재료를 하위 어패류로 전개해서 inv에 가산
-  {
-    const SF_SET = new Set(SF_TYPES.flatMap(sf => SF_TIERS.map(t => `${sf}${t}`)));
-    function expandIntermToSF(key, qty, depth=0) {
-      if (depth > 15 || qty <= 0) return;
-      if (SF_SET.has(key)) { inv[key] = (inv[key]||0) + qty; return; }
-      const rec = ALCHEMY[key]; if (!rec) return;
-      const output = rec.output || 1;
-      const batches = qty / output;
-      for (const [mk, mq] of Object.entries(rec.materials))
-        expandIntermToSF(mk, mq * batches, depth+1);
+  if (!useProc) {
+    /* ── 어패류 입력 모드 (기존) ── */
+    for (const sf of SF_TYPES) for (const t of SF_TIERS) {
+      const v = readSplitQty(`have_${sf}_${t}`);
+      if (v > 0) inv[`${sf}${t}`] = (inv[`${sf}${t}`]||0) + v;
     }
-    for (const [key, qty] of Object.entries(intermHave)) expandIntermToSF(key, qty);
+
+    // 중간재료 수집 후 하위 어패류로 전개
+    const intermHave = {};
+    document.querySelectorAll('#intermList .interm-row').forEach(row => {
+      const sel=row.querySelector('select.interm-sel');if(!sel)return;
+      const key=sel.value;if(!key)return;
+      const rid=row.id.replace('irow_','');
+      const qty=readSplitQty('iqty_'+rid);
+      if(qty>0)intermHave[key]=(intermHave[key]||0)+qty;
+    });
+    {
+      const SF_SET = new Set(SF_TYPES.flatMap(sf => SF_TIERS.map(t => `${sf}${t}`)));
+      function expandIntermToSF(key, qty, depth=0) {
+        if (depth > 15 || qty <= 0) return;
+        if (SF_SET.has(key)) { inv[key] = (inv[key]||0) + qty; return; }
+        const rec = ALCHEMY[key]; if (!rec) return;
+        const output = rec.output || 1;
+        const batches = qty / output;
+        for (const [mk, mq] of Object.entries(rec.materials))
+          expandIntermToSF(mk, mq * batches, depth+1);
+      }
+      for (const [key, qty] of Object.entries(intermHave)) expandIntermToSF(key, qty);
+    }
+  } else {
+    /* ── 1차 가공품 직접 입력 모드 ── */
+    // proc_* 입력값을 직접 inv에 추가 (key 그대로)
+    for (const grp of PROC_GROUPS) {
+      for (const it of grp.items) {
+        const v = parseInt(document.getElementById('proc_'+it.key)?.value||'0')||0;
+        if (v > 0) inv[it.key] = (inv[it.key]||0) + v;
+      }
+    }
   }
 
   const SF_KEYS = SF_TYPES.flatMap(sf => SF_TIERS.map(t => `${sf}${t}`));
   const sfTotal     = SF_KEYS.reduce((s,k)=>s+(inv[k]||0),0);
   const intermTotal = Object.keys(inv).filter(k=>ALCHEMY[k]).reduce((s,k)=>s+(inv[k]||0),0);
   if (sfTotal<=0&&intermTotal<=0) {
-    document.getElementById('optRes').innerHTML='<div class="empty-msg">보유 어패류를 입력하면 계산됩니다</div>';
+    document.getElementById('optRes').innerHTML=`<div class="empty-msg">${useProc?'1차 가공품 수량을 입력하면 계산됩니다':'보유 어패류를 입력하면 계산됩니다'}</div>`;
     return;
   }
 
@@ -620,6 +632,7 @@ async function calcOpt() {
 function renderOptResult({ planEntries, finalAnalysis, workInv, totalRev, totalVan, SF_KEYS, inv, intermHave={} }) {
   const includeSFCost = document.getElementById('sfCostToggle')?.checked      ?? false;
   const viewByStage   = document.getElementById('viewByStageToggle')?.checked  ?? false;
+  const useProc       = document.getElementById('useProcToggle')?.checked      ?? false;
 
   // 순이익 재계산 (토글에 따라 달라짐)
   for (const fKey of Object.keys(finalAnalysis)) {
@@ -791,7 +804,7 @@ function renderOptResult({ planEntries, finalAnalysis, workInv, totalRev, totalV
       const rowStyle = 'display:flex;align-items:center;flex-wrap:wrap;gap:5px;padding:5px 0;border-bottom:1px dashed var(--bdr)';
 
       const s2=Object.entries(fa.step2).filter(([,v])=>v>0);
-      if(s2.length){
+      if(s2.length && !useProc){
         html+=`<div style="font-family:'Jua',sans-serif;font-size:11px;color:var(--muted);margin:4px 0 4px">⚗️ 1차 연금품 — ${fmtTime(t1sec*(1-fr))}</div>`;
         for(const[mk2,mq2]of s2){
           const rec2=ALCHEMY[mk2];if(!rec2)continue;
@@ -852,7 +865,7 @@ function renderOptResult({ planEntries, finalAnalysis, workInv, totalRev, totalV
         const name=fa2.name.replace(/★+\s*/g,'').replace(/\s*★+/g,'').trim();
         html+=`<div style="${lStyle}">`;
         html+=`<span style="${chipB};background:${color2}18;border:1.5px solid ${color2};min-width:100px"><span style="color:${color2}">${name}</span></span>`;
-        html+=`<span style="font-size:12px;color:var(--muted);flex-shrink:0">${fmtQty(cnt)}</span>`;
+        html+=`<span style="font-size:12px;color:var(--muted);flex-shrink:0">${fmtQty(cnt)}개</span>`;
         html+=`<span style="font-size:12px;color:var(--txt);font-weight:900;flex-shrink:0">${f(rev)}원</span>`;
         html+=`<span style="font-size:11px;color:${netColor2};margin-left:auto;flex-shrink:0">${netSign2}${f(netTot)}원</span>`;
         html+=`</div>`;
@@ -1016,13 +1029,13 @@ function renderOptResult({ planEntries, finalAnalysis, workInv, totalRev, totalV
       return s;
     }
 
-    html+=stageSection('정수 제작',   '⚗️', agg.ess1,'ess1','#1e9e58', essOrder1);
+    html+=useProc ? '' : stageSection('정수 제작',   '⚗️', agg.ess1,'ess1','#1e9e58', essOrder1);
     html+=stageSection('핵 제작',     '💠', agg.core, 'core','#1e9e58', coreOrder);
     html+=stageSection('1성 완성품',  '★',  agg.fin1, 'fin1','#1e9e58', fin1Order);
-    html+=stageSection('에센스 제작', '⚗️', agg.ess2, 'ess2','#2060c8', essOrder2);
+    html+=useProc ? '' : stageSection('에센스 제작', '⚗️', agg.ess2, 'ess2','#2060c8', essOrder2);
     html+=stageSection('결정 제작',   '💎', agg.crys, 'crys','#2060c8', crysOrder);
     html+=stageSection('2성 완성품',  '★★', agg.fin2, 'fin2','#2060c8', fin2Order);
-    html+=stageSection('엘릭서 제작', '⚗️', agg.ess3, 'ess3','#c82828', essOrder3);
+    html+=useProc ? '' : stageSection('엘릭서 제작', '⚗️', agg.ess3, 'ess3','#c82828', essOrder3);
     html+=stageSection('영약 제작',   '🧪', agg.poti, 'poti','#c82828', potiOrder);
     html+=stageSection('3성 완성품',  '★★★',agg.fin3,'fin3','#c82828', fin3Order);
     html+=stageSection('0성 완성품',  '🔬', agg.fin0, 'fin0','#c8920a', null);
@@ -1052,7 +1065,7 @@ function renderOptResult({ planEntries, finalAnalysis, workInv, totalRev, totalV
         const name=fa2.name.replace(/★+\s*/g,'').replace(/\s*★+/g,'').trim();
         html+=`<div style="${lStyle}">`;
         html+=`<span style="${chipB};background:${color2}18;border:1.5px solid ${color2};min-width:100px"><span style="color:${color2}">${name}</span></span>`;
-        html+=`<span style="font-size:12px;color:var(--muted);flex-shrink:0">${fmtQty(qty)}</span>`;
+        html+=`<span style="font-size:12px;color:var(--muted);flex-shrink:0">${fmtQty(qty)}개</span>`;
         html+=`<span style="font-size:12px;color:var(--txt);font-weight:900;flex-shrink:0">${f(rev)}원</span>`;
         html+=`<span style="font-size:11px;color:${netColor2};margin-left:auto;flex-shrink:0">${netSign2}${f(netTot)}원</span>`;
         html+=`</div>`;
@@ -1362,15 +1375,70 @@ window.addIntermRow=()=>{
   list.appendChild(row);
   saveAll();
 };
+const PROC_GROUPS = [
+  { label:'⚗️ 1차 정수 ★',    items:[
+    {key:'essence_guardian1',  name:'수호', color:'#3d6fd4'},
+    {key:'essence_wave1',      name:'파동', color:'#c89c00'},
+    {key:'essence_chaos1',     name:'혼란', color:'#7c52c8'},
+    {key:'essence_life1',      name:'생명', color:'#d94f3d'},
+    {key:'essence_corrosion1', name:'부식', color:'#3a9e68'},
+  ]},
+  { label:'⚗️ 2차 에센스 ★★', items:[
+    {key:'essence_guardian2',  name:'수호', color:'#3d6fd4'},
+    {key:'essence_wave2',      name:'파동', color:'#c89c00'},
+    {key:'essence_chaos2',     name:'혼란', color:'#7c52c8'},
+    {key:'essence_life2',      name:'생명', color:'#d94f3d'},
+    {key:'essence_corrosion2', name:'부식', color:'#3a9e68'},
+  ]},
+  { label:'⚗️ 3차 엘릭서 ★★★', items:[
+    {key:'elixir_guardian',  name:'수호', color:'#3d6fd4'},
+    {key:'elixir_wave',      name:'파동', color:'#c89c00'},
+    {key:'elixir_chaos',     name:'혼란', color:'#7c52c8'},
+    {key:'elixir_life',      name:'생명', color:'#d94f3d'},
+    {key:'elixir_corrosion', name:'부식', color:'#3a9e68'},
+  ]},
+];
+
 function buildHaveSeafoodGrid(){
   const el=document.getElementById('haveSeafoodGrid');if(!el)return;
+  const useProc=document.getElementById('useProcToggle')?.checked??false;
   const sfColors={oyster:'#3d6fd4',conch:'#c89c00',octopus:'#7c52c8',seaweed:'#d94f3d',urchin:'#3a9e68'};
   const starLabels={1:'★ 1성',2:'★★ 2성',3:'★★★ 3성'};
-  let html='<div class="slabel">🦀 어패류</div>';
-  for(const sf of SF_TYPES){const meta=SEAFOOD_TYPES[sf],cl=sfColors[sf];html+='<div style="margin-bottom:8px"><div style="font-size:10px;font-weight:700;color:'+cl+';margin-bottom:4px">'+meta.name+'</div><div class="g3">';for(const t of SF_TIERS){const id='have_'+sf+'_'+t;html+='<div class="field"><label style="color:'+cl+'">'+starLabels[t]+'</label>'+splitQtyHtml(id,cl)+'</div>';}html+='</div></div>';}
-  html+='<div class="slabel" style="margin-top:8px">⚗️ 보유 중간재료 <small style="font-weight:500;font-size:9px">(선택)</small></div><div id="intermList"></div><div id="intermWarning" style="display:none;margin-top:8px;padding:7px 10px;background:var(--ylw-bg);border:1.5px solid var(--ylw);border-radius:var(--rs);font-size:11px;color:var(--ylw);line-height:1.5">⚠️ <b>핵 · 결정 · 영약</b>을 보유 중간재료로 입력하면 최적화 결과가 실제 최적이 아닐 수 있습니다.</div><button class="add-interm-btn" onclick="addIntermRow()">+ 중간재료 추가</button>';
+  let html='';
+
+  if(!useProc){
+    /* ── 어패류 입력 (기존) ── */
+    html+='<div class="slabel">🦀 어패류</div>';
+    for(const sf of SF_TYPES){
+      const meta=SEAFOOD_TYPES[sf],cl=sfColors[sf];
+      html+='<div style="margin-bottom:8px"><div style="font-size:10px;font-weight:700;color:'+cl+';margin-bottom:4px">'+meta.name+'</div><div class="g3">';
+      for(const t of SF_TIERS){const id='have_'+sf+'_'+t;html+='<div class="field"><label style="color:'+cl+'">'+starLabels[t]+'</label>'+splitQtyHtml(id,cl)+'</div>';}
+      html+='</div></div>';
+    }
+    html+='<div class="slabel" style="margin-top:8px">⚗️ 보유 중간재료 <small style="font-weight:500;font-size:9px">(선택)</small></div>'
+        +'<div id="intermList"></div>'
+        +'<div id="intermWarning" style="display:none;margin-top:8px;padding:7px 10px;background:var(--ylw-bg);border:1.5px solid var(--ylw);border-radius:var(--rs);font-size:11px;color:var(--ylw);line-height:1.5">⚠️ <b>핵 · 결정 · 영약</b>을 보유 중간재료로 입력하면 최적화 결과가 실제 최적이 아닐 수 있습니다.</div>'
+        +'<button class="add-interm-btn" onclick="addIntermRow()">+ 중간재료 추가</button>';
+  } else {
+    /* ── 1차 가공품 직접 입력 ── */
+    const inp=(it)=>'<div class="field">'
+      +'<label style="color:'+it.color+'">'+it.name+'</label>'
+      +'<input id="proc_'+it.key+'" type="number" inputmode="numeric" placeholder="0" min="0"'
+      +' style="font-size:13px!important;font-weight:700!important;border:1.5px solid var(--bdr);border-radius:var(--rs);padding:7px 10px;background:var(--bg);color:var(--txt);outline:none;width:100%"'
+      +' oninput="saveAll()">'
+      +'</div>';
+    for(const grp of PROC_GROUPS){
+      html+='<div class="slabel">'+grp.label+'</div><div class="g3" style="margin-bottom:8px">';
+      for(const it of grp.items) html+=inp(it);
+      html+='</div>';
+    }
+  }
+
   el.innerHTML=html;
+  if(!useProc){ loadIntermRows(); updateIntermWarning(); }
 }
+
+window.onUseProcToggle=()=>{ saveAll(); buildHaveSeafoodGrid(); };
 window.onSFQtyInput=(id)=>{const n=readSplitQty(id);const p=document.getElementById(id+'_p');if(p)p.textContent=n>0?'총 '+f(n)+'개':'';saveAll();};
 function buildVanillaPriceGrid(){
   const el=document.getElementById('vanillaPriceGrid');if(!el)return;
@@ -1408,7 +1476,8 @@ const KEY='ocean_calc_v8';
 const splitSuffixes=['_box','_set','_ea'];
 function getStaticIds(){
   const sfSplitIds=SF_TYPES.flatMap(sf=>SF_TIERS.flatMap(t=>splitSuffixes.map(s=>'have_'+sf+'_'+t+s)));
-  return['skillFurnace','skillCraftBonus','skillAlchBonus','skillDeepHarvest','skillStarBonus','skillClamBonus','engClamSearch','engSeafoodLuck','engFisherRoulette','engSpiritWhale','rodLevel','totalStamina','price_sf_1','price_sf_2','price_sf_3','sfCostToggle','viewByStageToggle','excludeDilutedToggle',...Object.keys(VANILLA_META).map(k=>'vprice_'+k),...sfSplitIds];
+  const procIds=PROC_GROUPS.flatMap(grp=>grp.items.map(it=>'proc_'+it.key));
+  return['skillFurnace','skillCraftBonus','skillAlchBonus','skillDeepHarvest','skillStarBonus','skillClamBonus','engClamSearch','engSeafoodLuck','engFisherRoulette','engSpiritWhale','rodLevel','totalStamina','price_sf_1','price_sf_2','price_sf_3','sfCostToggle','viewByStageToggle','excludeDilutedToggle','useProcToggle',...Object.keys(VANILLA_META).map(k=>'vprice_'+k),...sfSplitIds,...procIds];
 }
 function saveAll(){
   const d={};
