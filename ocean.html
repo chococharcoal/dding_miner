@@ -205,7 +205,6 @@ input[type=number]{-moz-appearance:textfield;appearance:textfield}
   gtag('config', 'G-TYFFZ1K6QG');
 </script>
 
-
 <body>
 <div class="page">
 <div class="hdr">
@@ -413,7 +412,7 @@ input[type=number]{-moz-appearance:textfield;appearance:textfield}
           ⚗️ 연금술 보너스 — <span id="oceanAlchMySkillVal">로딩중</span>
         </div>
         <div class="slabel">🔬 0성</div>
-        <div class="g2" style="margin-bottom:10px">
+        <div class="g3" style="margin-bottom:10px">
           <div class="field">
             <label style="color:#c8920a">추출된 희석액</label>
             <div class="split-qty-wrap" style="grid-template-columns:1fr 1fr">
@@ -554,48 +553,36 @@ input[type=number]{-moz-appearance:textfield;appearance:textfield}
         <div id="oceanCraftMySkillBadge" class="my-skill-badge" style="margin-bottom:12px">
           🛠️ 공예품 보너스 — <span id="oceanCraftMySkillVal">로딩중</span>
         </div>
-        <div style="display:flex;flex-direction:column;gap:10px">
-          <div class="rsec" style="padding:10px 12px">
-            <div style="font-size:12px;font-weight:700;color:#d4a020;margin-bottom:8px">📿 조개껍데기 브로치</div>
-            <div class="g2">
-              <div class="field"><label>수량 (개)</label><input id="oSale_craft_BROOCH_qty" type="number" inputmode="numeric" placeholder="0" min="0" onwheel="return false" oninput="calcOceanSaleCraft()"></div>
-              <div class="field"><label>기본가 (원/개) <span class="opt">선택</span></label><input id="oSale_craft_BROOCH_price" type="number" inputmode="numeric" placeholder="미입력 시 95%" min="0" onwheel="return false" oninput="calcOceanSaleCraft()"></div>
-            </div>
+        <div class="g3">
+          <div class="field">
+            <label style="color:#d4a020;font-size:11px;font-weight:700;margin-bottom:4px">📿 조개껍데기 브로치</label>
+            <input id="oSale_craft_BROOCH_qty" type="number" inputmode="numeric" placeholder="수량" min="0" onwheel="return false" oninput="calcOceanSaleCraft()" style="background:var(--surf);margin-bottom:4px">
+            <input id="oSale_craft_BROOCH_price" type="number" inputmode="numeric" placeholder="기본가 (미입력=95%)" min="0" onwheel="return false" oninput="calcOceanSaleCraft()" style="background:var(--surf);font-size:11px!important">
           </div>
-          <div class="rsec" style="padding:10px 12px">
-            <div style="font-size:12px;font-weight:700;color:#3d6fd4;margin-bottom:8px">🧴 푸른 향수병</div>
-            <div class="g2">
-              <div class="field"><label>수량 (개)</label><input id="oSale_craft_PERFUME_qty" type="number" inputmode="numeric" placeholder="0" min="0" onwheel="return false" oninput="calcOceanSaleCraft()"></div>
-              <div class="field"><label>기본가 (원/개) <span class="opt">선택</span></label><input id="oSale_craft_PERFUME_price" type="number" inputmode="numeric" placeholder="미입력 시 95%" min="0" onwheel="return false" oninput="calcOceanSaleCraft()"></div>
-            </div>
+          <div class="field">
+            <label style="color:#3d6fd4;font-size:11px;font-weight:700;margin-bottom:4px">🧴 푸른 향수병</label>
+            <input id="oSale_craft_PERFUME_qty" type="number" inputmode="numeric" placeholder="수량" min="0" onwheel="return false" oninput="calcOceanSaleCraft()" style="background:var(--surf);margin-bottom:4px">
+            <input id="oSale_craft_PERFUME_price" type="number" inputmode="numeric" placeholder="기본가 (미입력=95%)" min="0" onwheel="return false" oninput="calcOceanSaleCraft()" style="background:var(--surf);font-size:11px!important">
           </div>
-          <div class="rsec" style="padding:10px 12px">
-            <div style="font-size:12px;font-weight:700;color:#1aacac;margin-bottom:8px">🪞 자개 손거울</div>
-            <div class="g2">
-              <div class="field"><label>수량 (개)</label><input id="oSale_craft_MIRROR_qty" type="number" inputmode="numeric" placeholder="0" min="0" onwheel="return false" oninput="calcOceanSaleCraft()"></div>
-              <div class="field"><label>기본가 (원/개) <span class="opt">선택</span></label><input id="oSale_craft_MIRROR_price" type="number" inputmode="numeric" placeholder="미입력 시 95%" min="0" onwheel="return false" oninput="calcOceanSaleCraft()"></div>
-            </div>
+          <div class="field">
+            <label style="color:#1aacac;font-size:11px;font-weight:700;margin-bottom:4px">🪞 자개 손거울</label>
+            <input id="oSale_craft_MIRROR_qty" type="number" inputmode="numeric" placeholder="수량" min="0" onwheel="return false" oninput="calcOceanSaleCraft()" style="background:var(--surf);margin-bottom:4px">
+            <input id="oSale_craft_MIRROR_price" type="number" inputmode="numeric" placeholder="기본가 (미입력=95%)" min="0" onwheel="return false" oninput="calcOceanSaleCraft()" style="background:var(--surf);font-size:11px!important">
           </div>
-          <div class="rsec" style="padding:10px 12px">
-            <div style="font-size:12px;font-weight:700;color:#d46090;margin-bottom:8px">📌 분홍 헤어핀</div>
-            <div class="g2">
-              <div class="field"><label>수량 (개)</label><input id="oSale_craft_HAIRPIN_qty" type="number" inputmode="numeric" placeholder="0" min="0" onwheel="return false" oninput="calcOceanSaleCraft()"></div>
-              <div class="field"><label>기본가 (원/개) <span class="opt">선택</span></label><input id="oSale_craft_HAIRPIN_price" type="number" inputmode="numeric" placeholder="미입력 시 95%" min="0" onwheel="return false" oninput="calcOceanSaleCraft()"></div>
-            </div>
+          <div class="field">
+            <label style="color:#d46090;font-size:11px;font-weight:700;margin-bottom:4px">📌 분홍 헤어핀</label>
+            <input id="oSale_craft_HAIRPIN_qty" type="number" inputmode="numeric" placeholder="수량" min="0" onwheel="return false" oninput="calcOceanSaleCraft()" style="background:var(--surf);margin-bottom:4px">
+            <input id="oSale_craft_HAIRPIN_price" type="number" inputmode="numeric" placeholder="기본가 (미입력=95%)" min="0" onwheel="return false" oninput="calcOceanSaleCraft()" style="background:var(--surf);font-size:11px!important">
           </div>
-          <div class="rsec" style="padding:10px 12px">
-            <div style="font-size:12px;font-weight:700;color:#7c52c8;margin-bottom:8px">🪭 자개 부채</div>
-            <div class="g2">
-              <div class="field"><label>수량 (개)</label><input id="oSale_craft_FAN_qty" type="number" inputmode="numeric" placeholder="0" min="0" onwheel="return false" oninput="calcOceanSaleCraft()"></div>
-              <div class="field"><label>기본가 (원/개) <span class="opt">선택</span></label><input id="oSale_craft_FAN_price" type="number" inputmode="numeric" placeholder="미입력 시 95%" min="0" onwheel="return false" oninput="calcOceanSaleCraft()"></div>
-            </div>
+          <div class="field">
+            <label style="color:#7c52c8;font-size:11px;font-weight:700;margin-bottom:4px">🪭 자개 부채</label>
+            <input id="oSale_craft_FAN_qty" type="number" inputmode="numeric" placeholder="수량" min="0" onwheel="return false" oninput="calcOceanSaleCraft()" style="background:var(--surf);margin-bottom:4px">
+            <input id="oSale_craft_FAN_price" type="number" inputmode="numeric" placeholder="기본가 (미입력=95%)" min="0" onwheel="return false" oninput="calcOceanSaleCraft()" style="background:var(--surf);font-size:11px!important">
           </div>
-          <div class="rsec" style="padding:10px 12px">
-            <div style="font-size:12px;font-weight:700;color:#555555;margin-bottom:8px">⌚ 흑진주 시계</div>
-            <div class="g2">
-              <div class="field"><label>수량 (개)</label><input id="oSale_craft_WATCH_qty" type="number" inputmode="numeric" placeholder="0" min="0" onwheel="return false" oninput="calcOceanSaleCraft()"></div>
-              <div class="field"><label>기본가 (원/개) <span class="opt">선택</span></label><input id="oSale_craft_WATCH_price" type="number" inputmode="numeric" placeholder="미입력 시 95%" min="0" onwheel="return false" oninput="calcOceanSaleCraft()"></div>
-            </div>
+          <div class="field">
+            <label style="color:#555555;font-size:11px;font-weight:700;margin-bottom:4px">⌚ 흑진주 시계</label>
+            <input id="oSale_craft_WATCH_qty" type="number" inputmode="numeric" placeholder="수량" min="0" onwheel="return false" oninput="calcOceanSaleCraft()" style="background:var(--surf);margin-bottom:4px">
+            <input id="oSale_craft_WATCH_price" type="number" inputmode="numeric" placeholder="기본가 (미입력=95%)" min="0" onwheel="return false" oninput="calcOceanSaleCraft()" style="background:var(--surf);font-size:11px!important">
           </div>
         </div>
       </div>
