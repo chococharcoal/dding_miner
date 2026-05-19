@@ -812,11 +812,11 @@ window.toggleEngPanel   = () => document.getElementById('engPanel').classList.to
 */
 
 /* ── 스킬 테이블 ── */
-const FSALE_MONEY_BONUS = FARMING_SKILLS.MONEY_BONUS.bonusPct;
-const FSALE_POT_BONUS   = FARMING_SKILLS.FULL_POT.bonusPct;
+const FSALE_MONEY_BONUS = SKILLS.MONEY_BONUS.bonusPct;
+const FSALE_POT_BONUS   = SKILLS.FULL_POT.bonusPct;
 
 /* ── 요리 목록 (등급별 정렬) ── */
-const FSALE_RECIPES = Object.entries(FARMING_RECIPES).map(([key, r]) => ({ key, ...r }));
+const FSALE_RECIPES = Object.entries(RECIPES).map(([key, r]) => ({ key, ...r }));
 
 const FSALE_GRADE_ORDER = { common:0, normal:1, rare:2, epic:3 };
 FSALE_RECIPES.sort((a,b) => FSALE_GRADE_ORDER[a.grade] - FSALE_GRADE_ORDER[b.grade]);
@@ -912,7 +912,7 @@ function calcFarmSale() {
   const resEl = _fel('farmSaleRes'); if (!resEl) return;
 
   const recipeKey = _fgv('farmSaleRecipeSel');
-  const recipe    = FARMING_RECIPES[recipeKey];
+  const recipe    = RECIPES[recipeKey];
   if (!recipe) { resEl.innerHTML='<div class="empty-msg">요리를 선택해주세요</div>'; return; }
 
   const qty = _fgi('farmSaleQty');
