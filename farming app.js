@@ -47,7 +47,7 @@ function splitQtyHtml(id, color) {
 const TAB_TITLES=['하루 수익 예상','재료 시세 입력','요리 효율','재료 계산기'];
 window.sw=(i,el)=>{
   document.querySelectorAll('.tab').forEach(t=>t.classList.remove('on'));
-  [0,1,2,3].forEach(k=>{const p=document.getElementById('t'+k);if(p)p.style.display='none';});
+  [0,1,2,3,4].forEach(k=>{const p=document.getElementById('t'+k);if(p)p.style.display='none';});
   el.classList.add('on');
   document.getElementById('t'+i).style.display='block';
   const t=document.getElementById('pageTabTitle'); if(t) t.textContent=TAB_TITLES[i];
@@ -773,6 +773,286 @@ document.addEventListener('click',e=>{
 
 window.toggleSkillPanel = () => document.getElementById('skillPanel').classList.toggle('collapsed');
 window.toggleEngPanel   = () => document.getElementById('engPanel').classList.toggle('collapsed');
+
+/* ══════════════════════════════════════════════════════════════════
+   재배 판매가 계산기   farming app.js 맨 끝에 붙여넣기
+
+   farming.html 적용:
+   1. 탭바에 추가:
+      <div class="tab" onclick="sw(3,this)">💰 판매가 계산기</div>
+
+   2. TAB_TITLES 배열에 '판매가 계산기' 추가
+
+   3. sw() 루프 범위 +1 (k < 3 → k < 4)
+
+   4. farming.html </div><!-- /main --> 앞에 farming_sale_tab.html 삽입
+
+   5. window 노출:
+      window.onFarmSaleSubTabSel = onFarmSaleSubTabSel;
+      window.onFarmSaleOtherLvChange = onFarmSaleOtherLvChange;
+      window.onFarmSaleFeeChange = onFarmSaleFeeChange;
+      window.onFarmSaleRatioChange = onFarmSaleRatioChange;
+      window.calcFarmSale = calcFarmSale;
+
+   6. SAVE_IDS에 추가:
+      'farmSaleRecipeSel',
+      'farmSaleQty',
+      'farmSaleOtherMoneyLv','farmSaleOtherPotLv',
+      'farmSaleRatioSlider',
+   ══════════════════════════════════════════════════════════════════
+
+   스킬:
+     돈 좀 벌어볼까? (skillMoneyBonus) — FARMING_SKILLS.MONEY_BONUS.bonusPct
+     한 솥 가득     (skillFullPot)    — FARMING_SKILLS.FULL_POT.bonusPct
+     두 스킬 합산 적용
+
+   대리판매:
+     판매자 부담: 약정액 전액 송금 + ceil(약정액×0.05) 판매자 부담
+     의뢰인 부담: n + ceil(n×0.05) = 약정액 → 역산
+*/
+
+/* ── 스킬 테이블 ── */
+const FSALE_MONEY_BONUS = FARMING_SKILLS.MONEY_BONUS.bonusPct;
+const FSALE_POT_BONUS   = FARMING_SKILLS.FULL_POT.bonusPct;
+
+/* ── 요리 목록 (등급별 정렬) ── */
+const FSALE_RECIPES = Object.entries(FARMING_RECIPES).map(([key, r]) => ({ key, ...r }));
+
+const FSALE_GRADE_ORDER = { common:0, normal:1, rare:2, epic:3 };
+FSALE_RECIPES.sort((a,b) => FSALE_GRADE_ORDER[a.grade] - FSALE_GRADE_ORDER[b.grade]);
+
+const FSALE_GRADE_COLOR = {
+  common: '#8a7060', normal: '#3a9e68', rare: '#3d6fd4', epic: '#9b6dd4',
+};
+const FSALE_GRADE_LABEL = {
+  common: '커먼', normal: '노멀', rare: '레어', epic: '에픽',
+};
+
+/* ── 유틸 ── */
+const _ffk   = n => Math.round(n).toLocaleString('ko-KR');
+const _fel   = id => document.getElementById(id);
+const _fgi   = id => { const e=_fel(id); return e ? Math.max(0,+e.value||0) : 0; };
+const _fgv   = id => { const e=_fel(id); return e ? e.value : ''; };
+const _frrow = (l, v, style='') =>
+  `<div class="rrow"><span class="rl">${l}</span><span class="rv"${style?` style="${style}"`:''}>${v}</span></div>`;
+
+/* n + ceil(n×0.05) = target → n 역산 */
+function _fCalcN(target) {
+  if (target <= 0) return 0;
+  let n = Math.floor(target / 1.05);
+  while (n + Math.ceil(n * 0.05) < target) n++;
+  return (n + Math.ceil(n * 0.05) === target) ? n : n + 1;
+}
+
+/* 결과 박스 */
+function _fResultBox(leftLabel, leftVal, leftColor, rightLabel, rightVal, rightColor, footer='') {
+  return `<div class="result-box">
+    <div style="display:flex;gap:0;align-items:stretch">
+      <div style="flex:1;text-align:center;padding:4px 8px">
+        <div class="rb-label">${leftLabel}</div>
+        <div class="rb-value" style="color:${leftColor};font-size:18px">${leftVal}</div>
+      </div>
+      <div style="width:1px;background:var(--bdr2);margin:4px 0"></div>
+      <div style="flex:1;text-align:center;padding:4px 8px">
+        <div class="rb-label">${rightLabel}</div>
+        <div class="rb-value" style="color:${rightColor};font-size:18px">${rightVal}</div>
+      </div>
+    </div>
+    ${footer?`<div style="text-align:center;margin-top:6px;padding-top:6px;border-top:1px dashed var(--bdr2);font-size:11px;color:var(--muted)">${footer}</div>`:''}
+  </div>`;
+}
+
+/* ── 셀렉트 옵션 초기화 ── */
+function initFarmSaleSelect() {
+  const sel = _fel('farmSaleRecipeSel'); if (!sel || sel.dataset.init) return;
+  sel.innerHTML = '';
+  let lastGrade = '';
+  for (const r of FSALE_RECIPES) {
+    if (r.grade !== lastGrade) {
+      const og = document.createElement('optgroup');
+      og.label = `── ${FSALE_GRADE_LABEL[r.grade]} ──`;
+      sel.appendChild(og);
+      lastGrade = r.grade;
+    }
+    const opt = document.createElement('option');
+    opt.value = r.key;
+    opt.textContent = r.name;
+    sel.appendChild(opt);
+  }
+  sel.dataset.init = '1';
+}
+
+/* ── 셀렉트 변경 ── */
+function onFarmSaleSubTabSel() { calcFarmSale(); }
+
+/* ── 대리판매 수수료 방식 ── */
+function onFarmSaleFeeChange() {
+  const isProxy   = _fel('farmSaleProxyToggle')?.checked ?? false;
+  _fel('farmSaleProxyCard').style.display = isProxy ? '' : 'none';
+  const feeSeller = _fel('farmSaleFeeSeller')?.checked ?? true;
+  _fel('farmSaleSliderWrap').style.display = (isProxy && feeSeller) ? '' : 'none';
+  calcFarmSale();
+}
+
+/* ── 슬라이더 ── */
+function onFarmSaleRatioChange() {
+  const v = _fgi('farmSaleRatioSlider') || 115;
+  const lbl = _fel('farmSaleRatioLabel');
+  if (lbl) lbl.textContent = v + '%';
+  calcFarmSale();
+}
+
+/* ── 상대방 스킬 변경 ── */
+function onFarmSaleOtherLvChange() { calcFarmSale(); }
+
+/* ── 메인 계산 ── */
+function calcFarmSale() {
+  initFarmSaleSelect();
+
+  const resEl = _fel('farmSaleRes'); if (!resEl) return;
+
+  const recipeKey = _fgv('farmSaleRecipeSel');
+  const recipe    = FARMING_RECIPES[recipeKey];
+  if (!recipe) { resEl.innerHTML='<div class="empty-msg">요리를 선택해주세요</div>'; return; }
+
+  const qty = _fgi('farmSaleQty');
+  if (!qty) { resEl.innerHTML='<div class="empty-msg">수량을 입력하면 계산됩니다</div>'; return; }
+
+  /* 내 스킬 */
+  const myMoneyLv = _fgi('skillMoneyBonus');
+  const myPotLv   = _fgi('skillFullPot');
+  const myBonus   = (FSALE_MONEY_BONUS[myMoneyLv]??0) + (FSALE_POT_BONUS[myPotLv]??0);
+
+  /* 기본가 = currentPrice (config) */
+  const basePrice  = recipe.currentPrice;
+  const myUnitPrice= Math.round(basePrice * (100 + myBonus) / 100);
+  const myTotal    = myUnitPrice * qty;
+
+  /* 내 스킬 뱃지 업데이트 */
+  const badgeEl = _fel('farmSaleMySkillVal');
+  if (badgeEl) {
+    const b1 = FSALE_MONEY_BONUS[myMoneyLv]??0;
+    const b2 = FSALE_POT_BONUS[myPotLv]??0;
+    badgeEl.textContent = myBonus > 0
+      ? `돈좀벌어볼까 +${b1}% + 한솥가득 +${b2}% = +${myBonus}%`
+      : '스킬 없음 (기본가)';
+  }
+
+  const isProxy = _fel('farmSaleProxyToggle')?.checked ?? false;
+  const gc = FSALE_GRADE_COLOR[recipe.grade] || '#888';
+  const gl = FSALE_GRADE_LABEL[recipe.grade] || '';
+
+  /* 직접판매 */
+  if (!isProxy) {
+    resEl.innerHTML = `
+    <div class="rsec">
+      <div class="rsec-title">🍳 직접판매</div>
+      ${_frrow('요리', `<span style="color:${gc}">[${gl}]</span> ${recipe.name}`)}
+      ${_frrow('기본가', `${_ffk(basePrice)}원/개`)}
+      ${_frrow('판매 보너스', myBonus > 0 ? `+${myBonus}%` : '없음')}
+      ${_frrow('판매 단가', `${_ffk(myUnitPrice)}원/개`)}
+      ${_frrow('수량', `${qty.toLocaleString('ko-KR')}개`)}
+    </div>
+    <div class="result-box">
+      <div class="rb-label">총 수령액</div>
+      <div class="rb-value" style="color:var(--grn)">${_ffk(myTotal)}원</div>
+      <div class="rb-sub">개당 ${_ffk(myUnitPrice)}원 × ${qty.toLocaleString('ko-KR')}개</div>
+    </div>`;
+    return;
+  }
+
+  /* 대리판매 */
+  const otherMoneyLv = _fgi('farmSaleOtherMoneyLv');
+  const otherPotLv   = _fgi('farmSaleOtherPotLv');
+  const otherBonus   = (FSALE_MONEY_BONUS[otherMoneyLv]??0) + (FSALE_POT_BONUS[otherPotLv]??0);
+  const myBetter     = myBonus > otherBonus;
+  const samePct      = myBonus === otherBonus;
+
+  if (samePct) {
+    resEl.innerHTML = `
+    <div class="rsec">
+      ${_frrow('내 스킬',   `+${myBonus}%`)}
+      ${_frrow('상대 스킬', `+${otherBonus}%`)}
+    </div>
+    <div style="background:var(--ylw-bg);border:1.5px solid var(--ylw);border-radius:var(--rs);padding:10px 12px;text-align:center;font-size:13px;color:var(--ylw)">
+      두 스킬이 동일해서 대리판매로 추가 이득이 없어요
+    </div>`; return;
+  }
+
+  const sellerBonus     = myBetter ? myBonus : otherBonus;
+  const sellerUnitPrice = Math.round(basePrice * (100+sellerBonus) / 100);
+  const sellerTotal     = sellerUnitPrice * qty;
+
+  const feeSeller  = _fel('farmSaleFeeSeller')?.checked ?? true;
+  const ratioPct   = feeSeller ? (_fgi('farmSaleRatioSlider')||115) : null;
+  const agreeTotal = feeSeller
+    ? Math.round(basePrice * ratioPct / 100) * qty
+    : sellerTotal;
+
+  const ratioNoteEl = _fel('farmSaleRatioNote');
+  if (ratioNoteEl && feeSeller) {
+    ratioNoteEl.textContent = `기본가 ${_ffk(basePrice)}원의 ${ratioPct}% = 개당 ${_ffk(Math.round(basePrice*ratioPct/100))}원`;
+  }
+
+  let clientGet, sellerProfit, fee;
+  if (feeSeller) {
+    fee          = Math.ceil(agreeTotal * 0.05);
+    clientGet    = agreeTotal;
+    sellerProfit = sellerTotal - agreeTotal - fee;
+  } else {
+    const n      = _fCalcN(agreeTotal);
+    fee          = Math.ceil(n * 0.05);
+    clientGet    = n;
+    sellerProfit = sellerTotal - agreeTotal;
+  }
+
+  const feeNote   = feeSeller
+    ? `${_ffk(agreeTotal)}원 × 5% = ${_ffk(fee)}원 (판매자 부담)`
+    : `${_ffk(clientGet)}원 × 5% = ${_ffk(fee)}원 (의뢰인 차감)`;
+  const extraGain = clientGet - myTotal;
+
+  if (myBetter) {
+    resEl.innerHTML = `
+    <div style="background:var(--blu-bg,#eef3fd);border:1.5px solid var(--blu,#3d6fd4);border-radius:var(--rs);padding:8px 12px;margin-bottom:8px;font-size:12px;color:var(--blu,#3d6fd4);font-weight:700">
+      내 스킬(+${myBonus}%)이 상대방(+${otherBonus}%)보다 높아요
+    </div>
+    <div class="rsec">
+      <div class="rsec-title">내가 대신 판매</div>
+      ${_frrow('내 스킬 적용 총 판매가', `<b>${_ffk(sellerTotal)}원</b>`, 'color:var(--grn)')}
+      ${feeSeller ? _frrow(`판매 퍼센트 (기본가 × ${ratioPct}%)`, `${_ffk(agreeTotal)}원`) : ''}
+      ${_frrow('수수료', feeNote)}
+      ${_frrow('송금해야 할 금액', `<b>${_ffk(clientGet)}원</b>`)}
+    </div>
+    ${_fResultBox('상대방 받는 금액', _ffk(clientGet)+'원', 'var(--txt)',
+        '내 이득', (sellerProfit>=0?'+':'')+_ffk(sellerProfit)+'원',
+        sellerProfit>=0?'var(--grn)':'var(--red)',
+        `총 판매 ${_ffk(sellerTotal)}원 — 약정 ${_ffk(agreeTotal)}원 — 수수료 ${_ffk(fee)}원`)}`;
+  } else {
+    resEl.innerHTML = `
+    <div style="background:var(--grn-bg);border:1.5px solid var(--grn);border-radius:var(--rs);padding:8px 12px;margin-bottom:8px;font-size:12px;color:var(--grn);font-weight:700">
+      상대방 스킬(+${otherBonus}%)이 더 높아요
+    </div>
+    <div class="rsec">
+      <div class="rsec-title">상대방이 대신 판매</div>
+      ${_frrow('상대방 스킬 적용 총 판매가', `<b>${_ffk(sellerTotal)}원</b>`)}
+      ${feeSeller ? _frrow(`(기본가 × ${ratioPct}%)`, `${_ffk(agreeTotal)}원`) : ''}
+      ${_frrow('수수료', feeNote)}
+      ${_frrow('내가 받는 금액', `<b>${_ffk(clientGet)}원</b>`, 'color:var(--grn)')}
+      <div style="border-top:1px dashed var(--bdr2);margin-top:4px;padding-top:5px">
+        ${_frrow('내가 직접판매 시', `${_ffk(myTotal)}원 (+${myBonus}%)`, 'color:var(--muted)')}
+      </div>
+    </div>
+    ${_fResultBox('내가 받는 금액', _ffk(clientGet)+'원', 'var(--grn)',
+        '대리판매 추가수익', (extraGain>=0?'+':'')+_ffk(extraGain)+'원',
+        extraGain>=0?'var(--grn)':'var(--red)')}`;
+  }
+}
+
+window.onFarmSaleSubTabSel     = onFarmSaleSubTabSel;
+window.onFarmSaleOtherLvChange = onFarmSaleOtherLvChange;
+window.onFarmSaleFeeChange     = onFarmSaleFeeChange;
+window.onFarmSaleRatioChange   = onFarmSaleRatioChange;
+window.calcFarmSale            = calcFarmSale;
 
 function domReady(fn){
   if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',fn);

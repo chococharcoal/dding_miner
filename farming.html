@@ -184,6 +184,11 @@ html,body{min-height:100vh;background:var(--bg) radial-gradient(circle at 10% 15
 .seed-result-sub{font-size:10px;color:var(--muted);text-align:right;margin-top:1px}
 ::-webkit-scrollbar{width:5px}
 ::-webkit-scrollbar-thumb{background:var(--bdr2);border-radius:3px}
+
+.sale-radio-label{display:flex;align-items:flex-start;gap:8px;cursor:pointer;padding:8px 10px;border:1.5px solid var(--bdr);border-radius:var(--rs);background:var(--bg);transition:border-color .15s}
+.sale-radio-label:has(input:checked){border-color:var(--acc);background:#fff9f2}
+.my-skill-badge{display:inline-flex;align-items:center;gap:6px;padding:6px 12px;background:var(--ylw-bg);border:1.5px solid var(--ylw);border-radius:var(--rs);font-size:12px;font-weight:700;color:var(--ylw)}
+
 </style>
 </head>
 
@@ -328,6 +333,7 @@ html,body{min-height:100vh;background:var(--bg) radial-gradient(circle at 10% 15
     <div class="tab"    onclick="sw(1,this)">📦 재료 시세</div>
     <div class="tab"    onclick="sw(2,this)">🍳 요리 효율</div>
     <div class="tab"    onclick="sw(3,this)">🧮 재료 계산</div>
+    <div class="tab" onclick="sw(4,this)">💰 판매가 계산기</div>
     <div style="margin-left:auto;display:flex;gap:6px;align-items:center">
       <button class="autofill-btn" onclick="autoFill()">자동채우기</button>
       <button class="reset-btn"    onclick="resetAll()">🗑 초기화</button>
@@ -469,6 +475,118 @@ html,body{min-height:100vh;background:var(--bg) radial-gradient(circle at 10% 15
       <div id="matsRes"><div class="empty-msg">요리를 선택하고 수량을 입력하세요</div></div>
     </div>
   </div>
+
+  <!-- TAB 3: 판매가 계산기 -->
+  <div id="t3" class="panel" style="display:none">
+
+    <div class="card">
+      <div class="card-title">🍳 요리 판매 계산기</div>
+
+      <!-- 내 스킬 뱃지 -->
+      <div class="my-skill-badge" style="margin-bottom:12px">
+        💰 판매 보너스 — <span id="farmSaleMySkillVal">로딩중</span>
+      </div>
+
+      <!-- 요리 선택 + 수량 -->
+      <div class="g2" style="margin-bottom:8px">
+        <div class="field">
+          <label>요리 종류</label>
+          <select id="farmSaleRecipeSel" onchange="onFarmSaleSubTabSel()"></select>
+        </div>
+        <div class="field">
+          <label>수량 (개)</label>
+          <input id="farmSaleQty" type="number" inputmode="numeric" placeholder="0" min="0" onwheel="return false" oninput="calcFarmSale()">
+        </div>
+      </div>
+    </div>
+
+    <!-- 대리판매 토글 -->
+    <label class="swap-toggle-wrap">
+      <input type="checkbox" id="farmSaleProxyToggle" onchange="onFarmSaleFeeChange()" class="swap-toggle-input">
+      <span class="swap-toggle-track"><span class="swap-toggle-thumb"></span></span>
+      <span class="swap-toggle-label">🤝 대리판매 모드</span>
+      <span class="swap-toggle-desc">스킬 차이로 서로 이득 보는 금액 계산</span>
+    </label>
+
+    <div id="farmSaleProxyCard" style="display:none">
+
+      <!-- 상대방 스킬 -->
+      <div class="card">
+        <div class="card-title">👤 상대방 스킬</div>
+        <div class="skgrid">
+          <div class="skrow">
+            <span class="skname">💰 돈 좀 벌어볼까?</span>
+            <select id="farmSaleOtherMoneyLv" onchange="onFarmSaleOtherLvChange()">
+              <option value="0">0레벨 — 기본</option>
+              <option value="1">1레벨 — +1%</option>
+              <option value="2">2레벨 — +2%</option>
+              <option value="3">3레벨 — +3%</option>
+              <option value="4">4레벨 — +4%</option>
+              <option value="5">5레벨 — +5%</option>
+              <option value="6">6레벨 — +6%</option>
+              <option value="7">7레벨 — +10%</option>
+              <option value="8">8레벨 — +15%</option>
+              <option value="9">9레벨 — +30%</option>
+              <option value="10">10레벨 — +50%</option>
+            </select>
+          </div>
+          <div class="skrow">
+            <span class="skname">🥘 한 솥 가득</span>
+            <select id="farmSaleOtherPotLv" onchange="onFarmSaleOtherLvChange()">
+              <option value="0">0레벨 — 기본</option>
+              <option value="1">1레벨 — +1%</option>
+              <option value="2">2레벨 — +2%</option>
+              <option value="3">3레벨 — +3%</option>
+              <option value="4">4레벨 — +4%</option>
+              <option value="5">5레벨 — +7%</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <!-- 판매 방식 -->
+      <div class="card">
+        <div class="card-title">📊 판매 방식</div>
+        <div style="display:flex;flex-direction:column;gap:6px;margin-bottom:12px">
+          <label class="sale-radio-label">
+            <input type="radio" name="farmSaleFeeMode" id="farmSaleFeeSeller" value="seller" checked
+              style="margin-top:2px;accent-color:var(--acc);flex-shrink:0" onchange="onFarmSaleFeeChange()">
+            <div>
+              <div style="font-size:12px;font-weight:700;color:var(--txt)">판매자 부담</div>
+              <div style="font-size:10px;color:var(--muted);font-weight:500;margin-top:2px">기본가의 n% 송금. 남은 차액은 판매자가 이익으로 가져가는 방식</div>
+            </div>
+          </label>
+          <label class="sale-radio-label">
+            <input type="radio" name="farmSaleFeeMode" id="farmSaleFeeClient" value="client"
+              style="margin-top:2px;accent-color:var(--acc);flex-shrink:0" onchange="onFarmSaleFeeChange()">
+            <div>
+              <div style="font-size:12px;font-weight:700;color:var(--txt)">의뢰인 부담</div>
+              <div style="font-size:10px;color:var(--muted);font-weight:500;margin-top:2px">판매자의 이익 없이 판매만 도와주는 방식</div>
+            </div>
+          </label>
+        </div>
+
+        <div id="farmSaleSliderWrap">
+          <div style="font-size:11px;font-weight:700;color:var(--muted);margin-bottom:8px;letter-spacing:.3px">판매 퍼센트</div>
+          <div style="display:flex;align-items:center;gap:12px;margin-bottom:6px">
+            <span style="font-size:12px;color:var(--muted);white-space:nowrap;flex-shrink:0">기본가의</span>
+            <input type="range" id="farmSaleRatioSlider" min="100" max="150" step="5" value="115"
+              oninput="onFarmSaleRatioChange()" style="flex:1;accent-color:var(--acc);cursor:pointer;height:6px">
+            <span id="farmSaleRatioLabel"
+              style="font-family:'Jua',sans-serif!important;font-size:22px;color:var(--acc);min-width:56px;text-align:right;line-height:1">115%</span>
+          </div>
+          <div class="fnote" id="farmSaleRatioNote" style="color:var(--muted)"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">📊 계산 결과</div>
+      <div id="farmSaleRes"><div class="empty-msg">요리와 수량을 선택하면 계산됩니다</div></div>
+    </div>
+
+  </div>
+
 
 </div><!-- /main -->
 </div><!-- /layout -->
