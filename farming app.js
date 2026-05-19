@@ -44,7 +44,7 @@ function splitQtyHtml(id, color) {
     + '</div><div id="'+id+'_p" class="sq-parsed"></div>';
 }
 
-const TAB_TITLES=['하루 수익 예상','재료 시세 입력','요리 효율','재료 계산기'];
+const TAB_TITLES=['하루 수익 예상','재료 시세 입력','요리 효율','재료 계산기','판매가 계산기'];
 window.sw=(i,el)=>{
   document.querySelectorAll('.tab').forEach(t=>t.classList.remove('on'));
   [0,1,2,3,4].forEach(k=>{const p=document.getElementById('t'+k);if(p)p.style.display='none';});
