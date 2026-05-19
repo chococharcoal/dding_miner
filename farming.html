@@ -189,6 +189,10 @@ html,body{min-height:100vh;background:var(--bg) radial-gradient(circle at 10% 15
 .sale-radio-label:has(input:checked){border-color:var(--acc);background:#fff9f2}
 .my-skill-badge{display:inline-flex;align-items:center;gap:6px;padding:6px 12px;background:var(--ylw-bg);border:1.5px solid var(--ylw);border-radius:var(--rs);font-size:12px;font-weight:700;color:var(--ylw)}
 
+#farmSaleProxyToggle:checked+.sf-tog-track{background:var(--acc)}
+#farmSaleProxyToggle:checked+.sf-tog-track .sf-tog-thumb{transform:translateX(16px)}
+#farmSaleProxyToggle:checked~.sf-tog-label{color:var(--acc)}
+
 </style>
 </head>
 
@@ -501,12 +505,12 @@ html,body{min-height:100vh;background:var(--bg) radial-gradient(circle at 10% 15
     </div>
 
     <!-- 대리판매 토글 -->
-    <label class="swap-toggle-wrap">
-      <input type="checkbox" id="farmSaleProxyToggle" onchange="onFarmSaleFeeChange()" class="swap-toggle-input">
-      <span class="swap-toggle-track"><span class="swap-toggle-thumb"></span></span>
-      <span class="swap-toggle-label">🤝 대리판매 모드</span>
-      <span class="swap-toggle-desc">스킬 차이로 서로 이득 보는 금액 계산</span>
-    </label>
+    <label class="sf-tog-wrap">
+  <input type="checkbox" id="farmSaleProxyToggle" style="display:none" onchange="onFarmSaleFeeChange()">
+  <span class="sf-tog-track"><span class="sf-tog-thumb"></span></span>
+  <span class="sf-tog-label">🤝 대리판매 모드</span>
+  <span class="sf-tog-desc">스킬 차이로 서로 이득 보는 금액 계산</span>
+</label>
 
     <div id="farmSaleProxyCard" style="display:none">
 
