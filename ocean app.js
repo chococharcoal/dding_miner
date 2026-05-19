@@ -1745,6 +1745,7 @@ document.addEventListener('click',e=>{if(!e.target.closest('.cdd'))document.quer
      window.onOceanSaleCraftFeeChange = onOceanSaleCraftFeeChange;
      window.onOceanSaleCraftRatioChange=onOceanSaleCraftRatioChange;
      window.calcOceanSaleCraft        = calcOceanSaleCraft;
+     window.calcOceanSaleSF           = calcOceanSaleSF;
 
    sw 범위: [0,1,2] → [0,1,2,3] 로 변경
    TAB_TITLES에 '판매가 계산기' 추가
@@ -1843,6 +1844,7 @@ function onOceanSaleSubTab(i, el) {
   el.classList.add('on');
   _oel('oceanSalePanelAlch').style.display  = i===0 ? '' : 'none';
   _oel('oceanSalePanelCraft').style.display = i===1 ? '' : 'none';
+  _oel('oceanSalePanelSF').style.display    = i===2 ? '' : 'none';
 }
 
 /* ════════════════════════════════
@@ -1988,8 +1990,72 @@ function calcOceanSaleAlch() {
 }
 
 /* ════════════════════════════════
-   공예품 섹션
+   어패류 섹션
 ════════════════════════════════ */
+function calcOceanSaleSF() {
+  const resEl = _oel('oSaleSFRes'); if (!resEl) return;
+
+  const p1 = _ogi('oSaleSF_price1'), q1 = _ogi('oSaleSF_qty1');
+  const p2 = _ogi('oSaleSF_price2'), q2 = _ogi('oSaleSF_qty2');
+  const p3 = _ogi('oSaleSF_price3'), q3 = _ogi('oSaleSF_qty3');
+
+  const hasInput = (q1>0&&p1>0) || (q2>0&&p2>0) || (q3>0&&p3>0);
+  if (!hasInput) { resEl.innerHTML='<div class="empty-msg">가격과 수량을 입력하면 계산됩니다</div>'; return; }
+
+  const total1 = p1 * q1;
+  const total2 = p2 * q2;
+  const total3 = p3 * q3;
+  const grandTotal = total1 + total2 + total3;
+
+  // n + ceil(n×0.05) = grandTotal → n 역산
+  const n   = _oCalcN(grandTotal);
+  const fee = Math.ceil(n * 0.05);
+
+  const starLabel = ['', '★ 1성', '★★ 2성', '★★★ 3성'];
+  const starColor = ['', '#c87941', '#9ab8e4', ' #c8a020'];
+
+  let midRows = '';
+  if (q1>0&&p1>0) midRows += _orrow(`<span style="color:${starColor[1]}">${starLabel[1]}</span>`, `${_ofk(p1)}원 × ${_ofk(q1)}개 = <b>${_ofk(total1)}원</b>`);
+  if (q2>0&&p2>0) midRows += _orrow(`<span style="color:${starColor[2]}">${starLabel[2]}</span>`, `${_ofk(p2)}원 × ${_ofk(q2)}개 = <b>${_ofk(total2)}원</b>`);
+  if (q3>0&&p3>0) midRows += _orrow(`<span style="color:${starColor[3]}">${starLabel[3]}</span>`, `${_ofk(p3)}원 × ${_ofk(q3)}개 = <b>${_ofk(total3)}원</b>`);
+
+  resEl.innerHTML = `
+  <div class="rsec">
+    <div class="rsec-title">💰 등급별 합계</div>
+    ${midRows}
+    <div class="rrow rrow-strong">
+      <span class="rl">전체 합계</span>
+      <span class="rv">${_ofk(grandTotal)}원</span>
+    </div>
+  </div>
+  <div class="rsec" style="margin-top:4px">
+    <div class="rsec-title">송금 계산</div>
+    ${_orrow('송금 금액', `<b style="color:var(--grn)">${_ofk(n)}원</b>`)}
+    ${_orrow('수수료', `${_ofk(fee)}원`)}
+    <div class="rrow rrow-strong">
+      <span class="rl">송금 + 수수료</span>
+      <span class="rv" style="color:var(--acc)">${_ofk(n + fee)}원</span>
+    </div>
+  </div>
+  <div class="result-box">
+    <div style="display:flex;gap:0;align-items:stretch">
+      <div style="flex:1;text-align:center;padding:4px 8px">
+        <div class="rb-label">송금 금액</div>
+        <div class="rb-value" style="color:var(--grn);font-size:18px">${_ofk(n)}원</div>
+      </div>
+      <div style="width:1px;background:var(--bdr2);margin:4px 0"></div>
+      <div style="flex:1;text-align:center;padding:4px 8px">
+        <div class="rb-label">수수료</div>
+        <div class="rb-value" style="font-size:18px">${_ofk(fee)}원</div>
+      </div>
+      <div style="width:1px;background:var(--bdr2);margin:4px 0"></div>
+      <div style="flex:1;text-align:center;padding:4px 8px">
+        <div class="rb-label">합계</div>
+        <div class="rb-value" style="color:var(--acc);font-size:18px">${_ofk(n+fee)}원</div>
+      </div>
+    </div>
+  </div>`;
+}
 function onOceanSaleCraftToggle() {
   const on = _oel('oSaleCraftProxyToggle')?.checked ?? false;
   _oel('oSaleCraftProxyCard').style.display = on ? '' : 'none';
@@ -2135,6 +2201,7 @@ window.onOceanSaleCraftToggle     = onOceanSaleCraftToggle;
 window.onOceanSaleCraftFeeChange  = onOceanSaleCraftFeeChange;
 window.onOceanSaleCraftRatioChange= onOceanSaleCraftRatioChange;
 window.calcOceanSaleCraft         = calcOceanSaleCraft;
+window.calcOceanSaleSF = calcOceanSaleSF;
 
 /* ════════════════════════════════════════
    ⑭ DOMContentLoaded

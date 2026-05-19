@@ -402,6 +402,7 @@ input[type=number]{-moz-appearance:textfield;appearance:textfield}
     <div class="tabbar" id="oceanSaleSubTabBar" style="margin-bottom:8px">
       <div class="tab on" onclick="onOceanSaleSubTab(0,this)">⚗️ 연금품</div>
       <div class="tab"    onclick="onOceanSaleSubTab(1,this)">🛠️ 공예품</div>
+      <div class="tab"    onclick="onOceanSaleSubTab(2,this)">🦀 어패류</div>
     </div>
 
     <!-- 연금품 패널 -->
@@ -637,6 +638,52 @@ input[type=number]{-moz-appearance:textfield;appearance:textfield}
         <div id="oSaleCraftRes"><div class="empty-msg">수량을 입력하면 계산됩니다</div></div>
       </div>
     </div><!-- /oceanSalePanelCraft -->
+
+    <!-- 어패류 패널 -->
+    <div id="oceanSalePanelSF" style="display:none">
+      <div class="card">
+        <div class="card-title">🦀 어패류 판매</div>
+
+        <!-- 개당 가격 -->
+        <div class="slabel">💰 개당 판매가 (원)</div>
+        <div class="g3" style="margin-bottom:12px">
+          <div class="field">
+            <label style="color:#1e9e58">1성 ★</label>
+            <input id="oSaleSF_price1" type="number" inputmode="numeric" placeholder="0" min="0" onwheel="return false" oninput="calcOceanSaleSF()" style="background:var(--surf)">
+          </div>
+          <div class="field">
+            <label style="color:#2060c8">2성 ★★</label>
+            <input id="oSaleSF_price2" type="number" inputmode="numeric" placeholder="0" min="0" onwheel="return false" oninput="calcOceanSaleSF()" style="background:var(--surf)">
+          </div>
+          <div class="field">
+            <label style="color:#c82828">3성 ★★★</label>
+            <input id="oSaleSF_price3" type="number" inputmode="numeric" placeholder="0" min="0" onwheel="return false" oninput="calcOceanSaleSF()" style="background:var(--surf)">
+          </div>
+        </div>
+
+        <!-- 수량 -->
+        <div class="slabel">📦 판매 수량 (개)</div>
+        <div class="g3">
+          <div class="field">
+            <label style="color:#1e9e58">1성 ★</label>
+            <input id="oSaleSF_qty1" type="number" inputmode="numeric" placeholder="0" min="0" onwheel="return false" oninput="calcOceanSaleSF()" style="background:var(--surf)">
+          </div>
+          <div class="field">
+            <label style="color:#2060c8">2성 ★★</label>
+            <input id="oSaleSF_qty2" type="number" inputmode="numeric" placeholder="0" min="0" onwheel="return false" oninput="calcOceanSaleSF()" style="background:var(--surf)">
+          </div>
+          <div class="field">
+            <label style="color:#c82828">3성 ★★★</label>
+            <input id="oSaleSF_qty3" type="number" inputmode="numeric" placeholder="0" min="0" onwheel="return false" oninput="calcOceanSaleSF()" style="background:var(--surf)">
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">📊 계산 결과</div>
+        <div id="oSaleSFRes"><div class="empty-msg">가격과 수량을 입력하면 계산됩니다</div></div>
+      </div>
+    </div><!-- /oceanSalePanelSF -->
 
   </div><!-- /t3 -->
 
