@@ -648,6 +648,11 @@ const STATIC_IDS=[
   'pCoconut','pPineapple','pSteak',
   'pPork','pPorkBelly','pPorkFront','pLamb','pLambRib','pLambLeg',
   'pChicken','pChickenLeg','pChickenBreast','pBeefSirloin','pBeefRib',
+  'farmSaleRecipeSel',
+  'farmSaleQty',
+  'farmSaleOtherMoneyLv',
+  'farmSaleOtherPotLv',
+  'farmSaleRatioSlider',
   // 보유 베이스 3칸 × 3종
   ...BASE_TYPES.flatMap(t=>BASE_SUFFIXES.map(s=>BASE_ID_PREFIX+t.charAt(0).toUpperCase()+t.slice(1)+s)),
 ];
