@@ -2002,41 +2002,12 @@ function calcOceanSaleSF() {
   const hasInput = (q1>0&&p1>0) || (q2>0&&p2>0) || (q3>0&&p3>0);
   if (!hasInput) { resEl.innerHTML='<div class="empty-msg">가격과 수량을 입력하면 계산됩니다</div>'; return; }
 
-  const total1 = p1 * q1;
-  const total2 = p2 * q2;
-  const total3 = p3 * q3;
-  const grandTotal = total1 + total2 + total3;
-
-  // n + ceil(n×0.05) = grandTotal → n 역산
-  const n   = _oCalcN(grandTotal);
+  // 송금액 = 전체 합계 고정
+  const n = p1*q1 + p2*q2 + p3*q3;
+  // 수수료 = ceil(송금액 × 0.05)
   const fee = Math.ceil(n * 0.05);
 
-  const starLabel = ['', '★ 1성', '★★ 2성', '★★★ 3성'];
-  const starColor = ['', '#c87941', '#9ab8e4', ' #c8a020'];
-
-  let midRows = '';
-  if (q1>0&&p1>0) midRows += _orrow(`<span style="color:${starColor[1]}">${starLabel[1]}</span>`, `${_ofk(p1)}원 × ${_ofk(q1)}개 = <b>${_ofk(total1)}원</b>`);
-  if (q2>0&&p2>0) midRows += _orrow(`<span style="color:${starColor[2]}">${starLabel[2]}</span>`, `${_ofk(p2)}원 × ${_ofk(q2)}개 = <b>${_ofk(total2)}원</b>`);
-  if (q3>0&&p3>0) midRows += _orrow(`<span style="color:${starColor[3]}">${starLabel[3]}</span>`, `${_ofk(p3)}원 × ${_ofk(q3)}개 = <b>${_ofk(total3)}원</b>`);
-
   resEl.innerHTML = `
-  <div class="rsec">
-    <div class="rsec-title">💰 등급별 합계</div>
-    ${midRows}
-    <div class="rrow rrow-strong">
-      <span class="rl">전체 합계</span>
-      <span class="rv">${_ofk(grandTotal)}원</span>
-    </div>
-  </div>
-  <div class="rsec" style="margin-top:4px">
-    <div class="rsec-title">송금 계산</div>
-    ${_orrow('송금 금액', `<b style="color:var(--grn)">${_ofk(n)}원</b>`)}
-    ${_orrow('수수료', `${_ofk(fee)}원`)}
-    <div class="rrow rrow-strong">
-      <span class="rl">송금 + 수수료</span>
-      <span class="rv" style="color:var(--acc)">${_ofk(n + fee)}원</span>
-    </div>
-  </div>
   <div class="result-box">
     <div style="display:flex;gap:0;align-items:stretch">
       <div style="flex:1;text-align:center;padding:4px 8px">
@@ -2050,7 +2021,7 @@ function calcOceanSaleSF() {
       </div>
       <div style="width:1px;background:var(--bdr2);margin:4px 0"></div>
       <div style="flex:1;text-align:center;padding:4px 8px">
-        <div class="rb-label">합계</div>
+        <div class="rb-label">총 필요 금액</div>
         <div class="rb-value" style="color:var(--acc);font-size:18px">${_ofk(n+fee)}원</div>
       </div>
     </div>
