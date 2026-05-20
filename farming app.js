@@ -733,18 +733,20 @@ function calcFarmSale() {
 
   const myMoneyLv = _fgi('skillMoneyBonus');
   const myPotLv   = _fgi('skillFullPot');
-  const myBonus   = (FSALE_MONEY_BONUS[myMoneyLv]??0) + (FSALE_POT_BONUS[myPotLv]??0);
+  const moneyBonus = FSALE_MONEY_BONUS[myMoneyLv] ?? 0;
+  const potBonus   = FSALE_POT_BONUS[myPotLv] ?? 0;
+  const myBonus    = moneyBonus + potBonus;
 
   const basePrice   = recipe.currentPrice;
-  const myUnitPrice = Math.round(basePrice * (100 + myBonus) / 100);
+  const myUnitPrice = Math.round(
+    basePrice * (100 + moneyBonus) / 100 * (100 + potBonus) / 100
+  );
   const myTotal     = myUnitPrice * qty;
 
   const badgeEl = _fel('farmSaleMySkillVal');
   if (badgeEl) {
-    const b1 = FSALE_MONEY_BONUS[myMoneyLv]??0;
-    const b2 = FSALE_POT_BONUS[myPotLv]??0;
     badgeEl.textContent = myBonus > 0
-      ? `돈좀벌어볼까 +${b1}% + 한솥가득 +${b2}% = +${myBonus}%`
+      ? `돈좀벌어볼까 +${moneyBonus}% → 한솥가득 +${potBonus}% = 개당 ${_ffk(myUnitPrice)}원`
       : '스킬 없음 (기본가)';
   }
 
@@ -759,7 +761,7 @@ function calcFarmSale() {
       <div class="rsec-title">🍳 직접판매</div>
       ${_frrow('요리', `<span style="color:${gc}">[${gl}]</span> ${recipe.name}`)}
       ${_frrow('기본가', `${_ffk(basePrice)}원/개`)}
-      ${_frrow('판매 보너스', myBonus > 0 ? `+${myBonus}%` : '없음')}
+      ${_frrow('판매 보너스', myBonus > 0 ? `+${moneyBonus}% → +${potBonus}%` : '없음')}
       ${_frrow('판매 단가', `${_ffk(myUnitPrice)}원/개`)}
       ${_frrow('수량', `${qtyStr}개`)}
     </div>
@@ -788,8 +790,12 @@ function calcFarmSale() {
     </div>`; return;
   }
 
-  const sellerBonus     = myBetter ? myBonus : otherBonus;
-  const sellerUnitPrice = Math.round(basePrice * (100+sellerBonus) / 100);
+  const sellerBonus      = myBetter ? myBonus : otherBonus;
+  const sellerMoneyBonus = myBetter ? moneyBonus : (FSALE_MONEY_BONUS[otherMoneyLv]??0);
+  const sellerPotBonus   = myBetter ? potBonus   : (FSALE_POT_BONUS[otherPotLv]??0);
+  const sellerUnitPrice  = Math.round(
+    basePrice * (100 + sellerMoneyBonus) / 100 * (100 + sellerPotBonus) / 100
+  );
   const sellerTotal     = sellerUnitPrice * qty;
   const feeSeller  = _fel('farmSaleFeeSeller')?.checked ?? true;
   const ratioPct   = feeSeller ? (_fgi('farmSaleRatioSlider')||115) : null;
@@ -813,7 +819,7 @@ function calcFarmSale() {
   if (myBetter) {
     resEl.innerHTML = `
     <div style="background:#eef3fd;border:1.5px solid #3d6fd4;border-radius:var(--rs);padding:8px 12px;margin-bottom:8px;font-size:12px;color:#3d6fd4;font-weight:700">
-      내 스킬(+${myBonus}%)이 상대방(+${otherBonus}%)보다 높아요
+      내 스킬(+${moneyBonus}%→+${potBonus}%)이 상대방(+${FSALE_MONEY_BONUS[otherMoneyLv]??0}%→+${FSALE_POT_BONUS[otherPotLv]??0}%)보다 높아요
     </div>
     <div class="rsec">
       <div class="rsec-title">내가 대신 판매</div>
@@ -829,7 +835,7 @@ function calcFarmSale() {
   } else {
     resEl.innerHTML = `
     <div style="background:var(--grn-bg);border:1.5px solid var(--grn);border-radius:var(--rs);padding:8px 12px;margin-bottom:8px;font-size:12px;color:var(--grn);font-weight:700">
-      상대방 스킬(+${otherBonus}%)이 더 높아요
+      상대방 스킬(+${FSALE_MONEY_BONUS[otherMoneyLv]??0}%→+${FSALE_POT_BONUS[otherPotLv]??0}%)이 더 높아요
     </div>
     <div class="rsec">
       <div class="rsec-title">상대방이 대신 판매</div>
@@ -838,7 +844,7 @@ function calcFarmSale() {
       ${_frrow('수수료',feeNote)}
       ${_frrow('내가 받는 금액',`<b>${_ffk(clientGet)}원</b>`,'color:var(--grn)')}
       <div style="border-top:1px dashed var(--bdr2);margin-top:4px;padding-top:5px">
-        ${_frrow('내가 직접판매 시',`${_ffk(myTotal)}원 (+${myBonus}%)`,'color:var(--muted)')}
+        ${_frrow('내가 직접판매 시',`${_ffk(myTotal)}원 (+${moneyBonus}%→+${potBonus}%)`,'color:var(--muted)')}
       </div>
     </div>
     ${_fResultBox('내가 받는 금액',_ffk(clientGet)+'원','var(--grn)',
