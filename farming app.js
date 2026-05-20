@@ -1,12 +1,11 @@
 import {
-  FARMING_SKILLS as SKILLS, 
-  FARMING_ENGRAVING as ENGRAVING, 
-  FARMING_DEFAULT_PRICES as DEFAULT_PRICES, 
+  FARMING_SKILLS as SKILLS,
+  FARMING_ENGRAVING as ENGRAVING,
+  FARMING_DEFAULT_PRICES as DEFAULT_PRICES,
   FARMING_RECIPES as RECIPES,
   HOE, FARMING, BASES, CROPS, MILKY_PRICES,
   OTHER_META, GRADE_COLOR, UNITS, PROCESSED_RECIPES,
 } from './config.js';
-
 
 const { SET_SIZE, BOX_SIZE } = UNITS;
 const Z80 = 0.842;
@@ -53,21 +52,17 @@ window.sw=(i,el)=>{
   const t=document.getElementById('pageTabTitle'); if(t) t.textContent=TAB_TITLES[i];
   document.title=`재배 계산기 — ${TAB_TITLES[i]}`;
   if (typeof gtag === 'function') {
-    gtag('event', 'page_view', {
-      page_title: document.title,
-      page_location: window.location.href,
-    });
+    gtag('event', 'page_view', { page_title: document.title, page_location: window.location.href });
   }
 };
 
 function getSK() {
   const fl=gi('skillFurnace'),ml=gi('skillMoneyBonus'),pl=gi('skillFullPot');
   const ng=gi('skillNatureGift'),hb=gi('skillHarvestBonus'),sd=gi('skillSeedDrop'),fh=gi('skillFireHoe');
-  const kc=gi('skillKingCrop'); // 대왕작물 스킬 레벨
+  const kc=gi('skillKingCrop');
   const ngD=SKILLS.NATURE_GIFT.drops[ng]||{pct:0,count:0};
   const hbD=SKILLS.HARVEST_BONUS.drops[hb]||{pct:0,count:0};
   const fhD=SKILLS.FIRE_HOE.drops[fh]||{pct:0,count:0};
-  // 대왕작물 확률: 스킬 레벨에 따라 결정 (%)
   const kingCropPct = SKILLS.KING_CROP.pct[kc] ?? FARMING.KING_CROP_BASE_PCT;
   return {
     fr:(SKILLS.FURNACE.reductionPct[fl]??0)/100,
@@ -77,7 +72,7 @@ function getSK() {
     hbPct:hbD.pct,hbCnt:hbD.count,
     sdPct:SKILLS.SEED_DROP.pct[sd]??0,
     fhPct:fhD.pct,fhCnt:fhD.count,
-    kingCropPct, // 대왕작물 등장 확률 (%)
+    kingCropPct,
     fl,ml,pl,ng,hb,sd,fh,kc,
   };
 }
@@ -106,7 +101,7 @@ window.onSkillChange=()=>{
   const fhD=SKILLS.FIRE_HOE.drops[fh];
   st('infoFireHoe',    fh===0?'기본':fhD?`Lv${fh} — ${fhD.pct}%/${fhD.count}개`:'');
   st('infoKingCrop',   `Lv${kc} — ${SKILLS.KING_CROP.pct[kc]}%`);
-  calcDaily(); calcDishEff(); calcMats();
+  calcDaily(); calcDishEff(); calcMats(); calcFarmSale();
 };
 window.onEngChange=()=>{
   const st=(id,txt)=>{const e=document.getElementById(id);if(e)e.textContent=txt;};
@@ -120,21 +115,18 @@ window.onEngChange=()=>{
 window.onPriceChange=()=>{calcDaily();calcDishEff();calcMats();};
 
 function getPrices() {
-  // 건초더미 64개 가격 → 밀 1개 가격 (건초더미 1개 = 밀 9개)
-  const hayPerSet = gi('pHay'); // 건초더미 64개 가격
-  const wheatUnit = hayPerSet > 0 ? (hayPerSet / SET_SIZE) / 9 : 0; // 밀 1개 가격
-
+  const hayPerSet = gi('pHay');
+  const wheatUnit = hayPerSet > 0 ? (hayPerSet / SET_SIZE) / 9 : 0;
   return {
     seed:{tomato:gi('pSeedTomato')/SET_SIZE,onion:gi('pSeedOnion')/SET_SIZE,garlic:gi('pSeedGarlic')/SET_SIZE},
     crops:{
       pumpkin:gi('pCropPumpkin')/SET_SIZE,potato:gi('pCropPotato')/SET_SIZE,
       carrot:gi('pCropCarrot')/SET_SIZE,beet:gi('pCropBeet')/SET_SIZE,
       watermelon:gi('pCropWatermelon')/SET_SIZE,sweetfruit:gi('pCropSweetfruit')/SET_SIZE,
-      sugar:gi('pCropSugar')/SET_SIZE, // 설탕 큐브 (작물 묶음)
+      sugar:gi('pCropSugar')/SET_SIZE,
     },
     milky:{salt:MILKY_PRICES.salt,egg:MILKY_PRICES.egg,milk:MILKY_PRICES.milk,oil:MILKY_PRICES.oil},
-    wheat: wheatUnit, // 밀 1개 가격 (건초더미에서 역산)
-    // 기타 재료: 세트당 입력 → 개당으로 변환
+    wheat: wheatUnit,
     other:{
       coconut:gi('pCoconut')/SET_SIZE,pineapple:gi('pPineapple')/SET_SIZE,
       steak:gi('pSteak')/SET_SIZE,
@@ -146,82 +138,49 @@ function getPrices() {
   };
 }
 
-// ── 중간 재료 1개당 원가 계산 ──
-// PROCESSED_RECIPES 레시피 기반으로 밀키 고정가 + 밀(건초더미) 가격으로 계산
 function calcProcessedCost(key, prices) {
-  const rec = PROCESSED_RECIPES[key];
-  if (!rec) return 0;
+  const rec = PROCESSED_RECIPES[key]; if (!rec) return 0;
   let cost = 0;
   for (const [mat, qty] of Object.entries(rec.ingredients)) {
-    if (mat === 'wheat') {
-      cost += qty * prices.wheat; // 밀: 건초더미에서 역산
-    } else {
-      cost += qty * (prices.milky[mat] || 0); // 밀키 고정가
-    }
+    cost += qty * (mat === 'wheat' ? prices.wheat : (prices.milky[mat] || 0));
   }
   return cost;
 }
 
-// ── 베이스 1개 원가 계산 (씨앗은덤 재순환 반영) ──
 function calcBaseUnitCost(seedType, prices, sk) {
   const hr   = FARMING.HARVEST_RANGE[seedType];
   const kpct = (sk?.kingCropPct ?? FARMING.KING_CROP_BASE_PCT) / 100;
-
-  // 씨앗 1개 심기당 평균 작물 (대왕작물 포함)
   const baseAvg = (hr.min + hr.max) / 2;
   const avgCropsPerSeed = baseAvg * (1 - kpct) + baseAvg * FARMING.KING_CROP_MULT * kpct;
-
-  // 풍년이다! 추가 작물
   const harvestBonus = sk?.hbPct != null ? sk.hbPct / 100 * sk.hbCnt : 0;
   const totalCropsPerPlant = avgCropsPerSeed + harvestBonus;
-
-  // 씨앗은덤 재순환 배율
   const p = sk?.sdPct != null ? Math.min(sk.sdPct / 100, 0.99) : 0;
   const multiplier = p > 0 ? 1 / (1 - p) : 1;
-
-  // 베이스 1개 = 작물 8개
-  // 씨앗 n개 심으면 총 작물 = n × multiplier × totalCropsPerPlant
-  // 목표: 8개 → 필요 씨앗 = 8 / (multiplier × totalCropsPerPlant)
   const seedsPerBase = FARMING.CROPS_PER_BASE / (multiplier * totalCropsPerPlant);
   return seedsPerBase * (prices.seed[seedType] || 0);
 }
 
-// ── 요리 1개 재료비 계산 ──
 function calcRecipeCost(rec, prices, sk, includeBaseCost=true) {
-  const kingCropPct = typeof sk === 'object' && sk !== null ? sk.kingCropPct : sk;
   let cost = 0;
-  // 베이스 원가 (토글 꺼지면 0)
   if (includeBaseCost) {
     for (const [k, q] of Object.entries(rec.materials.base || {})) {
-      const seedType = BASES[k]?.seedType || k;
-      cost += q * calcBaseUnitCost(seedType, prices, sk);
+      cost += q * calcBaseUnitCost(BASES[k]?.seedType || k, prices, sk);
     }
   }
-  // 작물 묶음: q개 × 개당 가격 (prices.crops[k]는 이미 개당)
-  for (const [k, q] of Object.entries(rec.materials.crops || {}))
-    cost += q * (prices.crops[k] || 0);
-  // 밀키 고정가 재료
-  for (const [k, q] of Object.entries(rec.materials.milky || {}))
-    cost += q * (prices.milky[k] || 0);
-  // 기타 재료: 중간재료(가공품)는 원가 계산, 일반 재료는 입력가
+  for (const [k, q] of Object.entries(rec.materials.crops || {})) cost += q * (prices.crops[k] || 0);
+  for (const [k, q] of Object.entries(rec.materials.milky || {})) cost += q * (prices.milky[k] || 0);
   for (const [k, q] of Object.entries(rec.materials.other || {})) {
-    if (PROCESSED_RECIPES[k]) {
-      cost += q * calcProcessedCost(k, prices);
-    } else {
-      cost += q * (prices.other[k] || 0);
-    }
+    cost += q * (PROCESSED_RECIPES[k] ? calcProcessedCost(k, prices) : (prices.other[k] || 0));
   }
   return cost;
 }
 
-/* TAB 0: 하루 수익 (채집) */
 window.calcDaily=()=>{
   const sk=getSK(),eng=getENG();
   const hoeLevel=gi('hoeLevel'),stamina=gi('totalStamina');
   const hoe=HOE[hoeLevel]??HOE[0];
   const harvestCount=stamina>0?Math.floor(stamina/FARMING.STAMINA_PER_USE):0;
   if(harvestCount===0){document.getElementById('dailyRes').innerHTML='<div class="empty-msg">스태미나를 입력하면 계산됩니다</div>';return;}
-
   const natureExtra  =sk.ngPct/100*sk.ngCnt;
   const seedLuckExtra=eng.slPct/100*eng.slCnt;
   const cropBoxExtra =eng.cbPct/100*eng.cbAvg;
@@ -231,19 +190,16 @@ window.calcDaily=()=>{
   const totalSeeds=harvestCount*seedPerHarvest;
   const basePerHarvest=sk.fhPct/100*sk.fhCnt;
   const totalHarvestBase=harvestCount*basePerHarvest;
-
   const ps=getPrices().seed;
   const filled=Object.values(ps).filter(v=>v>0);
   const avgSeedUnit=filled.length?filled.reduce((a,b)=>a+b,0)/filled.length:0;
   const seedRev=totalSeeds*avgSeedUnit;
-
   const parts=[];
   if(hoe.seedDrop>0)  parts.push(`괭이 ${hoe.seedDrop}`);
   if(natureExtra>0)   parts.push(`자연선물 +${fd(natureExtra)}`);
   if(seedLuckExtra>0) parts.push(`씨앗행운 +${fd(seedLuckExtra)}`);
   if(cropBoxExtra>0)  parts.push(`작물상자 +${fd(cropBoxExtra)}`);
   if(rouletteExtra>0) parts.push(`룰렛 +${fd(rouletteExtra)}`);
-
   document.getElementById('dailyRes').innerHTML=`
   <div class="rsec">
     <div class="rsec-title">🌱 씨앗 획득</div>
@@ -259,11 +215,9 @@ window.calcDaily=()=>{
   </div></div>`;
 };
 
-/* TAB 2: 요리 효율 */
 window.calcDishEff=()=>{
   const sk=getSK(),prices=getPrices(),totalBonus=sk.mb+sk.fp;
   const includeBaseCost = document.getElementById('includBaseCoast')?.checked ?? false;
-
   const results=Object.entries(RECIPES).map(([key,rec])=>{
     const inputPrice = rec.currentPrice > 0 ? rec.currentPrice : 0;
     const skillSellPrice = inputPrice > 0 ? Math.round(inputPrice * (1 + totalBonus)) : 0;
@@ -276,7 +230,6 @@ window.calcDishEff=()=>{
     if (b.net === null) return -1;
     return b.net - a.net;
   });
-
   const html = results.map((r, i) => {
     const hasPrice = r.net !== null;
     const rankClass = !hasPrice ? '' : i===0?'top1':i===1?'top2':i===2?'top3':'';
@@ -284,18 +237,13 @@ window.calcDishEff=()=>{
       i===0?`<span class="dish-rank rank-gold">🥇 1위</span>`:
       i===1?`<span class="dish-rank rank-silver">🥈 2위</span>`:
       i===2?`<span class="dish-rank rank-bronze">🥉 3위</span>`:'';
-
     const gradeColors = {
-      common: { label:'커먼', color:'#8a7060', bg:'#f7f3ee' },
-      normal: { label:'노멀', color:'#3a9e68', bg:'#edf8f2' },
-      rare:   { label:'레어', color:'#3d6fd4', bg:'#eef3fd' },
-      epic:   { label:'에픽', color:'#d94f3d', bg:'#fef0ee' },
+      common:{label:'커먼',color:'#8a7060',bg:'#f7f3ee'},normal:{label:'노멀',color:'#3a9e68',bg:'#edf8f2'},
+      rare:{label:'레어',color:'#3d6fd4',bg:'#eef3fd'},epic:{label:'에픽',color:'#d94f3d',bg:'#fef0ee'},
     };
     const gd = gradeColors[r.rec.grade];
     const gradeBdg = `<span class="grade-bdg" style="background:${gd.bg};color:${gd.color};border:1px solid ${gd.color}">${gd.label}</span>`;
-
     let matChips = '';
-    // 베이스 칩 (씨앗은덤·대왕작물·풍년이다 반영 원가)
     for (const [k, q] of Object.entries(r.rec.materials.base || {})) {
       const seedType = BASES[k]?.seedType || k;
       const bc = BASES[k]?.color || '#888';
@@ -308,36 +256,29 @@ window.calcDishEff=()=>{
       }
       matChips += `<span class="mat-chip" style="color:${bc};border-color:${bc}44">${BASES[k]?.name||k}${q>1?` ×${q}`:''}${costTxt}</span>`;
     }
-    // 작물 묶음 칩 (×1 표시 생략)
     for (const [k, q] of Object.entries(r.rec.materials.crops || {})) {
       const cc = CROPS[k]?.color || '#888';
       matChips += `<span class="mat-chip" style="color:${cc};border-color:${cc}44">${CROPS[k]?.name||k}${q>1?` ×${q}`:''}</span>`;
     }
-    // 밀키 재료 칩
     for (const [k, q] of Object.entries(r.rec.materials.milky || {})) {
       const names = {salt:'소금',egg:'달걀',milk:'우유',oil:'오일'};
       matChips += `<span class="mat-chip" style="color:#6090a8;border-color:#6090a844">${names[k]||k}${q>1?` ×${q}`:''}</span>`;
     }
-    // 기타 재료 칩 (중간재료 원가 표시, 고기류 색상 적용)
     for (const [k, q] of Object.entries(r.rec.materials.other || {})) {
       const meta = OTHER_META[k] || { name: k, color: '#888' };
       const chipColor = meta.color || '#888';
       if (PROCESSED_RECIPES[k]) {
         const procCost = q * calcProcessedCost(k, prices);
-        const costTxt = ` <span style="opacity:.7;font-size:9px">(${f(Math.round(procCost))}원)</span>`;
-        matChips += `<span class="mat-chip" style="color:${chipColor};border-color:${chipColor}44">${meta.name}${q>1?` ×${q}`:''}${costTxt}</span>`;
+        matChips += `<span class="mat-chip" style="color:${chipColor};border-color:${chipColor}44">${meta.name}${q>1?` ×${q}`:''} <span style="opacity:.7;font-size:9px">(${f(Math.round(procCost))}원)</span></span>`;
       } else {
         matChips += `<span class="mat-chip" style="color:${chipColor};border-color:${chipColor}44">${meta.name}${q>1?` ×${q}`:''}</span>`;
       }
     }
-
     const bonusTxt = totalBonus > 0 ? ` +${Math.round(totalBonus*100)}% 스킬 적용` : '';
     const priceInfo = hasPrice
       ? `판매가 ${f(r.inputPrice)}원 → 스킬 적용 ${f(r.skillSellPrice)}원${bonusTxt}<br>총 재료비 ${f(Math.round(r.cost))}원 · 범위 ${f(r.rec.priceMin)}~${f(r.rec.priceMax)}원`
       : `판매가 미입력 · 범위 ${f(r.rec.priceMin)}~${f(r.rec.priceMax)}원<br>총 재료비 ${f(Math.round(r.cost))}원`;
-
-    return `<div class="dish-card ${rankClass}">
-      ${rankBadge}
+    return `<div class="dish-card ${rankClass}">${rankBadge}
       <div class="dish-head">
         <div style="min-width:0">
           <div class="dish-name" style="display:flex;align-items:center;gap:5px;flex-wrap:wrap">${r.rec.name} ${gradeBdg}</div>
@@ -355,63 +296,26 @@ window.calcDishEff=()=>{
   document.getElementById('dishEffRes').innerHTML = html || '<div class="empty-msg">데이터 없음</div>';
 };
 
-/* TAB 3: 재료 계산기
-   씨앗 재순환 계산:
-   - 씨앗은덤 확률 p → 씨앗 1개 심으면 p개 반환 → 그걸 또 심으면 p²개 반환...
-   - 총 심기 배율 = 1 + p + p² + ... = 1/(1-p)  (등비급수, p<1 이면 수렴)
-   - 풍년이다·대왕작물도 매 라운드 동일 적용
-   - 총 작물 = 심기1회당_평균작물 × 총심기횟수
-   - 총 심기횟수 = 최초씨앗수 × (1/(1-p))
-*/
 function calcSeedsNeeded(targetBase, seedType, sk) {
   if (targetBase <= 0) return { avg: 0, safe80: 0, multiplier: 1 };
-
   const hr   = FARMING.HARVEST_RANGE[seedType];
   const kpct = (sk?.kingCropPct ?? FARMING.KING_CROP_BASE_PCT) / 100;
-
-  // 씨앗 1개 심기당 평균 작물 (대왕작물 포함)
   const baseAvgCrops   = (hr.min + hr.max) / 2;
   const avgCropsPerSeed = baseAvgCrops * (1 - kpct) + baseAvgCrops * FARMING.KING_CROP_MULT * kpct;
-
-  // 풍년이다! 추가 작물 (기댓값)
   const harvestBonus = sk.hbPct / 100 * sk.hbCnt;
   const totalCropsPerPlant = avgCropsPerSeed + harvestBonus;
-
-  // 씨앗은덤 확률 p (0~1)
   const p = sk.sdPct / 100;
-  // 재순환 배율: 씨앗 1개 심으면 총 몇 번 심기가 발생하나
-  // p >= 1 이면 무한 → 실용적으로 0.99로 cap
   const pCapped    = Math.min(p, 0.99);
-  const multiplier = 1 / (1 - pCapped); // 등비급수 합
-
-  // 목표 작물 수 = targetBase × 8
+  const multiplier = 1 / (1 - pCapped);
   const targetCrops = targetBase * FARMING.CROPS_PER_BASE;
-
-  // 최초 씨앗 n개 심으면 총 심기 = n × multiplier
-  // 총 작물 = n × multiplier × totalCropsPerPlant = targetCrops
-  // → n = targetCrops / (multiplier × totalCropsPerPlant)
   const avgSeeds = targetCrops / (multiplier * totalCropsPerPlant);
-
-  // 80% 보정: 수확 분산 반영
-  // 1회 심기당 작물 분산 (균등분포 + 풍년이다 이항분포)
   const varPerPlant = Math.pow(hr.max - hr.min, 2) / 12
-    + sk.hbCnt * (sk.hbPct / 100) * (1 - sk.hbPct / 100); // 이항분포 분산 (정확)
-  // 총 심기횟수 n×multiplier에 대한 총 분산
-  // std_total ≈ sqrt(n × multiplier) × sqrt(varPerPlant)
-  // 필요 씨앗 std: std_seeds ≈ avgSeeds × sqrt(varPerPlant) / (totalCropsPerPlant × sqrt(n×multiplier))
-  // 단순화: cv(변동계수) = sqrt(varPerPlant) / totalCropsPerPlant / sqrt(n×multiplier)
-  // 80% 보정값 = avgSeeds + Z80 × std_seeds
+    + sk.hbCnt * (sk.hbPct / 100) * (1 - sk.hbPct / 100);
   const totalPlants = avgSeeds * multiplier;
   const stdCrops    = Math.sqrt(totalPlants * varPerPlant);
   const stdSeeds    = stdCrops / (multiplier * totalCropsPerPlant);
   const safe80      = avgSeeds + Z80 * stdSeeds;
-
-  return {
-    avg:        Math.ceil(avgSeeds),
-    safe80:     Math.ceil(safe80),
-    multiplier, // 재순환 배율 (표시용)
-    p,
-  };
+  return { avg: Math.ceil(avgSeeds), safe80: Math.ceil(safe80), multiplier, p };
 }
 
 let rowId=0;
@@ -462,13 +366,9 @@ window.onBaseQtyInput=(type)=>{
 window.calcMats=()=>{
   const sk=getSK();
   const prices=getPrices();
-  // 요리별 필요량 집계
   const needBase={tomato:0,onion:0,garlic:0};
-  const needCrops={};   // 작물 묶음
-  const needMilky={};   // 밀키 재료
-  const needOther={};   // 기타 재료 (중간재료 포함)
+  const needCrops={},needMilky={},needOther={};
   let totalDishes=0;
-
   document.querySelectorAll('.dish-picker-row').forEach(row=>{
     const rid=row.id.replace('drow_','');
     const key=document.getElementById('dsel_'+rid)?.value||'';
@@ -483,7 +383,6 @@ window.calcMats=()=>{
     for(const[k,q]of Object.entries(mat.other||{})) needOther[k]=(needOther[k]||0)+q*cnt;
   });
   if(totalDishes===0){document.getElementById('matsRes').innerHTML='<div class="empty-msg">요리를 선택하고 수량을 입력하세요</div>';return;}
-
   const haveBase={
     tomato: readSplitQty('haveBaseTomato'),
     onion:  readSplitQty('haveBaseOnion'),
@@ -492,10 +391,7 @@ window.calcMats=()=>{
   const lackBase={tomato:Math.max(0,needBase.tomato-haveBase.tomato),onion:Math.max(0,needBase.onion-haveBase.onion),garlic:Math.max(0,needBase.garlic-haveBase.garlic)};
   const baseColors={tomato:'#d94f3d',onion:'#c89c00',garlic:'#9ab0c8'};
   const baseNames={tomato:'토마토',onion:'양파',garlic:'마늘'};
-
   let html='';
-
-  // ── 베이스 필요량 ──
   html+=`<div class="rsec"><div class="rsec-title" style="color:var(--acc)">🫙 필요 베이스 (총 ${f(totalDishes)}개 요리)</div>`;
   for(const[k,need]of Object.entries(needBase)){
     if(need<=0)continue;
@@ -503,42 +399,23 @@ window.calcMats=()=>{
     html+=`<div class="rrow"><span class="rl" style="color:${cl}">${baseNames[k]} 베이스</span><span class="rv" style="color:var(--muted)">필요 ${f(need)}개 / 보유 ${f(have)}개 ${lack>0?`<span class="bdg br" style="margin-left:4px">부족 ${f(lack)}개</span>`:`<span class="bdg bg" style="margin-left:4px">충분</span>`}</span></div>`;
   }
   html+=`</div>`;
-
-  // ── 기타 재료 필요량 ──
   const hasCrops=Object.values(needCrops).some(v=>v>0);
   const hasMilky=Object.values(needMilky).some(v=>v>0);
   const hasOther=Object.values(needOther).some(v=>v>0);
-
   if(hasCrops||hasMilky||hasOther){
     html+=`<div class="rsec"><div class="rsec-title" style="color:var(--acc)">🧺 기타 재료 합계</div>`;
-    // 작물 묶음: 묶음 자체가 아이템 1개 단위 → fmtQty(q) 로 표시
-    for(const[k,q]of Object.entries(needCrops)){
-      if(q<=0)continue;
-      const cc=CROPS[k]?.color||'#888';
-      html+=`<div class="rrow"><span class="rl" style="color:${cc}">${CROPS[k]?.name||k}</span><span class="rv" style="color:var(--muted)">${fmtQty(q)}</span></div>`;
-    }
-    // 밀키 재료
+    for(const[k,q]of Object.entries(needCrops)){if(q<=0)continue;const cc=CROPS[k]?.color||'#888';html+=`<div class="rrow"><span class="rl" style="color:${cc}">${CROPS[k]?.name||k}</span><span class="rv" style="color:var(--muted)">${fmtQty(q)}</span></div>`;}
     const milkyNames={salt:'소금',egg:'달걀',milk:'우유',oil:'오일'};
-    for(const[k,q]of Object.entries(needMilky)){
-      if(q<=0)continue;
-      html+=`<div class="rrow"><span class="rl" style="color:#6090a8">${milkyNames[k]||k}</span><span class="rv" style="color:var(--muted)">${fmtQty(q)}</span></div>`;
-    }
-    // 기타 재료 (중간재료는 원재료 분해 표시)
+    for(const[k,q]of Object.entries(needMilky)){if(q<=0)continue;html+=`<div class="rrow"><span class="rl" style="color:#6090a8">${milkyNames[k]||k}</span><span class="rv" style="color:var(--muted)">${fmtQty(q)}</span></div>`;}
     for(const[k,q]of Object.entries(needOther)){
       if(q<=0)continue;
-      const meta=OTHER_META[k]||{name:k,color:'#888'};
-      const cc=meta.color||'#888';
+      const meta=OTHER_META[k]||{name:k,color:'#888'};const cc=meta.color||'#888';
       if(PROCESSED_RECIPES[k]){
-        const rec=PROCESSED_RECIPES[k];
-        const subParts=[];
+        const rec=PROCESSED_RECIPES[k];const subParts=[];
         for(const[mat,qty]of Object.entries(rec.ingredients)){
           const totalQty=qty*q;
-          if(mat==='wheat'){
-            const hayNeeded = Math.ceil(totalQty / 9); 
-            subParts.push(`밀 ${fmtQty(totalQty)} (건초더미 ${fmtQty(hayNeeded)})`);
-          } else {
-            subParts.push(`${milkyNames[mat]||mat} ${fmtQty(totalQty)}`);
-          }
+          if(mat==='wheat'){const hayNeeded=Math.ceil(totalQty/9);subParts.push(`밀 ${fmtQty(totalQty)} (건초더미 ${fmtQty(hayNeeded)})`);}
+          else subParts.push(`${milkyNames[mat]||mat} ${fmtQty(totalQty)}`);
         }
         html+=`<div class="rrow" style="align-items:flex-start"><span class="rl" style="color:${cc}">${meta.name}</span><span class="rv" style="color:var(--muted)">${fmtQty(q)}<small style="display:block">${subParts.join(' / ')}</small></span></div>`;
       } else {
@@ -547,8 +424,6 @@ window.calcMats=()=>{
     }
     html+=`</div>`;
   }
-
-  // ── 씨앗 계산 ──
   const anyLack=Object.values(lackBase).some(v=>v>0);
   if(!anyLack){
     html+=`<div class="result-box"><div class="rb-label">✅ 베이스 충분</div><div class="rb-value" style="font-size:16px">추가 씨앗 불필요</div></div>`;
@@ -556,85 +431,57 @@ window.calcMats=()=>{
     const seedColors={tomato:'#d94f3d',onion:'#c89c00',garlic:'#9ab0c8'};
     const seedNames={tomato:'토마토',onion:'양파',garlic:'마늘'};
     const seedResults={};
-    for(const bt of['tomato','onion','garlic']){
-      if(lackBase[bt]>0) seedResults[bt]=calcSeedsNeeded(lackBase[bt],bt,sk);
-    }
+    for(const bt of['tomato','onion','garlic']){if(lackBase[bt]>0)seedResults[bt]=calcSeedsNeeded(lackBase[bt],bt,sk);}
     const avgTotal=Object.entries(lackBase).reduce((s,[bt,lack])=>s+(lack>0?seedResults[bt].avg:0),0);
     const safeTotal=Object.entries(lackBase).reduce((s,[bt,lack])=>s+(lack>0?seedResults[bt].safe80:0),0);
-
-    // 종별 카드
-    const seedCards=[['tomato','onion','garlic']].flat()
-      .filter(bt=>lackBase[bt]>0)
-      .map(bt=>{
-        const cl=seedColors[bt], bn=seedNames[bt], sr=seedResults[bt];
-        const recycleNote=sr.p>0
-          ? `<div style="font-size:10px;color:var(--muted);margin-top:3px">씨앗은덤 ${fd(sr.p*100)}% → ${fd(sr.multiplier,1)}배 재순환 반영</div>`
-          : '';
-        return `<div class="seed-result-card" style="border-left:4px solid ${cl}">
-          <div class="seed-result-header">
-            <div>
-              <div class="seed-result-name" style="color:${cl}">${bn} 씨앗</div>
-              <div style="font-size:10px;color:var(--muted);margin-top:2px">부족 베이스 ${f(lackBase[bt])}개 → 작물 ${f(lackBase[bt]*8)}개 필요</div>
-              ${recycleNote}
-            </div>
-            <div style="text-align:right">
-              <div style="font-size:10px;color:var(--muted);margin-bottom:2px">평균</div>
-              <div class="seed-result-qty" style="color:${cl}">${fmtQty(sr.avg)}</div>
-              <div style="width:1px;background:var(--bdr);height:8px;margin:4px auto"></div>
-              <div style="font-size:10px;color:var(--grn);margin-bottom:2px">80% 안전</div>
-              <div class="seed-result-qty" style="color:var(--grn)">${fmtQty(sr.safe80)}</div>
-            </div>
+    const seedCards=[['tomato','onion','garlic']].flat().filter(bt=>lackBase[bt]>0).map(bt=>{
+      const cl=seedColors[bt],bn=seedNames[bt],sr=seedResults[bt];
+      const recycleNote=sr.p>0?`<div style="font-size:10px;color:var(--muted);margin-top:3px">씨앗은덤 ${fd(sr.p*100)}% → ${fd(sr.multiplier,1)}배 재순환 반영</div>`:'';
+      return `<div class="seed-result-card" style="border-left:4px solid ${cl}">
+        <div class="seed-result-header">
+          <div>
+            <div class="seed-result-name" style="color:${cl}">${bn} 씨앗</div>
+            <div style="font-size:10px;color:var(--muted);margin-top:2px">부족 베이스 ${f(lackBase[bt])}개 → 작물 ${f(lackBase[bt]*8)}개 필요</div>
+            ${recycleNote}
           </div>
-        </div>`;
-      }).join('');
-
-    const seedDropNote=sk.sdPct>0
-      ? `<div style="font-size:10px;color:var(--muted);margin-top:4px">씨앗은덤 ${sk.sdPct}% 재순환 반영</div>`:'';
-
+          <div style="text-align:right">
+            <div style="font-size:10px;color:var(--muted);margin-bottom:2px">평균</div>
+            <div class="seed-result-qty" style="color:${cl}">${fmtQty(sr.avg)}</div>
+            <div style="width:1px;background:var(--bdr);height:8px;margin:4px auto"></div>
+            <div style="font-size:10px;color:var(--grn);margin-bottom:2px">80% 안전</div>
+            <div class="seed-result-qty" style="color:var(--grn)">${fmtQty(sr.safe80)}</div>
+          </div>
+        </div>
+      </div>`;
+    }).join('');
+    const seedDropNote=sk.sdPct>0?`<div style="font-size:10px;color:var(--muted);margin-top:4px">씨앗은덤 ${sk.sdPct}% 재순환 반영</div>`:'';
     html+=seedCards;
-    html+=`<div class="result-box" style="margin-top:8px">
-      <div style="display:flex;gap:0;align-items:stretch">
-        <div style="flex:1;text-align:center;padding:4px 8px">
-          <div class="rb-label">합계 평균</div>
-          <div class="rb-value" style="font-size:20px">${fmtQty(avgTotal)}</div>
-          ${seedDropNote}
-        </div>
-        <div style="width:1px;background:var(--bdr2);margin:4px 0"></div>
-        <div style="flex:1;text-align:center;padding:4px 8px">
-          <div class="rb-label" style="color:var(--grn)">80% 안전 합계</div>
-          <div class="rb-value rb-floor" style="font-size:20px">${fmtQty(safeTotal)}</div>
-          <div style="font-size:10px;color:var(--muted);margin-top:2px">+${fmtQty(safeTotal-avgTotal)} 여유</div>
-        </div>
-      </div>
-    </div>`;
+    html+=`<div class="result-box" style="margin-top:8px"><div style="display:flex;gap:0;align-items:stretch">
+      <div style="flex:1;text-align:center;padding:4px 8px"><div class="rb-label">합계 평균</div><div class="rb-value" style="font-size:20px">${fmtQty(avgTotal)}</div>${seedDropNote}</div>
+      <div style="width:1px;background:var(--bdr2);margin:4px 0"></div>
+      <div style="flex:1;text-align:center;padding:4px 8px"><div class="rb-label" style="color:var(--grn)">80% 안전 합계</div><div class="rb-value rb-floor" style="font-size:20px">${fmtQty(safeTotal)}</div><div style="font-size:10px;color:var(--muted);margin-top:2px">+${fmtQty(safeTotal-avgTotal)} 여유</div></div>
+    </div></div>`;
   }
   document.getElementById('matsRes').innerHTML=html;
 };
 
-/* 자동채우기 */
 window.autoFill=()=>{
   const fill=(id,val)=>{if(!val||val<=0)return;const el=document.getElementById(id);if(el&&(!el.value||+el.value===0)){el.value=Math.round(val);el.dispatchEvent(new Event('input'));}};
-  fill('pSeedTomato',DEFAULT_PRICES.seeds.tomato*SET_SIZE);
-  fill('pSeedOnion', DEFAULT_PRICES.seeds.onion *SET_SIZE);
-  fill('pSeedGarlic',DEFAULT_PRICES.seeds.garlic*SET_SIZE);
+  fill('pSeedTomato',DEFAULT_PRICES.seeds.tomato*SET_SIZE);fill('pSeedOnion',DEFAULT_PRICES.seeds.onion*SET_SIZE);fill('pSeedGarlic',DEFAULT_PRICES.seeds.garlic*SET_SIZE);
   const cp=DEFAULT_PRICES.crops;
-  fill('pCropPumpkin',   cp.pumpkin   *SET_SIZE);fill('pCropPotato',    cp.potato   *SET_SIZE);
-  fill('pCropCarrot',    cp.carrot    *SET_SIZE);fill('pCropBeet',      cp.beet     *SET_SIZE);
+  fill('pCropPumpkin',cp.pumpkin*SET_SIZE);fill('pCropPotato',cp.potato*SET_SIZE);fill('pCropCarrot',cp.carrot*SET_SIZE);fill('pCropBeet',cp.beet*SET_SIZE);
   fill('pCropWatermelon',cp.watermelon*SET_SIZE);fill('pCropSweetfruit',cp.sweetfruit*SET_SIZE);
-  if(DEFAULT_PRICES.crops.sugar>0) fill('pCropSugar', DEFAULT_PRICES.crops.sugar*SET_SIZE);
-  if(DEFAULT_PRICES.crops.hay>0) fill('pHay', DEFAULT_PRICES.crops.hay*SET_SIZE);
+  if(DEFAULT_PRICES.crops.sugar>0) fill('pCropSugar',DEFAULT_PRICES.crops.sugar*SET_SIZE);
+  if(DEFAULT_PRICES.crops.hay>0) fill('pHay',DEFAULT_PRICES.crops.hay*SET_SIZE);
   const op=DEFAULT_PRICES.other;
-  fill('pCoconut',op.coconut*SET_SIZE);fill('pPineapple',op.pineapple*SET_SIZE);
-  fill('pSteak',op.steak*SET_SIZE);
-  fill('pPork',op.pork*SET_SIZE);
-  fill('pPorkBelly',op.pork_belly*SET_SIZE);fill('pPorkFront',op.pork_front*SET_SIZE);
+  fill('pCoconut',op.coconut*SET_SIZE);fill('pPineapple',op.pineapple*SET_SIZE);fill('pSteak',op.steak*SET_SIZE);
+  fill('pPork',op.pork*SET_SIZE);fill('pPorkBelly',op.pork_belly*SET_SIZE);fill('pPorkFront',op.pork_front*SET_SIZE);
   fill('pLamb',op.lamb*SET_SIZE);fill('pLambRib',op.lamb_rib*SET_SIZE);fill('pLambLeg',op.lamb_leg*SET_SIZE);
   fill('pChicken',op.chicken*SET_SIZE);fill('pChickenLeg',op.chicken_leg*SET_SIZE);fill('pChickenBreast',op.chicken_breast*SET_SIZE);
   fill('pBeefSirloin',op.beef_sirloin*SET_SIZE);fill('pBeefRib',op.beef_rib*SET_SIZE);
   onPriceChange();
 };
 
-/* localStorage */
 const BASE_TYPES=['tomato','onion','garlic'];
 const BASE_ID_PREFIX='haveBase';
 const BASE_SUFFIXES=['_box','_set','_ea'];
@@ -648,12 +495,8 @@ const STATIC_IDS=[
   'pCoconut','pPineapple','pSteak',
   'pPork','pPorkBelly','pPorkFront','pLamb','pLambRib','pLambLeg',
   'pChicken','pChickenLeg','pChickenBreast','pBeefSirloin','pBeefRib',
-  'farmSaleRecipeSel',
-  'farmSaleQty',
-  'farmSaleOtherMoneyLv',
-  'farmSaleOtherPotLv',
-  'farmSaleRatioSlider',
-  // 보유 베이스 3칸 × 3종
+  'farmSaleQty_box','farmSaleQty_set','farmSaleQty_ea',
+  'farmSaleOtherMoneyLv','farmSaleOtherPotLv','farmSaleRatioSlider',
   ...BASE_TYPES.flatMap(t=>BASE_SUFFIXES.map(s=>BASE_ID_PREFIX+t.charAt(0).toUpperCase()+t.slice(1)+s)),
 ];
 const KEY='farming_calc_v6';
@@ -661,6 +504,7 @@ function saveDishRows(){
   const rows=[];
   document.querySelectorAll('.dish-picker-row').forEach(row=>{
     const rid=row.id.replace('drow_','');
+    if(!rid||isNaN(+rid))return;
     rows.push({
       key:document.getElementById('dsel_'+rid)?.value||'',
       box:document.getElementById('dqty_'+rid+'_box')?.value||'',
@@ -674,6 +518,7 @@ function saveAll(){
   const d={};
   STATIC_IDS.forEach(id=>{const e=document.getElementById(id);if(e)d[id]=e.value;});
   d.__includBaseCoast = document.getElementById('includBaseCoast')?.checked ?? false;
+  d.__farmSaleRecipeSel = document.getElementById('farmSaleRecipeSel')?.value||'';
   d.__dishRows=saveDishRows();
   localStorage.setItem(KEY,JSON.stringify(d));
 }
@@ -683,13 +528,16 @@ function loadAll(){
     STATIC_IDS.forEach(id=>{const e=document.getElementById(id);if(e&&d[id]!==undefined)e.value=d[id];});
     const cb=document.getElementById('includBaseCoast');
     if(cb&&d.__includBaseCoast!==undefined)cb.checked=d.__includBaseCoast;
-    // 보유 베이스 총n개 표시 갱신
     BASE_TYPES.forEach(t=>{
       const key=BASE_ID_PREFIX+t.charAt(0).toUpperCase()+t.slice(1);
       const n=readSplitQty(key);
       const p=document.getElementById(key+'_p');
       if(p&&n>0)p.textContent='총 '+f(n)+'개';
     });
+    // 판매가 수량 파싱 표시
+    const qn=readSplitQty('farmSaleQty');
+    const qp=document.getElementById('farmSaleQtyParsed');
+    if(qp&&qn>0)qp.textContent='총 '+f(qn)+'개';
     if(Array.isArray(d.__dishRows)&&d.__dishRows.length>0){
       d.__dishRows.forEach(({key,box,set,ea})=>{
         addDishRow();
@@ -709,6 +557,11 @@ function loadAll(){
         onDishQtyInput(rid);
       });
     }
+    // 판매가 요리 선택 복원 (initFarmSaleSelect 후 실행)
+    if(d.__farmSaleRecipeSel){
+      const sel=document.getElementById('farmSaleRecipeSel');
+      if(sel)sel.value=d.__farmSaleRecipeSel;
+    }
   }catch(e){}
 }
 
@@ -716,18 +569,14 @@ window.resetAll=()=>{
   if(!confirm('초기화할까요?'))return;
   localStorage.removeItem(KEY);
   STATIC_IDS.forEach(id=>{const e=document.getElementById(id);if(!e)return;if(e.tagName==='SELECT')e.selectedIndex=0;else e.value='';});
-  const cb=document.getElementById('includBaseCoast');
-  if(cb) cb.checked=false;
-  BASE_TYPES.forEach(t=>{
-    const p=document.getElementById(BASE_ID_PREFIX+t.charAt(0).toUpperCase()+t.slice(1)+'_p');
-    if(p)p.textContent='';
-  });
+  const cb=document.getElementById('includBaseCoast');if(cb)cb.checked=false;
+  BASE_TYPES.forEach(t=>{const p=document.getElementById(BASE_ID_PREFIX+t.charAt(0).toUpperCase()+t.slice(1)+'_p');if(p)p.textContent='';});
+  const qp=document.getElementById('farmSaleQtyParsed');if(qp)qp.textContent='';
   document.getElementById('dishPickerList').innerHTML='';
   rowId=0;
   syncDropdownLabels();onSkillChange();
 };
 
-/* 커스텀 드롭다운 — mining.html과 동일한 방식 */
 function initOneCdd(sel) {
   if(!sel||sel.previousElementSibling?.classList.contains('cdd'))return;
   const cdd=document.createElement('div');cdd.className='cdd';
@@ -758,9 +607,8 @@ function initOneCdd(sel) {
   });
   cdd.appendChild(trigger);cdd.appendChild(menu);
   sel.parentNode.insertBefore(cdd,sel);
-  sel.classList.add('cdd-ready'); // 커스텀 드롭다운 완성 후 네이티브 select 숨김
+  sel.classList.add('cdd-ready');
 }
-
 function initCustomDropdowns(){
   document.querySelectorAll('.skrow select,.field select,.dish-sel-wrap select').forEach(sel=>initOneCdd(sel));
 }
@@ -771,69 +619,24 @@ function syncDropdownLabels(){
     cdd.querySelectorAll('.cdd-item').forEach(item=>item.classList.toggle('selected',item.dataset.value===sel.value));
   });
 }
-
 document.addEventListener('click',e=>{
   if(!e.target.closest('.cdd')) document.querySelectorAll('.cdd.open').forEach(el=>el.classList.remove('open'));
 });
-
 window.toggleSkillPanel = () => document.getElementById('skillPanel').classList.toggle('collapsed');
 window.toggleEngPanel   = () => document.getElementById('engPanel').classList.toggle('collapsed');
 
-/* ══════════════════════════════════════════════════════════════════
-   재배 판매가 계산기   farming app.js 맨 끝에 붙여넣기
-
-   farming.html 적용:
-   1. 탭바에 추가:
-      <div class="tab" onclick="sw(3,this)">💰 판매가 계산기</div>
-
-   2. TAB_TITLES 배열에 '판매가 계산기' 추가
-
-   3. sw() 루프 범위 +1 (k < 3 → k < 4)
-
-   4. farming.html </div><!-- /main --> 앞에 farming_sale_tab.html 삽입
-
-   5. window 노출:
-      window.onFarmSaleSubTabSel = onFarmSaleSubTabSel;
-      window.onFarmSaleOtherLvChange = onFarmSaleOtherLvChange;
-      window.onFarmSaleFeeChange = onFarmSaleFeeChange;
-      window.onFarmSaleRatioChange = onFarmSaleRatioChange;
-      window.calcFarmSale = calcFarmSale;
-
-   6. SAVE_IDS에 추가:
-      'farmSaleRecipeSel',
-      'farmSaleQty',
-      'farmSaleOtherMoneyLv','farmSaleOtherPotLv',
-      'farmSaleRatioSlider',
-   ══════════════════════════════════════════════════════════════════
-
-   스킬:
-     돈 좀 벌어볼까? (skillMoneyBonus) — FARMING_SKILLS.MONEY_BONUS.bonusPct
-     한 솥 가득     (skillFullPot)    — FARMING_SKILLS.FULL_POT.bonusPct
-     두 스킬 합산 적용
-
-   대리판매:
-     판매자 부담: 약정액 전액 송금 + ceil(약정액×0.05) 판매자 부담
-     의뢰인 부담: n + ceil(n×0.05) = 약정액 → 역산
-*/
-
-/* ── 스킬 테이블 ── */
+/* ══════════════════════════════════════════════════════
+   판매가 계산기
+══════════════════════════════════════════════════════ */
 const FSALE_MONEY_BONUS = SKILLS.MONEY_BONUS.bonusPct;
 const FSALE_POT_BONUS   = SKILLS.FULL_POT.bonusPct;
 
-/* ── 요리 목록 (등급별 정렬) ── */
 const FSALE_RECIPES = Object.entries(RECIPES).map(([key, r]) => ({ key, ...r }));
-
 const FSALE_GRADE_ORDER = { common:0, normal:1, rare:2, epic:3 };
 FSALE_RECIPES.sort((a,b) => FSALE_GRADE_ORDER[a.grade] - FSALE_GRADE_ORDER[b.grade]);
+const FSALE_GRADE_COLOR = { common:'#8a7060', normal:'#3a9e68', rare:'#3d6fd4', epic:'#9b6dd4' };
+const FSALE_GRADE_LABEL = { common:'커먼', normal:'노멀', rare:'레어', epic:'에픽' };
 
-const FSALE_GRADE_COLOR = {
-  common: '#8a7060', normal: '#3a9e68', rare: '#3d6fd4', epic: '#9b6dd4',
-};
-const FSALE_GRADE_LABEL = {
-  common: '커먼', normal: '노멀', rare: '레어', epic: '에픽',
-};
-
-/* ── 유틸 ── */
 const _ffk   = n => Math.round(n).toLocaleString('ko-KR');
 const _fel   = id => document.getElementById(id);
 const _fgi   = id => { const e=_fel(id); return e ? Math.max(0,+e.value||0) : 0; };
@@ -841,7 +644,6 @@ const _fgv   = id => { const e=_fel(id); return e ? e.value : ''; };
 const _frrow = (l, v, style='') =>
   `<div class="rrow"><span class="rl">${l}</span><span class="rv"${style?` style="${style}"`:''}>${v}</span></div>`;
 
-/* n + ceil(n×0.05) = target → n 역산 */
 function _fCalcN(target) {
   if (target <= 0) return 0;
   let n = Math.floor(target / 1.05);
@@ -849,7 +651,6 @@ function _fCalcN(target) {
   return (n + Math.ceil(n * 0.05) === target) ? n : n + 1;
 }
 
-/* 결과 박스 */
 function _fResultBox(leftLabel, leftVal, leftColor, rightLabel, rightVal, rightColor, footer='') {
   return `<div class="result-box">
     <div style="display:flex;gap:0;align-items:stretch">
@@ -867,10 +668,26 @@ function _fResultBox(leftLabel, leftVal, leftColor, rightLabel, rightVal, rightC
   </div>`;
 }
 
-/* ── 셀렉트 옵션 초기화 ── */
+function readFarmSaleQty() {
+  const box = parseInt(_fel('farmSaleQty_box')?.value||'0')||0;
+  const set = parseInt(_fel('farmSaleQty_set')?.value||'0')||0;
+  const ea  = parseInt(_fel('farmSaleQty_ea') ?.value||'0')||0;
+  return box * BOX_SIZE + set * SET_SIZE + ea;
+}
+
+function onFarmSaleQtyInput() {
+  const n = readFarmSaleQty();
+  const p = _fel('farmSaleQtyParsed');
+  if (p) p.textContent = n > 0 ? `총 ${n.toLocaleString('ko-KR')}개` : '';
+  calcFarmSale(); saveAll();
+}
+
 function initFarmSaleSelect() {
   const sel = _fel('farmSaleRecipeSel'); if (!sel || sel.dataset.init) return;
   sel.innerHTML = '';
+  const empty = document.createElement('option');
+  empty.value = ''; empty.textContent = '요리 선택';
+  sel.appendChild(empty);
   let lastGrade = '';
   for (const r of FSALE_RECIPES) {
     if (r.grade !== lastGrade) {
@@ -880,17 +697,14 @@ function initFarmSaleSelect() {
       lastGrade = r.grade;
     }
     const opt = document.createElement('option');
-    opt.value = r.key;
-    opt.textContent = r.name;
+    opt.value = r.key; opt.textContent = r.name;
     sel.appendChild(opt);
   }
   sel.dataset.init = '1';
 }
 
-/* ── 셀렉트 변경 ── */
-function onFarmSaleSubTabSel() { calcFarmSale(); }
+function onFarmSaleSubTabSel() { calcFarmSale(); saveAll(); }
 
-/* ── 대리판매 수수료 방식 ── */
 function onFarmSaleFeeChange() {
   const isProxy   = _fel('farmSaleProxyToggle')?.checked ?? false;
   _fel('farmSaleProxyCard').style.display = isProxy ? '' : 'none';
@@ -899,7 +713,6 @@ function onFarmSaleFeeChange() {
   calcFarmSale();
 }
 
-/* ── 슬라이더 ── */
 function onFarmSaleRatioChange() {
   const v = _fgi('farmSaleRatioSlider') || 115;
   const lbl = _fel('farmSaleRatioLabel');
@@ -907,33 +720,25 @@ function onFarmSaleRatioChange() {
   calcFarmSale();
 }
 
-/* ── 상대방 스킬 변경 ── */
 function onFarmSaleOtherLvChange() { calcFarmSale(); }
 
-/* ── 메인 계산 ── */
 function calcFarmSale() {
   initFarmSaleSelect();
-
   const resEl = _fel('farmSaleRes'); if (!resEl) return;
-
   const recipeKey = _fgv('farmSaleRecipeSel');
   const recipe    = RECIPES[recipeKey];
   if (!recipe) { resEl.innerHTML='<div class="empty-msg">요리를 선택해주세요</div>'; return; }
-
-  const qty = _fgi('farmSaleQty');
+  const qty = readFarmSaleQty();
   if (!qty) { resEl.innerHTML='<div class="empty-msg">수량을 입력하면 계산됩니다</div>'; return; }
 
-  /* 내 스킬 */
   const myMoneyLv = _fgi('skillMoneyBonus');
   const myPotLv   = _fgi('skillFullPot');
   const myBonus   = (FSALE_MONEY_BONUS[myMoneyLv]??0) + (FSALE_POT_BONUS[myPotLv]??0);
 
-  /* 기본가 = currentPrice (config) */
-  const basePrice  = recipe.currentPrice;
-  const myUnitPrice= Math.round(basePrice * (100 + myBonus) / 100);
-  const myTotal    = myUnitPrice * qty;
+  const basePrice   = recipe.currentPrice;
+  const myUnitPrice = Math.round(basePrice * (100 + myBonus) / 100);
+  const myTotal     = myUnitPrice * qty;
 
-  /* 내 스킬 뱃지 업데이트 */
   const badgeEl = _fel('farmSaleMySkillVal');
   if (badgeEl) {
     const b1 = FSALE_MONEY_BONUS[myMoneyLv]??0;
@@ -946,8 +751,8 @@ function calcFarmSale() {
   const isProxy = _fel('farmSaleProxyToggle')?.checked ?? false;
   const gc = FSALE_GRADE_COLOR[recipe.grade] || '#888';
   const gl = FSALE_GRADE_LABEL[recipe.grade] || '';
+  const qtyStr = qty.toLocaleString('ko-KR');
 
-  /* 직접판매 */
   if (!isProxy) {
     resEl.innerHTML = `
     <div class="rsec">
@@ -956,17 +761,16 @@ function calcFarmSale() {
       ${_frrow('기본가', `${_ffk(basePrice)}원/개`)}
       ${_frrow('판매 보너스', myBonus > 0 ? `+${myBonus}%` : '없음')}
       ${_frrow('판매 단가', `${_ffk(myUnitPrice)}원/개`)}
-      ${_frrow('수량', `${qty.toLocaleString('ko-KR')}개`)}
+      ${_frrow('수량', `${qtyStr}개`)}
     </div>
     <div class="result-box">
       <div class="rb-label">총 수령액</div>
       <div class="rb-value" style="color:var(--grn)">${_ffk(myTotal)}원</div>
-      <div class="rb-sub">개당 ${_ffk(myUnitPrice)}원 × ${qty.toLocaleString('ko-KR')}개</div>
+      <div class="rb-sub">개당 ${_ffk(myUnitPrice)}원 × ${qtyStr}개</div>
     </div>`;
     return;
   }
 
-  /* 대리판매 */
   const otherMoneyLv = _fgi('farmSaleOtherMoneyLv');
   const otherPotLv   = _fgi('farmSaleOtherPotLv');
   const otherBonus   = (FSALE_MONEY_BONUS[otherMoneyLv]??0) + (FSALE_POT_BONUS[otherPotLv]??0);
@@ -976,8 +780,8 @@ function calcFarmSale() {
   if (samePct) {
     resEl.innerHTML = `
     <div class="rsec">
-      ${_frrow('내 스킬',   `+${myBonus}%`)}
-      ${_frrow('상대 스킬', `+${otherBonus}%`)}
+      ${_frrow('내 스킬',`+${myBonus}%`)}
+      ${_frrow('상대 스킬',`+${otherBonus}%`)}
     </div>
     <div style="background:var(--ylw-bg);border:1.5px solid var(--ylw);border-radius:var(--rs);padding:10px 12px;text-align:center;font-size:13px;color:var(--ylw)">
       두 스킬이 동일해서 대리판매로 추가 이득이 없어요
@@ -987,49 +791,39 @@ function calcFarmSale() {
   const sellerBonus     = myBetter ? myBonus : otherBonus;
   const sellerUnitPrice = Math.round(basePrice * (100+sellerBonus) / 100);
   const sellerTotal     = sellerUnitPrice * qty;
-
   const feeSeller  = _fel('farmSaleFeeSeller')?.checked ?? true;
   const ratioPct   = feeSeller ? (_fgi('farmSaleRatioSlider')||115) : null;
-  const agreeTotal = feeSeller
-    ? Math.round(basePrice * ratioPct / 100) * qty
-    : sellerTotal;
+  const agreeTotal = feeSeller ? Math.round(basePrice * ratioPct / 100) * qty : sellerTotal;
 
   const ratioNoteEl = _fel('farmSaleRatioNote');
-  if (ratioNoteEl && feeSeller) {
+  if (ratioNoteEl && feeSeller)
     ratioNoteEl.textContent = `기본가 ${_ffk(basePrice)}원의 ${ratioPct}% = 개당 ${_ffk(Math.round(basePrice*ratioPct/100))}원`;
-  }
 
   let clientGet, sellerProfit, fee;
   if (feeSeller) {
-    fee          = Math.ceil(agreeTotal * 0.05);
-    clientGet    = agreeTotal;
-    sellerProfit = sellerTotal - agreeTotal - fee;
+    fee=Math.ceil(agreeTotal*0.05); clientGet=agreeTotal; sellerProfit=sellerTotal-agreeTotal-fee;
   } else {
-    const n      = _fCalcN(agreeTotal);
-    fee          = Math.ceil(n * 0.05);
-    clientGet    = n;
-    sellerProfit = sellerTotal - agreeTotal;
+    const n=_fCalcN(agreeTotal); fee=Math.ceil(n*0.05); clientGet=n; sellerProfit=sellerTotal-agreeTotal;
   }
-
-  const feeNote   = feeSeller
+  const feeNote = feeSeller
     ? `${_ffk(agreeTotal)}원 × 5% = ${_ffk(fee)}원 (판매자 부담)`
     : `${_ffk(clientGet)}원 × 5% = ${_ffk(fee)}원 (의뢰인 차감)`;
   const extraGain = clientGet - myTotal;
 
   if (myBetter) {
     resEl.innerHTML = `
-    <div style="background:var(--blu-bg,#eef3fd);border:1.5px solid var(--blu,#3d6fd4);border-radius:var(--rs);padding:8px 12px;margin-bottom:8px;font-size:12px;color:var(--blu,#3d6fd4);font-weight:700">
+    <div style="background:#eef3fd;border:1.5px solid #3d6fd4;border-radius:var(--rs);padding:8px 12px;margin-bottom:8px;font-size:12px;color:#3d6fd4;font-weight:700">
       내 스킬(+${myBonus}%)이 상대방(+${otherBonus}%)보다 높아요
     </div>
     <div class="rsec">
       <div class="rsec-title">내가 대신 판매</div>
-      ${_frrow('내 스킬 적용 총 판매가', `<b>${_ffk(sellerTotal)}원</b>`, 'color:var(--grn)')}
-      ${feeSeller ? _frrow(`판매 퍼센트 (기본가 × ${ratioPct}%)`, `${_ffk(agreeTotal)}원`) : ''}
-      ${_frrow('수수료', feeNote)}
-      ${_frrow('송금해야 할 금액', `<b>${_ffk(clientGet)}원</b>`)}
+      ${_frrow('내 스킬 적용 총 판매가',`<b>${_ffk(sellerTotal)}원</b>`,'color:var(--grn)')}
+      ${feeSeller?_frrow(`판매 퍼센트 (기본가 × ${ratioPct}%)`,`${_ffk(agreeTotal)}원`):''}
+      ${_frrow('수수료',feeNote)}
+      ${_frrow('송금해야 할 금액',`<b>${_ffk(clientGet)}원</b>`)}
     </div>
-    ${_fResultBox('상대방 받는 금액', _ffk(clientGet)+'원', 'var(--txt)',
-        '내 이득', (sellerProfit>=0?'+':'')+_ffk(sellerProfit)+'원',
+    ${_fResultBox('상대방 받는 금액',_ffk(clientGet)+'원','var(--txt)',
+        '내 이득',(sellerProfit>=0?'+':'')+_ffk(sellerProfit)+'원',
         sellerProfit>=0?'var(--grn)':'var(--red)',
         `총 판매 ${_ffk(sellerTotal)}원 — 약정 ${_ffk(agreeTotal)}원 — 수수료 ${_ffk(fee)}원`)}`;
   } else {
@@ -1039,21 +833,22 @@ function calcFarmSale() {
     </div>
     <div class="rsec">
       <div class="rsec-title">상대방이 대신 판매</div>
-      ${_frrow('상대방 스킬 적용 총 판매가', `<b>${_ffk(sellerTotal)}원</b>`)}
-      ${feeSeller ? _frrow(`(기본가 × ${ratioPct}%)`, `${_ffk(agreeTotal)}원`) : ''}
-      ${_frrow('수수료', feeNote)}
-      ${_frrow('내가 받는 금액', `<b>${_ffk(clientGet)}원</b>`, 'color:var(--grn)')}
+      ${_frrow('상대방 스킬 적용 총 판매가',`<b>${_ffk(sellerTotal)}원</b>`)}
+      ${feeSeller?_frrow(`(기본가 × ${ratioPct}%)`,`${_ffk(agreeTotal)}원`):''}
+      ${_frrow('수수료',feeNote)}
+      ${_frrow('내가 받는 금액',`<b>${_ffk(clientGet)}원</b>`,'color:var(--grn)')}
       <div style="border-top:1px dashed var(--bdr2);margin-top:4px;padding-top:5px">
-        ${_frrow('내가 직접판매 시', `${_ffk(myTotal)}원 (+${myBonus}%)`, 'color:var(--muted)')}
+        ${_frrow('내가 직접판매 시',`${_ffk(myTotal)}원 (+${myBonus}%)`,'color:var(--muted)')}
       </div>
     </div>
-    ${_fResultBox('내가 받는 금액', _ffk(clientGet)+'원', 'var(--grn)',
-        '대리판매 추가수익', (extraGain>=0?'+':'')+_ffk(extraGain)+'원',
+    ${_fResultBox('내가 받는 금액',_ffk(clientGet)+'원','var(--grn)',
+        '대리판매 추가수익',(extraGain>=0?'+':'')+_ffk(extraGain)+'원',
         extraGain>=0?'var(--grn)':'var(--red)')}`;
   }
 }
 
 window.onFarmSaleSubTabSel     = onFarmSaleSubTabSel;
+window.onFarmSaleQtyInput      = onFarmSaleQtyInput;
 window.onFarmSaleOtherLvChange = onFarmSaleOtherLvChange;
 window.onFarmSaleFeeChange     = onFarmSaleFeeChange;
 window.onFarmSaleRatioChange   = onFarmSaleRatioChange;
@@ -1064,8 +859,10 @@ function domReady(fn){
   else fn();
 }
 domReady(()=>{
+  initFarmSaleSelect();
   loadAll();
   initCustomDropdowns();
+  initOneCdd(document.getElementById('farmSaleRecipeSel'));
   syncDropdownLabels();
   onSkillChange();
   const titleEl=document.getElementById('pageTabTitle');if(titleEl)titleEl.textContent=TAB_TITLES[0];

@@ -11,7 +11,6 @@
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 *{font-family:'Noto Sans KR','Apple SD Gothic Neo',sans-serif;font-weight:700}
 input,select,button,textarea{font-family:'Noto Sans KR','Apple SD Gothic Neo',sans-serif!important;font-weight:700}
-/* number input 화살표 제거 */
 input[type=number]::-webkit-inner-spin-button,
 input[type=number]::-webkit-outer-spin-button{-webkit-appearance:none;appearance:none;margin:0}
 input[type=number]{-moz-appearance:textfield;appearance:textfield}
@@ -38,7 +37,6 @@ html,body{min-height:100vh;background:var(--bg) radial-gradient(circle at 10% 15
   .main{padding:0 16px 0 376px;display:flex;flex-direction:column;align-items:center}
   .main>*{width:100%;max-width:700px;box-sizing:border-box}
 }
-/* 스킬 패널 */
 .skpanel{background:var(--surf);border:1.5px solid var(--bdr);border-radius:var(--r);padding:14px;box-shadow:var(--sh);margin-bottom:14px}
 .skpanel-title{font-family:'Jua',sans-serif!important;font-size:15px;color:var(--acc);display:flex;align-items:center;gap:6px;cursor:pointer;user-select:none;margin-bottom:10px}
 .skpanel-title:hover{color:var(--acc2)}
@@ -49,29 +47,14 @@ html,body{min-height:100vh;background:var(--bg) radial-gradient(circle at 10% 15
 .skgrid{display:grid;grid-template-columns:1fr 1fr;gap:6px}
 .skrow{background:var(--bg);border:1px solid var(--bdr);border-radius:var(--rs);padding:9px 11px;display:flex;flex-direction:column;gap:4px}
 .skname{font-family:'Jua',sans-serif!important;font-size:13px;color:var(--txt);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-/* mining.html 방식: skrow/field 안 select만 숨김 */
 .skrow select{font-size:11px!important;font-weight:700!important;border:1.5px solid var(--bdr2);border-radius:var(--rs);padding:5px 7px;background:var(--surf);color:var(--txt);outline:none;width:100%;cursor:pointer}
 .field select{font-size:12px!important;font-weight:700!important;border:1.5px solid var(--bdr);border-radius:var(--rs);padding:7px 10px;background:var(--bg);color:var(--txt);outline:none;width:100%;cursor:pointer}
 .skrow select.cdd-ready,.field select.cdd-ready,.dish-sel-wrap select.cdd-ready{display:none}
 .skinfo{font-size:11px;color:var(--muted);font-weight:500;min-height:14px}
-/* 커스텀 드롭다운 - mining.html과 동일 구조 */
 .cdd{position:relative;width:100%}
-.skrow .cdd-trigger{
-  display:flex;align-items:center;justify-content:space-between;gap:4px;
-  padding:6px 8px;border:1.5px solid var(--bdr2);border-radius:var(--rs);
-  background:var(--surf);color:var(--txt);
-  font-size:11px!important;font-weight:700!important;
-  cursor:pointer;user-select:none;line-height:1.3;white-space:nowrap;overflow:hidden;
-}
+.skrow .cdd-trigger{display:flex;align-items:center;justify-content:space-between;gap:4px;padding:6px 8px;border:1.5px solid var(--bdr2);border-radius:var(--rs);background:var(--surf);color:var(--txt);font-size:11px!important;font-weight:700!important;cursor:pointer;user-select:none;line-height:1.3;white-space:nowrap;overflow:hidden;}
 .skrow .cdd-trigger:hover{border-color:var(--acc)}
-.field .cdd-trigger{
-  display:flex;align-items:center;justify-content:space-between;gap:4px;
-  padding:7px 10px;border:1.5px solid var(--bdr);border-radius:var(--rs);
-  background:var(--bg);color:var(--txt);
-  font-size:12px!important;font-weight:700!important;
-  cursor:pointer;user-select:none;line-height:1.3;
-  transition:border-color .15s,box-shadow .15s;white-space:nowrap;overflow:hidden;
-}
+.field .cdd-trigger{display:flex;align-items:center;justify-content:space-between;gap:4px;padding:7px 10px;border:1.5px solid var(--bdr);border-radius:var(--rs);background:var(--bg);color:var(--txt);font-size:12px!important;font-weight:700!important;cursor:pointer;user-select:none;line-height:1.3;transition:border-color .15s,box-shadow .15s;white-space:nowrap;overflow:hidden;}
 .field .cdd-trigger:hover{border-color:var(--acc)}
 .dish-sel-wrap .cdd-trigger{display:flex;align-items:center;justify-content:space-between;gap:4px;padding:7px 10px;border:1.5px solid var(--bdr);border-radius:var(--rs);background:var(--bg);color:var(--txt);font-size:12px!important;font-weight:700!important;cursor:pointer;user-select:none;line-height:1.3;white-space:nowrap;overflow:hidden;}
 .dish-sel-wrap .cdd-trigger:hover{border-color:var(--acc)}
@@ -85,7 +68,6 @@ html,body{min-height:100vh;background:var(--bg) radial-gradient(circle at 10% 15
 .cdd-item:last-child{border-bottom:none}
 .cdd-item:hover{background:var(--ylw-bg);color:var(--acc)}
 .cdd-item.selected{background:var(--acc);color:#fff}
-/* 탭바 */
 .tabbar{display:flex;align-items:center;flex-wrap:wrap;gap:7px;margin-bottom:12px}
 .tab{font-family:'Jua',sans-serif!important;font-size:14px;padding:8px 16px;border-radius:20px;border:2px solid var(--bdr2);background:var(--surf);color:var(--muted);cursor:pointer;transition:all .15s;white-space:nowrap}
 .tab:hover{border-color:var(--acc);color:var(--acc)}
@@ -94,7 +76,6 @@ html,body{min-height:100vh;background:var(--bg) radial-gradient(circle at 10% 15
 .reset-btn:hover{border-color:var(--red);color:var(--red);background:var(--red-bg)}
 .autofill-btn{font-family:'Jua',sans-serif!important;font-size:12px;padding:5px 11px;border-radius:20px;border:1.5px solid var(--grn);background:var(--grn-bg);color:var(--grn);cursor:pointer;transition:all .15s}
 .autofill-btn:hover{background:var(--grn);color:#fff}
-/* 카드 */
 .panel{display:flex;flex-direction:column;gap:20px}
 .card{background:var(--surf);border:1.5px solid var(--bdr);border-radius:var(--r);padding:15px 16px;box-shadow:var(--sh)}
 .card-title{font-family:'Jua',sans-serif!important;font-size:14px;color:var(--txt);margin-bottom:12px;display:flex;align-items:center;gap:6px}
@@ -127,7 +108,6 @@ html,body{min-height:100vh;background:var(--bg) radial-gradient(circle at 10% 15
 .rb-value{font-family:'Jua',sans-serif!important;font-size:22px;color:var(--acc)}
 .rb-floor{color:var(--grn)}
 .rb-sub{display:block;font-size:10px;color:var(--muted);font-weight:500;margin-top:2px}
-/* 요리 효율 */
 .dish-card{background:var(--surf);border:1.5px solid var(--bdr);border-radius:var(--rs);padding:12px 14px;margin-bottom:8px;position:relative}
 .dish-card.top1{border-color:#d4a020;box-shadow:0 4px 16px rgba(212,160,32,.18)}
 .dish-card.top2{border-color:#aaaaaa}
@@ -144,8 +124,8 @@ html,body{min-height:100vh;background:var(--bg) radial-gradient(circle at 10% 15
 .dish-mats{display:flex;flex-wrap:wrap;gap:4px;margin-top:6px}
 .mat-chip{font-size:10px;font-weight:700;border-radius:4px;padding:1px 6px;border:1px solid var(--bdr2);background:var(--bg);color:var(--txt)}
 .grade-bdg{font-size:10px;font-weight:700;padding:1px 7px;border-radius:20px;vertical-align:middle;display:inline-block}
-/* 탭3 요리 선택 */
-.dish-picker-row{display:flex;align-items:flex-start;gap:8px;margin-bottom:10px}
+/* 재료 계산 탭 — align-items:center 로 줄맞춤 수정 */
+.dish-picker-row{display:flex;align-items:center;gap:8px;margin-bottom:10px}
 .dish-sel-wrap{flex:0 0 210px}
 .dish-sel-wrap select{display:none}
 .dish-qty-wrap{flex:1;display:flex;flex-direction:column;gap:2px}
@@ -155,10 +135,9 @@ html,body{min-height:100vh;background:var(--bg) radial-gradient(circle at 10% 15
 .dish-qty-parsed{font-size:10px;color:var(--muted);min-height:14px}
 .add-dish-btn{font-family:'Jua',sans-serif!important;font-size:12px;padding:6px 14px;border-radius:20px;border:1.5px solid var(--acc);background:var(--grn-bg);color:var(--acc);cursor:pointer;white-space:nowrap;transition:all .15s;margin-top:6px;display:inline-block}
 .add-dish-btn:hover{background:var(--acc);color:#fff}
-.del-dish-btn{font-size:11px;padding:5px 9px;border-radius:20px;border:1.5px solid var(--bdr2);background:var(--surf);color:var(--muted);cursor:pointer;flex-shrink:0;transition:all .15s;align-self:flex-start;margin-top:1px}
+.del-dish-btn{font-size:11px;padding:5px 9px;border-radius:20px;border:1.5px solid var(--bdr2);background:var(--surf);color:var(--muted);cursor:pointer;flex-shrink:0;transition:all .15s;align-self:center}
 .del-dish-btn:hover{border-color:var(--red);color:var(--red)}
 .empty-msg{color:var(--muted);font-size:12px;text-align:center;padding:14px 0;font-weight:500}
-/* 상자/세트/개 분리 입력 */
 .split-qty-wrap{display:grid;grid-template-columns:1fr 1fr 1fr;border:1.5px solid var(--bdr);border-radius:var(--rs);overflow:hidden;margin-top:2px;background:var(--bg)}
 .split-qty-wrap>div{display:flex;flex-direction:column;border-right:1px solid var(--bdr)}
 .split-qty-wrap>div:last-child{border-right:none}
@@ -166,7 +145,6 @@ html,body{min-height:100vh;background:var(--bg) radial-gradient(circle at 10% 15
 .sq-input{border:none!important;outline:none!important;background:transparent!important;width:100%!important;text-align:center;font-size:13px!important;font-weight:700!important;color:var(--txt)!important;padding:5px 2px!important;box-shadow:none!important;-moz-appearance:textfield!important;appearance:textfield!important}
 .sq-input::-webkit-inner-spin-button,.sq-input::-webkit-outer-spin-button{-webkit-appearance:none!important;appearance:none!important;margin:0!important}
 .sq-parsed{font-size:10px;font-weight:700;text-align:right;min-height:13px;margin-top:2px;color:var(--acc)}
-/* 베이스 원가 포함 토글 */
 .base-cost-toggle-wrap{display:flex;align-items:center;gap:8px;cursor:pointer;user-select:none;padding:8px 10px;background:var(--bg);border:1.5px solid var(--bdr);border-radius:var(--rs);margin-bottom:10px;transition:border-color .15s}
 .base-cost-toggle-wrap:hover{border-color:var(--acc)}
 .base-cost-toggle-input{display:none}
@@ -182,17 +160,6 @@ html,body{min-height:100vh;background:var(--bg) radial-gradient(circle at 10% 15
 .seed-result-name{font-family:'Jua',sans-serif!important;font-size:13px}
 .seed-result-qty{font-family:'Jua',sans-serif!important;font-size:15px;font-weight:900;text-align:right}
 .seed-result-sub{font-size:10px;color:var(--muted);text-align:right;margin-top:1px}
-::-webkit-scrollbar{width:5px}
-::-webkit-scrollbar-thumb{background:var(--bdr2);border-radius:3px}
-
-.sale-radio-label{display:flex;align-items:flex-start;gap:8px;cursor:pointer;padding:8px 10px;border:1.5px solid var(--bdr);border-radius:var(--rs);background:var(--bg);transition:border-color .15s}
-.sale-radio-label:has(input:checked){border-color:var(--acc);background:#fff9f2}
-.my-skill-badge{display:inline-flex;align-items:center;gap:6px;padding:6px 12px;background:var(--ylw-bg);border:1.5px solid var(--ylw);border-radius:var(--rs);font-size:12px;font-weight:700;color:var(--ylw)}
-
-#farmSaleProxyToggle:checked+.sf-tog-track{background:var(--acc)}
-#farmSaleProxyToggle:checked+.sf-tog-track .sf-tog-thumb{transform:translateX(16px)}
-#farmSaleProxyToggle:checked~.sf-tog-label{color:var(--acc)}
-
 /* sf-tog 토글 공통 */
 .sf-tog-wrap{display:flex;align-items:center;gap:10px;cursor:pointer;user-select:none;padding:8px 10px;background:var(--bg);border:1.5px solid var(--bdr);border-radius:var(--rs);margin-bottom:8px;transition:border-color .15s}
 .sf-tog-wrap:hover{border-color:var(--acc)}
@@ -200,27 +167,23 @@ html,body{min-height:100vh;background:var(--bg) radial-gradient(circle at 10% 15
 .sf-tog-thumb{position:absolute;top:2px;left:2px;width:16px;height:16px;background:#fff;border-radius:50%;box-shadow:0 1px 4px rgba(0,0,0,.2);transition:transform .2s;display:block}
 .sf-tog-label{font-family:'Jua',sans-serif!important;font-size:13px;color:var(--txt);flex-shrink:0}
 .sf-tog-desc{font-size:10px;color:var(--muted);font-weight:500}
-
-/* 선택 뱃지 */
+#farmSaleProxyToggle:checked+.sf-tog-track{background:var(--acc)}
+#farmSaleProxyToggle:checked+.sf-tog-track .sf-tog-thumb{transform:translateX(16px)}
+#farmSaleProxyToggle:checked~.sf-tog-label{color:var(--acc)}
+.sale-radio-label{display:flex;align-items:flex-start;gap:8px;cursor:pointer;padding:8px 10px;border:1.5px solid var(--bdr);border-radius:var(--rs);background:var(--bg);transition:border-color .15s}
+.sale-radio-label:has(input:checked){border-color:var(--acc);background:#fff9f2}
+.my-skill-badge{display:inline-flex;align-items:center;gap:6px;padding:6px 12px;background:var(--ylw-bg);border:1.5px solid var(--ylw);border-radius:var(--rs);font-size:12px;font-weight:700;color:var(--ylw)}
 .opt{font-size:9px;font-weight:700;background:var(--ylw-bg);color:var(--ylw);border:1px solid currentColor;border-radius:4px;padding:0 4px;vertical-align:middle}
-
-.sf-tog-wrap{display:flex;align-items:center;gap:10px;cursor:pointer;user-select:none;padding:8px 10px;background:var(--bg);border:1.5px solid var(--bdr);border-radius:var(--rs);margin-bottom:8px;transition:border-color .15s}
-.sf-tog-wrap:hover{border-color:var(--acc)}
-.sf-tog-track{position:relative;width:36px;height:20px;background:var(--bdr2);border-radius:10px;flex-shrink:0;transition:background .2s;display:inline-block}
-.sf-tog-thumb{position:absolute;top:2px;left:2px;width:16px;height:16px;background:#fff;border-radius:50%;box-shadow:0 1px 4px rgba(0,0,0,.2);transition:transform .2s;display:block}
-.sf-tog-label{font-family:'Jua',sans-serif!important;font-size:13px;color:var(--txt);flex-shrink:0}
-.sf-tog-desc{font-size:10px;color:var(--muted);font-weight:500}
-
+::-webkit-scrollbar{width:5px}
+::-webkit-scrollbar-thumb{background:var(--bdr2);border-radius:3px}
 </style>
 </head>
 
-<!-- Google tag (gtag.js) -->
 <script async src="https://www.googletagmanager.com/gtag/js?id=G-TYFFZ1K6QG"></script>
 <script>
   window.dataLayer = window.dataLayer || [];
   function gtag(){dataLayer.push(arguments);}
   gtag('js', new Date());
-
   gtag('config', 'G-TYFFZ1K6QG');
 </script>
 
@@ -233,15 +196,13 @@ html,body{min-height:100vh;background:var(--bg) radial-gradient(circle at 10% 15
 </div>
 <div class="layout">
 
-<!-- 사이드바 -->
 <div class="sidebar">
   <div class="skpanel" id="skillPanel">
     <div class="skpanel-title" onclick="toggleSkillPanel()">⚡ 스킬 설정<span class="toggle-arrow">▼</span></div>
     <div class="skbody">
       <div class="sksec">🔥 제작 시간</div>
       <div class="skgrid">
-        <div class="skrow">
-          <span class="skname">🔥 불 더 올려!</span>
+        <div class="skrow"><span class="skname">🔥 불 더 올려!</span>
           <select id="skillFurnace" onchange="onSkillChange()">
             <option value="0">0레벨</option><option value="1">1레벨 -10%</option><option value="2">2레벨 -30%</option>
             <option value="3">3레벨 -40%</option><option value="4">4레벨 -60%</option><option value="5">5레벨 -80%</option>
@@ -250,8 +211,7 @@ html,body{min-height:100vh;background:var(--bg) radial-gradient(circle at 10% 15
       </div>
       <div class="sksec">💰 판매 보너스</div>
       <div class="skgrid">
-        <div class="skrow">
-          <span class="skname">💰 돈 좀 벌어볼까?</span>
+        <div class="skrow"><span class="skname">💰 돈 좀 벌어볼까?</span>
           <select id="skillMoneyBonus" onchange="onSkillChange()">
             <option value="0">0레벨</option><option value="1">1레벨 +1%</option><option value="2">2레벨 +2%</option>
             <option value="3">3레벨 +3%</option><option value="4">4레벨 +4%</option><option value="5">5레벨 +5%</option>
@@ -259,8 +219,7 @@ html,body{min-height:100vh;background:var(--bg) radial-gradient(circle at 10% 15
             <option value="9">9레벨 +30%</option><option value="10">10레벨 +50%</option>
           </select>
         </div>
-        <div class="skrow">
-          <span class="skname">🥘 한 솥 가득</span>
+        <div class="skrow"><span class="skname">🥘 한 솥 가득</span>
           <select id="skillFullPot" onchange="onSkillChange()">
             <option value="0">0레벨</option><option value="1">1레벨 +1%</option><option value="2">2레벨 +2%</option>
             <option value="3">3레벨 +3%</option><option value="4">4레벨 +4%</option><option value="5">5레벨 +7%</option>
@@ -269,8 +228,7 @@ html,body{min-height:100vh;background:var(--bg) radial-gradient(circle at 10% 15
       </div>
       <div class="sksec">🏝️ 아일랜드 채집 스킬</div>
       <div class="skgrid">
-        <div class="skrow">
-          <span class="skname">☘️ 자연이 주는 선물</span>
+        <div class="skrow"><span class="skname">☘️ 자연이 주는 선물</span>
           <select id="skillNatureGift" onchange="onSkillChange()">
             <option value="0">0레벨</option><option value="1">1레벨 1%/1개</option><option value="2">2레벨 2%/1개</option>
             <option value="3">3레벨 3%/1개</option><option value="4">4레벨 4%/1개</option><option value="5">5레벨 5%/2개</option>
@@ -278,8 +236,7 @@ html,body{min-height:100vh;background:var(--bg) radial-gradient(circle at 10% 15
             <option value="9">9레벨 9%/5개</option><option value="10">10레벨 10%/8개</option>
           </select>
         </div>
-        <div class="skrow">
-          <span class="skname">🔥 불붙은 괭이</span>
+        <div class="skrow"><span class="skname">🔥 불붙은 괭이</span>
           <select id="skillFireHoe" onchange="onSkillChange()">
             <option value="0">0레벨</option><option value="1">1레벨 1%/1개</option><option value="2">2레벨 2%/1개</option>
             <option value="3">3레벨 3%/2개</option><option value="4">4레벨 4%/2개</option><option value="5">5레벨 5%/2개</option>
@@ -290,16 +247,14 @@ html,body{min-height:100vh;background:var(--bg) radial-gradient(circle at 10% 15
       </div>
       <div class="sksec">🌾 마을 재배 스킬</div>
       <div class="skgrid">
-        <div class="skrow">
-          <span class="skname">🌾 오늘도 풍년이다!</span>
+        <div class="skrow"><span class="skname">🌾 오늘도 풍년이다!</span>
           <select id="skillHarvestBonus" onchange="onSkillChange()">
             <option value="0">0레벨</option><option value="1">1레벨 1%/1개</option><option value="2">2레벨 2%/1개</option>
             <option value="3">3레벨 3%/1개</option><option value="4">4레벨 4%/1개</option><option value="5">5레벨 5%/2개</option>
             <option value="6">6레벨 7%/2개</option><option value="7">7레벨 10%/3개</option>
           </select>
         </div>
-        <div class="skrow">
-          <span class="skname">🌱 씨앗은 덤이야</span>
+        <div class="skrow"><span class="skname">🌱 씨앗은 덤이야</span>
           <select id="skillSeedDrop" onchange="onSkillChange()">
             <option value="0">0레벨</option><option value="1">1레벨 1%</option><option value="2">2레벨 2%</option>
             <option value="3">3레벨 3%</option><option value="4">4레벨 4%</option><option value="5">5레벨 5%</option>
@@ -307,8 +262,7 @@ html,body{min-height:100vh;background:var(--bg) radial-gradient(circle at 10% 15
             <option value="9">9레벨 20%</option><option value="10">10레벨 30%</option>
           </select>
         </div>
-        <div class="skrow">
-          <span class="skname">👑 왕크니깐 왕좋아</span>
+        <div class="skrow"><span class="skname">👑 왕크니깐 왕좋아</span>
           <select id="skillKingCrop" onchange="onSkillChange()">
             <option value="0">0레벨 0.02%</option><option value="1">1레벨 0.5%</option>
             <option value="2">2레벨 1%</option><option value="3">3레벨 3%</option>
@@ -322,22 +276,19 @@ html,body{min-height:100vh;background:var(--bg) radial-gradient(circle at 10% 15
     <div class="skpanel-title" onclick="toggleEngPanel()">🪨 각인석 설정<span class="toggle-arrow">▼</span></div>
     <div class="skbody">
       <div class="skgrid">
-        <div class="skrow">
-          <span class="skname">🫘 씨앗 행운</span>
+        <div class="skrow"><span class="skname">🫘 씨앗 행운</span>
           <select id="engSeedLuck" onchange="onEngChange()">
             <option value="0">없음</option><option value="1">I — 25%/+2개</option><option value="2">II — 50%/+2개</option>
             <option value="3">III — 75%/+2개</option><option value="4">IV — 100%/+2개</option>
           </select>
         </div>
-        <div class="skrow">
-          <span class="skname">🌱 작물 상자</span>
+        <div class="skrow"><span class="skname">🌱 작물 상자</span>
           <select id="engCropBox" onchange="onEngChange()">
             <option value="0">없음</option><option value="1">I — 1%</option><option value="2">II — 2%</option>
             <option value="3">III — 3%</option><option value="4">IV — 4%</option><option value="5">V — 5%</option>
           </select>
         </div>
-        <div class="skrow">
-          <span class="skname">🎲 농부 룰렛</span>
+        <div class="skrow"><span class="skname">🎲 농부 룰렛</span>
           <select id="engFarmerRoulette" onchange="onEngChange()">
             <option value="0">없음</option><option value="1">I — 1%</option><option value="2">II — 2%</option>
             <option value="3">III — 3%</option><option value="4">IV — 4%</option><option value="5">V — 5%</option>
@@ -348,27 +299,25 @@ html,body{min-height:100vh;background:var(--bg) radial-gradient(circle at 10% 15
   </div>
 </div><!-- /sidebar -->
 
-<!-- 메인 -->
 <div class="main">
   <div class="tabbar">
     <div class="tab on" onclick="sw(0,this)">🌱 하루 수익</div>
     <div class="tab"    onclick="sw(1,this)">📦 재료 시세</div>
     <div class="tab"    onclick="sw(2,this)">🍳 요리 효율</div>
     <div class="tab"    onclick="sw(3,this)">🧮 재료 계산</div>
-    <div class="tab" onclick="sw(4,this)">💰 판매가 계산기</div>
+    <div class="tab"    onclick="sw(4,this)">💰 판매가 계산기</div>
     <div style="margin-left:auto;display:flex;gap:6px;align-items:center">
       <button class="autofill-btn" onclick="autoFill()">자동채우기</button>
       <button class="reset-btn"    onclick="resetAll()">🗑 초기화</button>
     </div>
   </div>
 
-  <!-- TAB 0: 하루 수익 -->
+  <!-- TAB 0 -->
   <div id="t0" class="panel">
     <div class="card">
       <div class="card-title">🏝️ 아일랜드 채집</div>
       <div class="g2">
-        <div class="field">
-          <label>세이지 괭이 강화</label>
+        <div class="field"><label>세이지 괭이 강화</label>
           <select id="hoeLevel" onchange="calcDaily()">
             <option value="0">0강</option><option value="1">1강</option><option value="2">2강</option>
             <option value="3">3강</option><option value="4">4강</option><option value="5">5강</option>
@@ -378,19 +327,16 @@ html,body{min-height:100vh;background:var(--bg) radial-gradient(circle at 10% 15
             <option value="15">15강</option>
           </select>
         </div>
-        <div class="field">
-          <label>총 스태미나</label>
-          <input id="totalStamina" type="number" inputmode="numeric" placeholder="0" oninput="calcDaily()">
-        </div>
+        <div class="field"><label>총 스태미나</label><input id="totalStamina" type="number" inputmode="numeric" placeholder="0" oninput="calcDaily()"></div>
       </div>
     </div>
     <div class="card">
       <div class="card-title">📊 채집 결과</div>
       <div id="dailyRes"><div class="empty-msg">스태미나를 입력하면 계산됩니다</div></div>
     </div>
-  </div>
+  </div><!-- /t0 -->
 
-  <!-- TAB 1: 재료 시세 -->
+  <!-- TAB 1 -->
   <div id="t1" class="panel" style="display:none">
     <div class="card">
       <div class="card-title">🌱 씨앗 가격 (원/세트)</div>
@@ -435,9 +381,9 @@ html,body{min-height:100vh;background:var(--bg) radial-gradient(circle at 10% 15
         <div class="field"><label>익힌 소 갈비살</label><input id="pBeefRib" type="number" inputmode="numeric" placeholder="0" oninput="onPriceChange()"></div>
       </div>
     </div>
-  </div>
+  </div><!-- /t1 -->
 
-  <!-- TAB 2: 요리 효율 -->
+  <!-- TAB 2 -->
   <div id="t2" class="panel" style="display:none">
     <div class="card">
       <div class="card-title">🍳 현재 요리 효율</div>
@@ -450,9 +396,9 @@ html,body{min-height:100vh;background:var(--bg) radial-gradient(circle at 10% 15
       <div style="font-size:11px;color:var(--muted);margin-bottom:10px;font-weight:500">개당 순이익 기준 내림차순</div>
       <div id="dishEffRes"><div class="empty-msg">재료 시세를 입력해주세요</div></div>
     </div>
-  </div>
+  </div><!-- /t2 -->
 
-  <!-- TAB 3: 재료 계산기 -->
+  <!-- TAB 3 -->
   <div id="t3" class="panel" style="display:none">
     <div class="card">
       <div class="card-title">🍳 만들 요리 선택</div>
@@ -468,7 +414,7 @@ html,body{min-height:100vh;background:var(--bg) radial-gradient(circle at 10% 15
           <div class="split-qty-wrap">
             <div><span class="sq-label">상자</span><input id="haveBaseTomato_box" type="number" inputmode="numeric" placeholder="0" min="0" oninput="onBaseQtyInput('tomato')" class="sq-input"></div>
             <div><span class="sq-label">세트</span><input id="haveBaseTomato_set" type="number" inputmode="numeric" placeholder="0" min="0" oninput="onBaseQtyInput('tomato')" class="sq-input"></div>
-            <div><span class="sq-label">개</span><input id="haveBaseTomato_ea"  type="number" inputmode="numeric" placeholder="0" min="0" oninput="onBaseQtyInput('tomato')" class="sq-input"></div>
+            <div><span class="sq-label">개</span><input id="haveBaseTomato_ea" type="number" inputmode="numeric" placeholder="0" min="0" oninput="onBaseQtyInput('tomato')" class="sq-input"></div>
           </div>
           <div id="haveBaseTomato_p" class="sq-parsed"></div>
         </div>
@@ -477,7 +423,7 @@ html,body{min-height:100vh;background:var(--bg) radial-gradient(circle at 10% 15
           <div class="split-qty-wrap">
             <div><span class="sq-label">상자</span><input id="haveBaseOnion_box" type="number" inputmode="numeric" placeholder="0" min="0" oninput="onBaseQtyInput('onion')" class="sq-input"></div>
             <div><span class="sq-label">세트</span><input id="haveBaseOnion_set" type="number" inputmode="numeric" placeholder="0" min="0" oninput="onBaseQtyInput('onion')" class="sq-input"></div>
-            <div><span class="sq-label">개</span><input id="haveBaseOnion_ea"  type="number" inputmode="numeric" placeholder="0" min="0" oninput="onBaseQtyInput('onion')" class="sq-input"></div>
+            <div><span class="sq-label">개</span><input id="haveBaseOnion_ea" type="number" inputmode="numeric" placeholder="0" min="0" oninput="onBaseQtyInput('onion')" class="sq-input"></div>
           </div>
           <div id="haveBaseOnion_p" class="sq-parsed"></div>
         </div>
@@ -486,7 +432,7 @@ html,body{min-height:100vh;background:var(--bg) radial-gradient(circle at 10% 15
           <div class="split-qty-wrap">
             <div><span class="sq-label">상자</span><input id="haveBaseGarlic_box" type="number" inputmode="numeric" placeholder="0" min="0" oninput="onBaseQtyInput('garlic')" class="sq-input"></div>
             <div><span class="sq-label">세트</span><input id="haveBaseGarlic_set" type="number" inputmode="numeric" placeholder="0" min="0" oninput="onBaseQtyInput('garlic')" class="sq-input"></div>
-            <div><span class="sq-label">개</span><input id="haveBaseGarlic_ea"  type="number" inputmode="numeric" placeholder="0" min="0" oninput="onBaseQtyInput('garlic')" class="sq-input"></div>
+            <div><span class="sq-label">개</span><input id="haveBaseGarlic_ea" type="number" inputmode="numeric" placeholder="0" min="0" oninput="onBaseQtyInput('garlic')" class="sq-input"></div>
           </div>
           <div id="haveBaseGarlic_p" class="sq-parsed"></div>
         </div>
@@ -496,106 +442,82 @@ html,body{min-height:100vh;background:var(--bg) radial-gradient(circle at 10% 15
       <div class="card-title">📋 필요 씨앗 계산</div>
       <div id="matsRes"><div class="empty-msg">요리를 선택하고 수량을 입력하세요</div></div>
     </div>
-  </div>
+  </div><!-- /t3 -->
 
-  <!-- TAB 3: 판매가 계산기 -->
+  <!-- TAB 4: 판매가 계산기 -->
   <div id="t4" class="panel" style="display:none">
 
     <div class="card">
       <div class="card-title">🍳 요리 판매 계산기</div>
-
-      <!-- 내 스킬 뱃지 -->
       <div class="my-skill-badge" style="margin-bottom:12px">
         💰 판매 보너스 — <span id="farmSaleMySkillVal">로딩중</span>
       </div>
-
-      <!-- 요리 선택 + 수량 -->
-      <div class="g2" style="margin-bottom:8px">
-        <div class="field">
-          <label>요리 종류</label>
-          <select id="farmSaleRecipeSel" onchange="onFarmSaleSubTabSel()"></select>
+      <!-- 요리 선택 + 상자/세트/개 — 재료 계산 탭과 동일한 구조 -->
+      <div class="dish-picker-row" style="margin-bottom:0">
+        <div class="dish-sel-wrap">
+          <select id="farmSaleRecipeSel" onchange="onFarmSaleSubTabSel()">
+            <option value="">요리 선택</option>
+          </select>
         </div>
-        <div class="field">
-          <label>수량 (개)</label>
-          <input id="farmSaleQty" type="number" inputmode="numeric" placeholder="0" min="0" onwheel="return false" oninput="calcFarmSale()">
+        <div class="dish-qty-wrap">
+          <div class="split-qty-wrap">
+            <div><span class="sq-label">상자</span><input id="farmSaleQty_box" type="number" inputmode="numeric" placeholder="0" min="0" class="sq-input" oninput="onFarmSaleQtyInput()"></div>
+            <div><span class="sq-label">세트</span><input id="farmSaleQty_set" type="number" inputmode="numeric" placeholder="0" min="0" class="sq-input" oninput="onFarmSaleQtyInput()"></div>
+            <div><span class="sq-label">개</span>  <input id="farmSaleQty_ea"  type="number" inputmode="numeric" placeholder="0" min="0" class="sq-input" oninput="onFarmSaleQtyInput()"></div>
+          </div>
+          <div class="dish-qty-parsed" id="farmSaleQtyParsed"></div>
         </div>
       </div>
     </div>
 
-    <!-- 대리판매 토글 -->
     <label class="sf-tog-wrap">
-  <input type="checkbox" id="farmSaleProxyToggle" style="display:none" onchange="onFarmSaleFeeChange()">
-  <span class="sf-tog-track"><span class="sf-tog-thumb"></span></span>
-  <span class="sf-tog-label">🤝 대리판매 모드</span>
-  <span class="sf-tog-desc">스킬 차이로 서로 이득 보는 금액 계산</span>
-</label>
+      <input type="checkbox" id="farmSaleProxyToggle" style="display:none" onchange="onFarmSaleFeeChange()">
+      <span class="sf-tog-track"><span class="sf-tog-thumb"></span></span>
+      <span class="sf-tog-label">🤝 대리판매 모드</span>
+      <span class="sf-tog-desc">스킬 차이로 서로 이득 보는 금액 계산</span>
+    </label>
 
     <div id="farmSaleProxyCard" style="display:none">
-
-      <!-- 상대방 스킬 -->
       <div class="card">
         <div class="card-title">👤 상대방 스킬</div>
         <div class="skgrid">
-          <div class="skrow">
-            <span class="skname">💰 돈 좀 벌어볼까?</span>
+          <div class="skrow"><span class="skname">💰 돈 좀 벌어볼까?</span>
             <select id="farmSaleOtherMoneyLv" onchange="onFarmSaleOtherLvChange()">
-              <option value="0">0레벨 — 기본</option>
-              <option value="1">1레벨 — +1%</option>
-              <option value="2">2레벨 — +2%</option>
-              <option value="3">3레벨 — +3%</option>
-              <option value="4">4레벨 — +4%</option>
-              <option value="5">5레벨 — +5%</option>
-              <option value="6">6레벨 — +6%</option>
-              <option value="7">7레벨 — +10%</option>
-              <option value="8">8레벨 — +15%</option>
-              <option value="9">9레벨 — +30%</option>
-              <option value="10">10레벨 — +50%</option>
+              <option value="0">0레벨 — 기본</option><option value="1">1레벨 — +1%</option><option value="2">2레벨 — +2%</option>
+              <option value="3">3레벨 — +3%</option><option value="4">4레벨 — +4%</option><option value="5">5레벨 — +5%</option>
+              <option value="6">6레벨 — +6%</option><option value="7">7레벨 — +10%</option><option value="8">8레벨 — +15%</option>
+              <option value="9">9레벨 — +30%</option><option value="10">10레벨 — +50%</option>
             </select>
           </div>
-          <div class="skrow">
-            <span class="skname">🥘 한 솥 가득</span>
+          <div class="skrow"><span class="skname">🥘 한 솥 가득</span>
             <select id="farmSaleOtherPotLv" onchange="onFarmSaleOtherLvChange()">
-              <option value="0">0레벨 — 기본</option>
-              <option value="1">1레벨 — +1%</option>
-              <option value="2">2레벨 — +2%</option>
-              <option value="3">3레벨 — +3%</option>
-              <option value="4">4레벨 — +4%</option>
-              <option value="5">5레벨 — +7%</option>
+              <option value="0">0레벨 — 기본</option><option value="1">1레벨 — +1%</option><option value="2">2레벨 — +2%</option>
+              <option value="3">3레벨 — +3%</option><option value="4">4레벨 — +4%</option><option value="5">5레벨 — +7%</option>
             </select>
           </div>
         </div>
       </div>
-
-      <!-- 판매 방식 -->
       <div class="card">
         <div class="card-title">📊 판매 방식</div>
         <div style="display:flex;flex-direction:column;gap:6px;margin-bottom:12px">
           <label class="sale-radio-label">
             <input type="radio" name="farmSaleFeeMode" id="farmSaleFeeSeller" value="seller" checked
               style="margin-top:2px;accent-color:var(--acc);flex-shrink:0" onchange="onFarmSaleFeeChange()">
-            <div>
-              <div style="font-size:12px;font-weight:700;color:var(--txt)">판매자 부담</div>
-              <div style="font-size:10px;color:var(--muted);font-weight:500;margin-top:2px">기본가의 n% 송금. 남은 차액은 판매자가 이익으로 가져가는 방식</div>
-            </div>
+            <div><div style="font-size:12px;font-weight:700;color:var(--txt)">판매자 부담</div><div style="font-size:10px;color:var(--muted);font-weight:500;margin-top:2px">기본가의 n% 송금. 남은 차액은 판매자가 이익으로 가져가는 방식</div></div>
           </label>
           <label class="sale-radio-label">
             <input type="radio" name="farmSaleFeeMode" id="farmSaleFeeClient" value="client"
               style="margin-top:2px;accent-color:var(--acc);flex-shrink:0" onchange="onFarmSaleFeeChange()">
-            <div>
-              <div style="font-size:12px;font-weight:700;color:var(--txt)">의뢰인 부담</div>
-              <div style="font-size:10px;color:var(--muted);font-weight:500;margin-top:2px">판매자의 이익 없이 판매만 도와주는 방식</div>
-            </div>
+            <div><div style="font-size:12px;font-weight:700;color:var(--txt)">의뢰인 부담</div><div style="font-size:10px;color:var(--muted);font-weight:500;margin-top:2px">판매자의 이익 없이 판매만 도와주는 방식</div></div>
           </label>
         </div>
-
         <div id="farmSaleSliderWrap">
           <div style="font-size:11px;font-weight:700;color:var(--muted);margin-bottom:8px;letter-spacing:.3px">판매 퍼센트</div>
           <div style="display:flex;align-items:center;gap:12px;margin-bottom:6px">
             <span style="font-size:12px;color:var(--muted);white-space:nowrap;flex-shrink:0">기본가의</span>
             <input type="range" id="farmSaleRatioSlider" min="100" max="150" step="5" value="115"
               oninput="onFarmSaleRatioChange()" style="flex:1;accent-color:var(--acc);cursor:pointer;height:6px">
-            <span id="farmSaleRatioLabel"
-              style="font-family:'Jua',sans-serif!important;font-size:22px;color:var(--acc);min-width:56px;text-align:right;line-height:1">115%</span>
+            <span id="farmSaleRatioLabel" style="font-family:'Jua',sans-serif!important;font-size:22px;color:var(--acc);min-width:56px;text-align:right;line-height:1">115%</span>
           </div>
           <div class="fnote" id="farmSaleRatioNote" style="color:var(--muted)"></div>
         </div>
@@ -607,15 +529,12 @@ html,body{min-height:100vh;background:var(--bg) radial-gradient(circle at 10% 15
       <div id="farmSaleRes"><div class="empty-msg">요리와 수량을 선택하면 계산됩니다</div></div>
     </div>
 
-  </div>
-
+  </div><!-- /t4 -->
 
 </div><!-- /main -->
 </div><!-- /layout -->
 </div><!-- /page -->
 
-
 <script type="module" src="./farming%20app.js"></script>
-
 </body>
 </html>
