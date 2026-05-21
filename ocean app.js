@@ -1733,6 +1733,449 @@ function syncDropdownLabels(){document.querySelectorAll('.skrow select,.field se
 document.addEventListener('click',e=>{if(!e.target.closest('.cdd'))document.querySelectorAll('.cdd.open').forEach(el=>el.classList.remove('open'));});
 
 
+/* ══════════════════════════════════════════════════════════════════
+   해양 판매가 계산기 (TAB 3)   ocean app.js 맨 끝에 붙여넣기
+
+   window 노출:
+     window.onOceanSaleSubTab         = onOceanSaleSubTab;
+     window.onOceanSaleAlchToggle     = onOceanSaleAlchToggle;
+     window.onOceanSaleAlchFeeChange  = onOceanSaleAlchFeeChange;
+     window.onOceanSaleAlchRatioChange= onOceanSaleAlchRatioChange;
+     window.calcOceanSaleAlch         = calcOceanSaleAlch;
+     window.onOceanSaleCraftToggle    = onOceanSaleCraftToggle;
+     window.onOceanSaleCraftFeeChange = onOceanSaleCraftFeeChange;
+     window.onOceanSaleCraftRatioChange=onOceanSaleCraftRatioChange;
+     window.calcOceanSaleCraft        = calcOceanSaleCraft;
+     window.calcOceanSaleSF           = calcOceanSaleSF;
+
+   sw 범위: [0,1,2] → [0,1,2,3] 로 변경
+   TAB_TITLES에 '판매가 계산기' 추가
+   ocean.html 탭바에 추가:
+     <div class="tab" onclick="sw(3,this)">💰 판매가 계산기</div>
+   ocean.html에 ocean_sale_tab.html 내용 추가 (</div><!-- /main --> 앞)
+
+   CSS — ocean.html <style>에 추가:
+     #oSaleAlchProxyToggle:checked+.sf-tog-track{background:var(--acc)}
+     #oSaleAlchProxyToggle:checked+.sf-tog-track .sf-tog-thumb{transform:translateX(16px)}
+     #oSaleAlchProxyToggle:checked~.sf-tog-label{color:var(--acc)}
+     #oSaleCraftProxyToggle:checked+.sf-tog-track{background:var(--acc)}
+     #oSaleCraftProxyToggle:checked+.sf-tog-track .sf-tog-thumb{transform:translateX(16px)}
+     #oSaleCraftProxyToggle:checked~.sf-tog-label{color:var(--acc)}
+     .sale-radio-label{display:flex;align-items:flex-start;gap:8px;cursor:pointer;padding:8px 10px;border:1.5px solid var(--bdr);border-radius:var(--rs);background:var(--bg);transition:border-color .15s,background .15s}
+     .sale-radio-label:has(input:checked){border-color:var(--acc);background:#fff9f2}
+     .my-skill-badge{display:inline-flex;align-items:center;gap:6px;padding:6px 12px;background:var(--ylw-bg);border:1.5px solid var(--ylw);border-radius:var(--rs);font-size:12px;font-weight:700;color:var(--ylw)}
+   ══════════════════════════════════════════════════════════════════ */
+
+/* ── 연금품 정보 ── */
+const O_ALCH_ITEMS = [
+  { key:'DILUTED_EXTRACT', name:'추출된 희석액',         color:'#c8920a', tier:0 },
+  { key:'AQUTIS',      name:'영생의 아쿠티스 ★',    color:'#1e9e58', tier:1 },
+  { key:'KRAKEN',      name:'크라켄의 광란체 ★',    color:'#1e9e58', tier:1 },
+  { key:'LEVIATHAN',   name:'리바이던의 깃털 ★',    color:'#1e9e58', tier:1 },
+  { key:'WAVE_CORE',   name:'해구 파동의 코어 ★★',  color:'#2060c8', tier:2 },
+  { key:'DEEP_VIAL',   name:'침묵의 심해 비약 ★★',  color:'#2060c8', tier:2 },
+  { key:'SEA_WING',    name:'청해룡의 날개 ★★',     color:'#2060c8', tier:2 },
+  { key:'AQUA_PULSE',  name:'아쿠아 펄스 파편 ★★★', color:'#c82828', tier:3 },
+  { key:'NAUTILUS',    name:'나우틸러스의 손 ★★★',  color:'#c82828', tier:3 },
+  { key:'ABYSS_SPINE', name:'무저의 척추 ★★★',      color:'#c82828', tier:3 },
+];
+
+/* ── 공예품 정보 (진주 색상 반영) ── */
+const O_CRAFT_ITEMS = [
+  { key:'BROOCH',  name:'조개껍데기 브로치', emoji:'📿', priceMax: 50000,   color:'#d4a020' }, // yellow
+  { key:'PERFUME', name:'푸른 향수병',       emoji:'🧴', priceMax:150000,   color:'#3d6fd4' }, // blue
+  { key:'MIRROR',  name:'자개 손거울',       emoji:'🪞', priceMax:300000,   color:'#1aacac' }, // cyan
+  { key:'HAIRPIN', name:'분홍 헤어핀',       emoji:'📌', priceMax:500000,   color:'#d46090' }, // pink
+  { key:'FAN',     name:'자개 부채',         emoji:'🪭', priceMax:700000,   color:'#7c52c8' }, // purple
+  { key:'WATCH',   name:'흑진주 시계',       emoji:'⌚', priceMax:1000000,  color:'#555555' }, // black
+];
+
+/* ── 스킬 테이블 ── */
+const O_ALCH_BONUS  = SKILLS.ALCH_BONUS.bonusPct;   // 연금술 보너스
+const O_CRAFT_BONUS = SKILLS.CRAFT_BONUS.bonusPct;  // 공예품 보너스
+
+/* ── 유틸 ── */
+const _ofk   = n => Math.round(n).toLocaleString('ko-KR');
+const _oel   = id => document.getElementById(id);
+const _ogi   = id => { const e=_oel(id); return e ? Math.max(0,+e.value||0) : 0; };
+const _orrow = (l, v, style='') =>
+  `<div class="rrow"><span class="rl">${l}</span><span class="rv"${style?` style="${style}"`:''}>${v}</span></div>`;
+
+/* n + ceil(n×0.05) = target → n 역산 */
+function _oCalcN(target) {
+  if (target <= 0) return 0;
+  let n = Math.floor(target / 1.05);
+  while (n + Math.ceil(n * 0.05) < target) n++;
+  return (n + Math.ceil(n * 0.05) === target) ? n : n + 1;
+}
+
+/* 대리판매 공통 계산 */
+function _oProxyCalc({ sellerTotal, agreeTotal, feeSeller }) {
+  if (feeSeller) {
+    const fee = Math.ceil(agreeTotal * 0.05);
+    return { clientGet: agreeTotal, sellerProfit: sellerTotal - agreeTotal - fee, fee };
+  } else {
+    const n   = _oCalcN(agreeTotal);
+    const fee = Math.ceil(n * 0.05);
+    return { clientGet: n, sellerProfit: sellerTotal - agreeTotal, fee };
+  }
+}
+
+/* 결과 박스 공통 */
+function _oResultBox(leftLabel, leftVal, leftColor, rightLabel, rightVal, rightColor, footer='') {
+  return `<div class="result-box">
+    <div style="display:flex;gap:0;align-items:stretch">
+      <div style="flex:1;text-align:center;padding:4px 8px">
+        <div class="rb-label">${leftLabel}</div>
+        <div class="rb-value" style="color:${leftColor};font-size:18px">${leftVal}</div>
+      </div>
+      <div style="width:1px;background:var(--bdr2);margin:4px 0"></div>
+      <div style="flex:1;text-align:center;padding:4px 8px">
+        <div class="rb-label">${rightLabel}</div>
+        <div class="rb-value" style="color:${rightColor};font-size:18px">${rightVal}</div>
+      </div>
+    </div>
+    ${footer?`<div style="text-align:center;margin-top:6px;padding-top:6px;border-top:1px dashed var(--bdr2);font-size:11px;color:var(--muted)">${footer}</div>`:''}
+  </div>`;
+}
+
+/* ── 서브탭 ── */
+function onOceanSaleSubTab(i, el) {
+  _oel('oceanSaleSubTabBar').querySelectorAll('.tab').forEach(t => t.classList.remove('on'));
+  el.classList.add('on');
+  _oel('oceanSalePanelAlch').style.display  = i===0 ? '' : 'none';
+  _oel('oceanSalePanelCraft').style.display = i===1 ? '' : 'none';
+  _oel('oceanSalePanelSF').style.display    = i===2 ? '' : 'none';
+}
+
+/* ════════════════════════════════
+   연금품 섹션
+════════════════════════════════ */
+function onOceanSaleAlchToggle() {
+  const on = _oel('oSaleAlchProxyToggle')?.checked ?? false;
+  _oel('oSaleAlchProxyCard').style.display = on ? '' : 'none';
+  calcOceanSaleAlch();
+}
+
+function onOceanSaleAlchFeeChange() {
+  const feeSeller = _oel('oSaleAlchFeeSeller')?.checked ?? true;
+  _oel('oSaleAlchSliderWrap').style.display = feeSeller ? '' : 'none';
+  calcOceanSaleAlch();
+}
+
+function onOceanSaleAlchRatioChange() {
+  const v = _ogi('oSaleAlchRatioSlider') || 115;
+  const lbl = _oel('oSaleAlchRatioLabel');
+  if (lbl) lbl.textContent = v + '%';
+  calcOceanSaleAlch();
+}
+
+function calcOceanSaleAlch() {
+  /* 내 스킬 뱃지 */
+  const myLv    = _ogi('skillAlchBonus');
+  const myBonus = O_ALCH_BONUS[myLv] ?? 0;
+  const badgeEl = _oel('oceanAlchMySkillVal');
+  if (badgeEl) badgeEl.textContent = myLv === 0 ? '0레벨 (기본)' : `Lv${myLv} +${myBonus}%`;
+
+  const resEl = _oel('oSaleAlchRes'); if (!resEl) return;
+
+  /* 수량 읽기 (세트×64 + 개) */
+  const _oAlchQty = key => {
+    const SET = typeof UNITS !== 'undefined' ? UNITS.SET_SIZE : 64;
+    return _ogi('oSale_'+key+'_set')*SET + _ogi('oSale_'+key+'_ea');
+  };
+  const items = O_ALCH_ITEMS.map(it => ({
+    ...it,
+    qty:       _oAlchQty(it.key),
+    basePrice: PRECISION_ALCHEMY[it.key]?.price ?? 0,
+  })).filter(it => it.qty > 0);
+
+  if (!items.length) { resEl.innerHTML='<div class="empty-msg">수량을 입력하면 계산됩니다</div>'; return; }
+
+  /* 내 직접판매 총액 */
+  const myTotal = items.reduce((s, it) => s + Math.round(it.basePrice * (100+myBonus)/100) * it.qty, 0);
+
+  const isProxy = _oel('oSaleAlchProxyToggle')?.checked ?? false;
+
+  /* 직접판매 */
+  if (!isProxy) {
+    const rows = items.map(it => {
+      const unitPrice = Math.round(it.basePrice * (100+myBonus)/100);
+      return _orrow(
+        `<span style="color:${it.color}">${it.name}</span> (${_ofk(it.basePrice)}원 × ${100+myBonus}%)`,
+        `${_ofk(unitPrice)}원 × ${it.qty.toLocaleString('ko-KR')}개 = <b>${_ofk(unitPrice*it.qty)}원</b>`
+      );
+    }).join('');
+    resEl.innerHTML = `
+    <div class="rsec">
+      <div class="rsec-title">⚗️ 직접판매 — 연금술 보너스 Lv${myLv} +${myBonus}%</div>
+      ${rows}
+    </div>
+    <div class="result-box">
+      <div class="rb-label">총 수령액</div>
+      <div class="rb-value" style="color:var(--grn)">${_ofk(myTotal)}원</div>
+    </div>`;
+    return;
+  }
+
+  /* 대리판매 */
+  const otherLv    = _ogi('oSaleAlchOtherLv');
+  const otherBonus = O_ALCH_BONUS[otherLv] ?? 0;
+  const myBetter   = myBonus > otherBonus;
+  const samePct    = myBonus === otherBonus;
+
+  if (samePct) {
+    resEl.innerHTML = `
+    <div class="rsec">
+      ${_orrow('내 스킬',   `연금술 Lv${myLv} +${myBonus}%`)}
+      ${_orrow('상대 스킬', `연금술 Lv${otherLv} +${otherBonus}%`)}
+    </div>
+    <div style="background:var(--ylw-bg);border:1.5px solid var(--ylw);border-radius:var(--rs);padding:10px 12px;text-align:center;font-size:13px;color:var(--ylw)">
+      두 스킬이 동일해서 대리판매로 추가 이득이 없어요
+    </div>`; return;
+  }
+
+  const sellerBonus = myBetter ? myBonus : otherBonus;
+  const sellerTotal = items.reduce((s, it) => s + Math.round(it.basePrice*(100+sellerBonus)/100)*it.qty, 0);
+
+  const feeSeller  = _oel('oSaleAlchFeeSeller')?.checked ?? true;
+  const ratioPct   = feeSeller ? (_ogi('oSaleAlchRatioSlider')||115) : null;
+  const agreeTotal = feeSeller
+    ? items.reduce((s, it) => s + Math.round(it.basePrice*ratioPct/100)*it.qty, 0)
+    : sellerTotal;
+
+  const ratioNoteEl = _oel('oSaleAlchRatioNote');
+  if (ratioNoteEl && feeSeller) ratioNoteEl.textContent = `기본가 × ${ratioPct}% 합산 = ${_ofk(agreeTotal)}원`;
+
+  const { clientGet, sellerProfit, fee } = _oProxyCalc({ sellerTotal, agreeTotal, feeSeller });
+  const feeNote = feeSeller
+    ? `${_ofk(agreeTotal)}원 × 5% = ${_ofk(fee)}원 (판매자 부담)`
+    : `${_ofk(clientGet)}원 × 5% = ${_ofk(fee)}원 (의뢰인 차감)`;
+  const extraGain = clientGet - myTotal;
+
+  if (myBetter) {
+    resEl.innerHTML = `
+    <div style="background:var(--blu-bg);border:1.5px solid var(--blu);border-radius:var(--rs);padding:8px 12px;margin-bottom:8px;font-size:12px;color:var(--blu);font-weight:700">
+      내 스킬(Lv${myLv} +${myBonus}%)이 상대방(Lv${otherLv} +${otherBonus}%)보다 높아요
+    </div>
+    <div class="rsec">
+      <div class="rsec-title">내가 대신 판매</div>
+      ${_orrow('내 스킬 적용 총 판매가', `<b>${_ofk(sellerTotal)}원</b>`, 'color:var(--grn)')}
+      ${feeSeller ? _orrow(`판매 퍼센트 (기본가 × ${ratioPct}% 합산)`, `${_ofk(agreeTotal)}원`) : ''}
+      ${_orrow('수수료', feeNote)}
+      ${_orrow('송금해야 할 금액', `<b>${_ofk(clientGet)}원</b>`)}
+    </div>
+    ${_oResultBox('상대방 받는 금액', _ofk(clientGet)+'원', 'var(--txt)',
+        '내 이득', (sellerProfit>=0?'+':'')+_ofk(sellerProfit)+'원',
+        sellerProfit>=0?'var(--grn)':'var(--red)',
+        `총 판매 ${_ofk(sellerTotal)}원 — 약정 ${_ofk(agreeTotal)}원 — 수수료 ${_ofk(fee)}원`)}`;
+  } else {
+    resEl.innerHTML = `
+    <div style="background:var(--grn-bg);border:1.5px solid var(--grn);border-radius:var(--rs);padding:8px 12px;margin-bottom:8px;font-size:12px;color:var(--grn);font-weight:700">
+      상대방 스킬(Lv${otherLv} +${otherBonus}%)이 더 높아요
+    </div>
+    <div class="rsec">
+      <div class="rsec-title">상대방이 대신 판매</div>
+      ${_orrow('상대방 스킬 적용 총 판매가', `<b>${_ofk(sellerTotal)}원</b>`)}
+      ${feeSeller ? _orrow(`(기본가 × ${ratioPct}% 합산)`, `${_ofk(agreeTotal)}원`) : ''}
+      ${_orrow('수수료', feeNote)}
+      ${_orrow('내가 받는 금액', `<b>${_ofk(clientGet)}원</b>`, 'color:var(--grn)')}
+      <div style="border-top:1px dashed var(--bdr2);margin-top:4px;padding-top:5px">
+        ${_orrow('내가 직접판매 시', `${_ofk(myTotal)}원 (Lv${myLv} +${myBonus}%)`, 'color:var(--muted)')}
+      </div>
+    </div>
+    ${_oResultBox('내가 받는 금액', _ofk(clientGet)+'원', 'var(--grn)',
+        '대리판매 추가수익', (extraGain>=0?'+':'')+_ofk(extraGain)+'원',
+        extraGain>=0?'var(--grn)':'var(--red)')}`;
+  }
+}
+
+/* ════════════════════════════════
+   어패류 섹션
+════════════════════════════════ */
+function calcOceanSaleSF() {
+  const resEl = _oel('oSaleSFRes'); if (!resEl) return;
+
+  const p1 = _ogi('oSaleSF_price1'), q1 = _ogi('oSaleSF_qty1');
+  const p2 = _ogi('oSaleSF_price2'), q2 = _ogi('oSaleSF_qty2');
+  const p3 = _ogi('oSaleSF_price3'), q3 = _ogi('oSaleSF_qty3');
+
+  const hasInput = (q1>0&&p1>0) || (q2>0&&p2>0) || (q3>0&&p3>0);
+  if (!hasInput) { resEl.innerHTML='<div class="empty-msg">가격과 수량을 입력하면 계산됩니다</div>'; return; }
+
+  // 송금액 = 전체 합계 고정
+  const n = p1*q1 + p2*q2 + p3*q3;
+  // 수수료 = ceil(송금액 × 0.05)
+  const fee = Math.ceil(n * 0.05);
+
+  resEl.innerHTML = `
+  <div class="result-box">
+    <div style="display:flex;gap:0;align-items:stretch">
+      <div style="flex:1;text-align:center;padding:4px 8px">
+        <div class="rb-label">송금 금액</div>
+        <div class="rb-value" style="color:var(--grn);font-size:18px">${_ofk(n)}원</div>
+      </div>
+      <div style="width:1px;background:var(--bdr2);margin:4px 0"></div>
+      <div style="flex:1;text-align:center;padding:4px 8px">
+        <div class="rb-label">수수료</div>
+        <div class="rb-value" style="font-size:18px">${_ofk(fee)}원</div>
+      </div>
+      <div style="width:1px;background:var(--bdr2);margin:4px 0"></div>
+      <div style="flex:1;text-align:center;padding:4px 8px">
+        <div class="rb-label">총 필요 금액</div>
+        <div class="rb-value" style="color:var(--acc);font-size:18px">${_ofk(n+fee)}원</div>
+      </div>
+    </div>
+  </div>`;
+}
+function onOceanSaleCraftToggle() {
+  const on = _oel('oSaleCraftProxyToggle')?.checked ?? false;
+  _oel('oSaleCraftProxyCard').style.display = on ? '' : 'none';
+  calcOceanSaleCraft();
+}
+
+function onOceanSaleCraftFeeChange() {
+  const feeSeller = _oel('oSaleCraftFeeSeller')?.checked ?? true;
+  _oel('oSaleCraftSliderWrap').style.display = feeSeller ? '' : 'none';
+  calcOceanSaleCraft();
+}
+
+function onOceanSaleCraftRatioChange() {
+  const v = _ogi('oSaleCraftRatioSlider') || 115;
+  const lbl = _oel('oSaleCraftRatioLabel');
+  if (lbl) lbl.textContent = v + '%';
+  calcOceanSaleCraft();
+}
+
+function calcOceanSaleCraft() {
+  /* 내 스킬 뱃지 */
+  const myLv    = _ogi('skillCraftBonus');
+  const myBonus = O_CRAFT_BONUS[myLv] ?? 0;
+  const badgeEl = _oel('oceanCraftMySkillVal');
+  if (badgeEl) badgeEl.textContent = myLv === 0 ? '0레벨 (기본)' : `Lv${myLv} +${myBonus}%`;
+
+  const resEl = _oel('oSaleCraftRes'); if (!resEl) return;
+
+  /* 수량 및 기본가 읽기 */
+  const items = O_CRAFT_ITEMS.map(it => {
+    const qty       = _ogi(`oSale_craft_${it.key}_qty`);
+    const manualPx  = _ogi(`oSale_craft_${it.key}_price`);
+    const basePrice = manualPx > 0 ? manualPx : Math.round(it.priceMax * 0.95);
+    return { ...it, qty, basePrice, isDefault: manualPx === 0 };
+  }).filter(it => it.qty > 0);
+
+  if (!items.length) { resEl.innerHTML='<div class="empty-msg">수량을 입력하면 계산됩니다</div>'; return; }
+
+  /* 내 직접판매 총액 */
+  const myTotal = items.reduce((s, it) => s + Math.round(it.basePrice*(100+myBonus)/100)*it.qty, 0);
+
+  const isProxy = _oel('oSaleCraftProxyToggle')?.checked ?? false;
+
+  /* 직접판매 */
+  if (!isProxy) {
+    const rows = items.map(it => {
+      const unitPrice = Math.round(it.basePrice*(100+myBonus)/100);
+      return _orrow(
+        `${it.emoji} ${it.name} (${_ofk(it.basePrice)}원 × ${100+myBonus}%)`,
+        `${_ofk(unitPrice)}원 × ${it.qty.toLocaleString('ko-KR')}개 = <b>${_ofk(unitPrice*it.qty)}원</b>`
+      );
+    }).join('');
+    resEl.innerHTML = `
+    <div class="rsec">
+      <div class="rsec-title">🛠️ 직접판매 — 공예품 보너스 Lv${myLv} +${myBonus}%</div>
+      ${rows}
+    </div>
+    <div class="result-box">
+      <div class="rb-label">총 수령액</div>
+      <div class="rb-value" style="color:var(--grn)">${_ofk(myTotal)}원</div>
+    </div>`;
+    return;
+  }
+
+  /* 대리판매 */
+  const otherLv    = _ogi('oSaleCraftOtherLv');
+  const otherBonus = O_CRAFT_BONUS[otherLv] ?? 0;
+  const myBetter   = myBonus > otherBonus;
+  const samePct    = myBonus === otherBonus;
+
+  if (samePct) {
+    resEl.innerHTML = `
+    <div class="rsec">
+      ${_orrow('내 스킬',   `공예품 Lv${myLv} +${myBonus}%`)}
+      ${_orrow('상대 스킬', `공예품 Lv${otherLv} +${otherBonus}%`)}
+    </div>
+    <div style="background:var(--ylw-bg);border:1.5px solid var(--ylw);border-radius:var(--rs);padding:10px 12px;text-align:center;font-size:13px;color:var(--ylw)">
+      두 스킬이 동일해서 대리판매로 추가 이득이 없어요
+    </div>`; return;
+  }
+
+  const sellerBonus = myBetter ? myBonus : otherBonus;
+  const sellerTotal = items.reduce((s, it) => s + Math.round(it.basePrice*(100+sellerBonus)/100)*it.qty, 0);
+
+  const feeSeller  = _oel('oSaleCraftFeeSeller')?.checked ?? true;
+  const ratioPct   = feeSeller ? (_ogi('oSaleCraftRatioSlider')||115) : null;
+  const agreeTotal = feeSeller
+    ? items.reduce((s, it) => s + Math.round(it.basePrice*ratioPct/100)*it.qty, 0)
+    : sellerTotal;
+
+  const ratioNoteEl = _oel('oSaleCraftRatioNote');
+  if (ratioNoteEl && feeSeller) ratioNoteEl.textContent = `기본가 × ${ratioPct}% 합산 = ${_ofk(agreeTotal)}원`;
+
+  const { clientGet, sellerProfit, fee } = _oProxyCalc({ sellerTotal, agreeTotal, feeSeller });
+  const feeNote = feeSeller
+    ? `${_ofk(agreeTotal)}원 × 5% = ${_ofk(fee)}원 (판매자 부담)`
+    : `${_ofk(clientGet)}원 × 5% = ${_ofk(fee)}원 (의뢰인 차감)`;
+  const extraGain = clientGet - myTotal;
+
+  if (myBetter) {
+    resEl.innerHTML = `
+    <div style="background:var(--blu-bg);border:1.5px solid var(--blu);border-radius:var(--rs);padding:8px 12px;margin-bottom:8px;font-size:12px;color:var(--blu);font-weight:700">
+      내 스킬(Lv${myLv} +${myBonus}%)이 상대방(Lv${otherLv} +${otherBonus}%)보다 높아요
+    </div>
+    <div class="rsec">
+      <div class="rsec-title">내가 대신 판매</div>
+      ${_orrow('내 스킬 적용 총 판매가', `<b>${_ofk(sellerTotal)}원</b>`, 'color:var(--grn)')}
+      ${feeSeller ? _orrow(`판매 퍼센트 (기본가 × ${ratioPct}% 합산)`, `${_ofk(agreeTotal)}원`) : ''}
+      ${_orrow('수수료', feeNote)}
+      ${_orrow('송금해야 할 금액', `<b>${_ofk(clientGet)}원</b>`)}
+    </div>
+    ${_oResultBox('상대방 받는 금액', _ofk(clientGet)+'원', 'var(--txt)',
+        '내 이득', (sellerProfit>=0?'+':'')+_ofk(sellerProfit)+'원',
+        sellerProfit>=0?'var(--grn)':'var(--red)',
+        `총 판매 ${_ofk(sellerTotal)}원 — 약정 ${_ofk(agreeTotal)}원 — 수수료 ${_ofk(fee)}원`)}`;
+  } else {
+    resEl.innerHTML = `
+    <div style="background:var(--grn-bg);border:1.5px solid var(--grn);border-radius:var(--rs);padding:8px 12px;margin-bottom:8px;font-size:12px;color:var(--grn);font-weight:700">
+      상대방 스킬(Lv${otherLv} +${otherBonus}%)이 더 높아요
+    </div>
+    <div class="rsec">
+      <div class="rsec-title">상대방이 대신 판매</div>
+      ${_orrow('상대방 스킬 적용 총 판매가', `<b>${_ofk(sellerTotal)}원</b>`)}
+      ${feeSeller ? _orrow(`(기본가 × ${ratioPct}% 합산)`, `${_ofk(agreeTotal)}원`) : ''}
+      ${_orrow('수수료', feeNote)}
+      ${_orrow('내가 받는 금액', `<b>${_ofk(clientGet)}원</b>`, 'color:var(--grn)')}
+      <div style="border-top:1px dashed var(--bdr2);margin-top:4px;padding-top:5px">
+        ${_orrow('내가 직접판매 시', `${_ofk(myTotal)}원 (Lv${myLv} +${myBonus}%)`, 'color:var(--muted)')}
+      </div>
+    </div>
+    ${_oResultBox('내가 받는 금액', _ofk(clientGet)+'원', 'var(--grn)',
+        '대리판매 추가수익', (extraGain>=0?'+':'')+_ofk(extraGain)+'원',
+        extraGain>=0?'var(--grn)':'var(--red)')}`;
+  }
+}
+
+window.onOceanSaleSubTab          = onOceanSaleSubTab;
+window.onOceanSaleAlchToggle      = onOceanSaleAlchToggle;
+window.onOceanSaleAlchFeeChange   = onOceanSaleAlchFeeChange;
+window.onOceanSaleAlchRatioChange = onOceanSaleAlchRatioChange;
+window.calcOceanSaleAlch          = calcOceanSaleAlch;
+window.onOceanSaleCraftToggle     = onOceanSaleCraftToggle;
+window.onOceanSaleCraftFeeChange  = onOceanSaleCraftFeeChange;
+window.onOceanSaleCraftRatioChange= onOceanSaleCraftRatioChange;
+window.calcOceanSaleCraft         = calcOceanSaleCraft;
+window.calcOceanSaleSF = calcOceanSaleSF;
+
+
 /* ════════════════════════════════════════
    ⑭ DOMContentLoaded
 ════════════════════════════════════════ */
