@@ -34,7 +34,7 @@ function fmtTime(sec) {
 
 const SF_TYPES  = ['oyster','conch','octopus','seaweed','urchin'];
 const SF_TIERS  = [1, 2, 3];
-const TAB_TITLES = ['하루 수익 예상','시세 입력','연금 최적화'];
+const TAB_TITLES = ['하루 수익 예상','시세 입력','연금 최적화','판매가 계산기'];
 
 
 /* ════════════════════════════════════════
@@ -42,7 +42,7 @@ const TAB_TITLES = ['하루 수익 예상','시세 입력','연금 최적화'];
 ════════════════════════════════════════ */
 window.sw = (i, el) => {
   document.querySelectorAll('.tab').forEach(t => t.classList.remove('on'));
-  [0,1,2].forEach(k => { const p = document.getElementById('t'+k); if (p) p.style.display = 'none'; });
+  [0,1,2,3].forEach(k => { const p = document.getElementById('t'+k); if (p) p.style.display = 'none'; });
   el.classList.add('on');
   document.getElementById('t'+i).style.display = 'block';
   const t = document.getElementById('pageTabTitle'); if (t) t.textContent = TAB_TITLES[i];
@@ -268,8 +268,7 @@ function calcSFNeedFromMats(materials) {
     if (SF_SET.has(key)) { need[key] = (need[key]||0) + qty; return; }
     const rec = ALCHEMY[key]; if (!rec) return;
     const output = rec.output || 1;
-    // output > 1(정수/에센스)은 ceil 배치 — 실제 제작 시 투입 어패류 수와 일치
-    const batches = output > 1 ? Math.ceil(qty / output) : qty / output;
+    const batches = qty / output;
     for (const [mk, mq] of Object.entries(rec.materials))
       expand(mk, mq * batches, depth+1);
   }
@@ -2174,7 +2173,6 @@ window.onOceanSaleCraftFeeChange  = onOceanSaleCraftFeeChange;
 window.onOceanSaleCraftRatioChange= onOceanSaleCraftRatioChange;
 window.calcOceanSaleCraft         = calcOceanSaleCraft;
 window.calcOceanSaleSF = calcOceanSaleSF;
-
 
 /* ════════════════════════════════════════
    ⑭ DOMContentLoaded
