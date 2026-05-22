@@ -992,11 +992,9 @@ function renderOptResult({ planEntries, finalAnalysis, workInv, totalRev, totalV
               aggSaved[essKey][mk3]=(aggSaved[essKey][mk3]||0)+useEss;
             }
             const netEss=needEss-useEss;
-            // 실제 제작 가능량: floor(netEss/output)*output (짝수 단위)
-            const essBatch = Math.floor(netEss/(rec3.output||1));
-            const makeableEss = essBatch*(rec3.output||1);
-            agg[essKey][mk3]=(agg[essKey][mk3]||0)+makeableEss;
-            timeSec[essKey]+=essBatch*(rec3.craftTimeSec||0);
+            // 필요량을 raw하게 누적 — stageSection에서 전체 합산 후 ceil 배치
+            agg[essKey][mk3]=(agg[essKey][mk3]||0)+netEss;
+            timeSec[essKey]+=netEss*(rec3.craftTimeSec||0)/(rec3.output||1);
           }
         } else if(rec2.type==='essence'){
           const essKey=rec2.tier===1?'ess1':rec2.tier===2?'ess2':'ess3';
@@ -1007,11 +1005,9 @@ function renderOptResult({ planEntries, finalAnalysis, workInv, totalRev, totalV
             aggSaved[essKey][mk2]=(aggSaved[essKey][mk2]||0)+useEss;
           }
           const netEss=totalMk2-useEss;
-          // 실제 제작 가능량: floor(netEss/output)*output (짝수 단위)
-          const essBatch = Math.floor(netEss/(rec2.output||1));
-          const makeableEss = essBatch*(rec2.output||1);
-          agg[essKey][mk2]=(agg[essKey][mk2]||0)+makeableEss;
-          timeSec[essKey]+=essBatch*(rec2.craftTimeSec||0);
+          // 필요량을 raw하게 누적 — stageSection에서 전체 합산 후 ceil 배치
+          agg[essKey][mk2]=(agg[essKey][mk2]||0)+netEss;
+          timeSec[essKey]+=netEss*(rec2.craftTimeSec||0)/(rec2.output||1);
         }
       }
     }
@@ -1061,8 +1057,8 @@ function renderOptResult({ planEntries, finalAnalysis, workInv, totalRev, totalV
             if(isPA){
               totalQ = mq*qty;
             } else if(output>1){
-              // agg에 실제 제작 가능량(짝수)이 저장돼 있으므로 qty/output이 정확한 배치 수
-              const batch = qty/output;
+              // ceil 배치: 전체 합산된 qty에 한 번만 ceil → 실제 투입 재료량
+              const batch = Math.ceil(qty/output);
               totalQ = mq*batch;
             } else {
               totalQ = mq*qty;
@@ -1073,9 +1069,10 @@ function renderOptResult({ planEntries, finalAnalysis, workInv, totalRev, totalV
           }).join(' ');
 
         s+=`<div style="${lStyle}">`;
-        // 에센스/정수(output:2): agg에 필요 개수가 저장돼 있으므로 qty 그대로 표시
-        // ceil 올림하면 35→36개가 되므로 제거
-        const makeableQty = qty;
+        // 에센스/정수(output>1): agg에 raw 필요량이 쌓여있으므로 ceil 배치로 실제 제작량 계산
+        const makeableQty = (!isPA && output>1)
+          ? Math.ceil(qty/output)*output  // 전체 합산 후 한 번만 ceil → 실제 제작량
+          : qty;
         const effectiveSaved = saved > 0 ? saved : 0;
         const totalQty = makeableQty + effectiveSaved;
         let qtyDisplay = fmtQty(totalQty);
