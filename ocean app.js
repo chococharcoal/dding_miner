@@ -1051,6 +1051,9 @@ function renderOptResult({ planEntries, finalAnalysis, workInv, totalRev, totalV
         }
 
         const output=(rec?.output)||1;
+        // 에센스/정수(output>1): ceil 배치로 제작량과 재료량 일치
+        const essBatch = (!isPA && output>1) ? Math.ceil(qty/output) : null;
+
         const matSource=isPA?PRECISION_ALCHEMY[key]?.materials:rec?.materials;
         const matParts=Object.entries(matSource||{}).filter(([,v])=>v>0)
           .map(([mk,mq])=>{
@@ -1058,7 +1061,6 @@ function renderOptResult({ planEntries, finalAnalysis, workInv, totalRev, totalV
             if(isPA){
               totalQ = mq*qty;
             } else if(essBatch !== null){
-              // ceil 배치 기준 — 표시 제작량과 재료량 일치
               totalQ = mq*essBatch;
             } else {
               totalQ = mq*qty;
@@ -1069,8 +1071,6 @@ function renderOptResult({ planEntries, finalAnalysis, workInv, totalRev, totalV
           }).join(' ');
 
         s+=`<div style="${lStyle}">`;
-        // 에센스/정수(output>1): agg에 raw 필요량. ceil 배치로 제작량과 재료를 함께 계산
-        const essBatch = (!isPA && output>1) ? Math.ceil(qty/output) : null;
         const makeableQty = essBatch !== null ? essBatch*output : qty;
         const effectiveSaved = saved > 0 ? saved : 0;
         const totalQty = makeableQty + effectiveSaved;
@@ -1241,6 +1241,8 @@ function renderOptResult({ planEntries, finalAnalysis, workInv, totalRev, totalV
   } else {
     // 어패류 잔여
     const sfRem = SF_KEYS.map(k=>[k,workInv[k]||0]).filter(([,v])=>v>0);
+    console.log('[DEBUG] workInv in renderOptResult:', JSON.stringify(workInv));
+    console.log('[DEBUG] sfRem:', JSON.stringify(sfRem));
     // 중간재료(핵·결정·영약) 잔여 — intermHave에서 실제 소비된 양 차감
     // workInv에는 어패류만 있으므로, intermHave 중 compound(핵·결정·영약) 잔여를 별도 계산
     const compRem = [];
