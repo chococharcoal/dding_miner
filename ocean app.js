@@ -268,17 +268,9 @@ function calcSFNeedFromMats(materials) {
     if (SF_SET.has(key)) { need[key] = (need[key]||0) + qty; return; }
     const rec = ALCHEMY[key]; if (!rec) return;
     const output = rec.output || 1;
-    if (output > 1) {
-      // 에센스/정수: 2개 단위로만 제작 가능
-      // 필요량을 올림해서 실제 제작 배치(ceil) 계산 → 어패류 소비량 정확히 반영
-      const batches = Math.ceil(qty / output);
-      for (const [mk, mq] of Object.entries(rec.materials))
-        expand(mk, mq * batches, depth+1);
-    } else {
-      const batches = qty / output;
-      for (const [mk, mq] of Object.entries(rec.materials))
-        expand(mk, mq * batches, depth+1);
-    }
+    const batches = qty / output;
+    for (const [mk, mq] of Object.entries(rec.materials))
+      expand(mk, mq * batches, depth+1);
   }
   for (const [mk, mq] of Object.entries(materials)) expand(mk, mq);
   return need;
@@ -628,6 +620,7 @@ async function calcOpt() {
       bestRev = lsSol.rev;
       bestPlan = {...lsSol.plan};
       workInv  = {...lsSol.remInv};
+      console.log('[DEBUG] workInv after best plan:', JSON.stringify(workInv));
     }
   }
 
