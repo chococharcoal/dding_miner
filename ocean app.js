@@ -268,10 +268,17 @@ function calcSFNeedFromMats(materials) {
     if (SF_SET.has(key)) { need[key] = (need[key]||0) + qty; return; }
     const rec = ALCHEMY[key]; if (!rec) return;
     const output = rec.output || 1;
-    // output > 1(정수/에센스): ceil 배치 — 실제 제작 시 투입 어패류와 일치
-    const batches = output > 1 ? Math.ceil(qty / output) : qty / output;
-    for (const [mk, mq] of Object.entries(rec.materials))
-      expand(mk, mq * batches, depth+1);
+    if (output > 1) {
+      // 에센스/정수: 2개 단위로만 제작 가능
+      // 필요량을 올림해서 실제 제작 배치(ceil) 계산 → 어패류 소비량 정확히 반영
+      const batches = Math.ceil(qty / output);
+      for (const [mk, mq] of Object.entries(rec.materials))
+        expand(mk, mq * batches, depth+1);
+    } else {
+      const batches = qty / output;
+      for (const [mk, mq] of Object.entries(rec.materials))
+        expand(mk, mq * batches, depth+1);
+    }
   }
   for (const [mk, mq] of Object.entries(materials)) expand(mk, mq);
   return need;
@@ -1057,10 +1064,9 @@ function renderOptResult({ planEntries, finalAnalysis, workInv, totalRev, totalV
             let totalQ;
             if(isPA){
               totalQ = mq*qty;
-            } else if(output>1){
-              // ceil 배치: 전체 합산된 qty에 한 번만 ceil → 실제 투입 재료량
-              const batch = Math.ceil(qty/output);
-              totalQ = mq*batch;
+            } else if(essBatch !== null){
+              // ceil 배치 기준 — 표시 제작량과 재료량 일치
+              totalQ = mq*essBatch;
             } else {
               totalQ = mq*qty;
             }
@@ -1070,10 +1076,9 @@ function renderOptResult({ planEntries, finalAnalysis, workInv, totalRev, totalV
           }).join(' ');
 
         s+=`<div style="${lStyle}">`;
-        // 에센스/정수(output>1): agg에 raw 필요량이 쌓여있으므로 ceil 배치로 실제 제작량 계산
-        const makeableQty = (!isPA && output>1)
-          ? Math.ceil(qty/output)*output  // 전체 합산 후 한 번만 ceil → 실제 제작량
-          : qty;
+        // 에센스/정수(output>1): agg에 raw 필요량. ceil 배치로 제작량과 재료를 함께 계산
+        const essBatch = (!isPA && output>1) ? Math.ceil(qty/output) : null;
+        const makeableQty = essBatch !== null ? essBatch*output : qty;
         const effectiveSaved = saved > 0 ? saved : 0;
         const totalQty = makeableQty + effectiveSaved;
         let qtyDisplay = fmtQty(totalQty);
