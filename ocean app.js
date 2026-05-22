@@ -252,7 +252,44 @@ window.calcDaily = () => {
 
 function calcSFNeedForFinal(fKey) {
   const fRec = PRECISION_ALCHEMY[fKey]; if (!fRec) return {};
-  return calcSFNeedFromMats(fRec.materials);
+  // 1단계: 완성품 → 핵/결정/영약 → 에센스/정수/엘릭서 필요량 집계 (output:1 레이어는 소수 허용)
+  // 2단계: 에센스/정수(output>1)는 ceil 배치로 실제 어패류 소비량 계산
+  const SF_SET = new Set(SF_TYPES.flatMap(sf => SF_TIERS.map(t => `${sf}${t}`)));
+  const essNeeded = {}; // essence/elixir 필요량 (소수 허용)
+  const sfNeed = {};
+
+  function expandToEss(key, qty, depth=0) {
+    if (depth > 15 || qty <= 0) return;
+    if (SF_SET.has(key)) { sfNeed[key] = (sfNeed[key]||0) + qty; return; }
+    const rec = ALCHEMY[key]; if (!rec) return;
+    const output = rec.output || 1;
+    if (rec.type === 'essence') {
+      // 에센스/정수: 누적 후 나중에 ceil 처리
+      essNeeded[key] = (essNeeded[key]||0) + qty;
+      return;
+    }
+    // 핵/결정/영약(output:1): 소수 배치로 진행
+    const batches = qty / output;
+    for (const [mk, mq] of Object.entries(rec.materials))
+      expandToEss(mk, mq * batches, depth+1);
+  }
+
+  for (const [mk, mq] of Object.entries(fRec.materials))
+    expandToEss(mk, mq);
+
+  // 에센스/정수: 전체 필요량 합산 후 ceil 배치로 어패류 계산
+  for (const [essKey, essQty] of Object.entries(essNeeded)) {
+    const rec = ALCHEMY[essKey]; if (!rec) continue;
+    const output = rec.output || 1;
+    const batches = output > 1 ? Math.ceil(essQty / output) : essQty;
+    for (const [mk, mq] of Object.entries(rec.materials)) {
+      if (SF_SET.has(mk)) {
+        sfNeed[mk] = (sfNeed[mk]||0) + mq * batches;
+      }
+    }
+  }
+
+  return sfNeed;
 }
 
 function calcSFNeedForFinal_single(alchemyKey) {
@@ -509,9 +546,16 @@ async function calcOpt() {
           let wo=0,wsi=-1;
           for(let si=0;si<5;si++){const over=items.reduce((s,_,ii)=>s+A[ii][si]*sol[ii],0)-stock[si];if(over>wo){wo=over;wsi=si;}}
           if(wsi<0)break;
-          let wi=-1,wa=0;for(let ii=0;ii<n;ii++){if(A[ii][wsi]>wa&&sol[ii]>0){wa=A[ii][wsi];wi=ii;}}
+          // 초과 어패류를 줄일 완성품: 수익 손실이 가장 적은 것 (단가/소비량 비율 최소)
+          let wi=-1, minRatio=Infinity;
+          for(let ii=0;ii<n;ii++){
+            if(A[ii][wsi]>0 && sol[ii]>0){
+              const ratio = finalAnalysis[items[ii]].sellPrice / A[ii][wsi];
+              if(ratio < minRatio){ minRatio=ratio; wi=ii; }
+            }
+          }
           if(wi<0)break;
-          sol[wi]=Math.max(0,sol[wi]-Math.ceil(wo/wa));
+          sol[wi]=Math.max(0,sol[wi]-Math.ceil(wo/A[wi][wsi]));
         }
         return sol;
       }
@@ -648,7 +692,7 @@ async function calcOpt() {
   function collectVan(key,qty,depth=0){if(depth>12)return;if(VANILLA_META[key]){totalVan[key]=(totalVan[key]||0)+qty;return;}const rec=ALCHEMY[key];if(!rec)return;const b=Math.ceil(qty/(rec.output||1));for(const[mk,mq]of Object.entries(rec.materials))collectVan(mk,mq*b,depth+1);}
   for(const[fKey,cnt]of planEntries)for(const[mk,mq]of Object.entries(PRECISION_ALCHEMY[fKey].materials))collectVan(mk,mq*cnt);
 
-  _cachedOptResult = { planEntries, finalAnalysis, workInv, totalRev, totalVan, SF_KEYS, inv, intermHave };
+  _cachedOptResult = { planEntries, finalAnalysis, workInv: {...workInv}, totalRev, totalVan, SF_KEYS, inv, intermHave };
 
   renderOptResult(_cachedOptResult);
 }
@@ -1264,6 +1308,7 @@ function renderOptResult({ planEntries, finalAnalysis, workInv, totalRev, totalV
       if (remaining > 0) compRem.push([key, remaining]);
     }
     remEntries = [...sfRem, ...compRem];
+    console.log('[DEBUG] final remEntries:', JSON.stringify(remEntries));
   }
 
   html+=`<div class="result-box" style="margin-top:12px">`;
