@@ -252,44 +252,7 @@ window.calcDaily = () => {
 
 function calcSFNeedForFinal(fKey) {
   const fRec = PRECISION_ALCHEMY[fKey]; if (!fRec) return {};
-  // 1단계: 완성품 → 핵/결정/영약 → 에센스/정수/엘릭서 필요량 집계 (output:1 레이어는 소수 허용)
-  // 2단계: 에센스/정수(output>1)는 ceil 배치로 실제 어패류 소비량 계산
-  const SF_SET = new Set(SF_TYPES.flatMap(sf => SF_TIERS.map(t => `${sf}${t}`)));
-  const essNeeded = {}; // essence/elixir 필요량 (소수 허용)
-  const sfNeed = {};
-
-  function expandToEss(key, qty, depth=0) {
-    if (depth > 15 || qty <= 0) return;
-    if (SF_SET.has(key)) { sfNeed[key] = (sfNeed[key]||0) + qty; return; }
-    const rec = ALCHEMY[key]; if (!rec) return;
-    const output = rec.output || 1;
-    if (rec.type === 'essence') {
-      // 에센스/정수: 누적 후 나중에 ceil 처리
-      essNeeded[key] = (essNeeded[key]||0) + qty;
-      return;
-    }
-    // 핵/결정/영약(output:1): 소수 배치로 진행
-    const batches = qty / output;
-    for (const [mk, mq] of Object.entries(rec.materials))
-      expandToEss(mk, mq * batches, depth+1);
-  }
-
-  for (const [mk, mq] of Object.entries(fRec.materials))
-    expandToEss(mk, mq);
-
-  // 에센스/정수: 전체 필요량 합산 후 ceil 배치로 어패류 계산
-  for (const [essKey, essQty] of Object.entries(essNeeded)) {
-    const rec = ALCHEMY[essKey]; if (!rec) continue;
-    const output = rec.output || 1;
-    const batches = output > 1 ? Math.ceil(essQty / output) : essQty;
-    for (const [mk, mq] of Object.entries(rec.materials)) {
-      if (SF_SET.has(mk)) {
-        sfNeed[mk] = (sfNeed[mk]||0) + mq * batches;
-      }
-    }
-  }
-
-  return sfNeed;
+  return calcSFNeedFromMats(fRec.materials);
 }
 
 function calcSFNeedForFinal_single(alchemyKey) {
@@ -452,7 +415,6 @@ async function calcOpt() {
     for (const [sf, need] of Object.entries(sfNeed)) {
       if (need <= 0) continue;
       const needInt = Math.ceil(need);
-      const tier = parseInt(sf.slice(-1));
       let avail = curInv[sf] || 0;
       m = Math.min(m, Math.floor(avail / needInt));
     }
@@ -671,6 +633,55 @@ async function calcOpt() {
   showOptLoading(97, `계산 완료 · 최선 ${f(bestRev)}원`);
   await new Promise(r => setTimeout(r, 20));
   await new Promise(r => setTimeout(r, 20));
+
+  // ── 후처리: 에센스 ceil 올림으로 보유량 초과 시 수익 최소 완성품 1개 줄이기 ──
+  {
+    const SF_KEYS_SET = new Set(SF_KEYS);
+    let adjusted = true;
+    while (adjusted) {
+      adjusted = false;
+      // 현재 planEntries 기준으로 실제 어패류 소비량 계산
+      // 에센스(output>1) 레이어: 완성품별 에센스 필요량 합산 후 ceil 배치
+      const sfConsumed = {};
+      for (const [fKey, cnt] of Object.entries(bestPlan)) {
+        if (cnt <= 0) continue;
+        const sfNeed = finalAnalysis[fKey].sfNeed;
+        for (const [sf, need] of Object.entries(sfNeed)) {
+          if (!SF_KEYS_SET.has(sf)) continue;
+          // N개 만들 때 실제 소비 = ceil(N × need)
+          sfConsumed[sf] = (sfConsumed[sf] || 0) + Math.ceil(cnt * need);
+        }
+      }
+      // 초과 어패류 찾기
+      let overSF = null;
+      for (const [sf, consumed] of Object.entries(sfConsumed)) {
+        if (consumed > (inv[sf] || 0)) { overSF = sf; break; }
+      }
+      if (!overSF) break;
+
+      // 이 어패류를 사용하는 완성품 중 수익이 가장 낮은 것 1개 줄이기
+      let minRev = Infinity, minKey = null;
+      for (const [fKey, cnt] of Object.entries(bestPlan)) {
+        if (cnt <= 0) continue;
+        const need = finalAnalysis[fKey].sfNeed[overSF] || 0;
+        if (need > 0 && finalAnalysis[fKey].sellPrice < minRev) {
+          minRev = finalAnalysis[fKey].sellPrice;
+          minKey = fKey;
+        }
+      }
+      if (minKey) {
+        bestPlan[minKey] = Math.max(0, bestPlan[minKey] - 1);
+        adjusted = true;
+      } else break;
+    }
+  }
+
+  // workInv 재계산 (후처리 후)
+  workInv = {...inv};
+  for (const [fKey, cnt] of Object.entries(bestPlan)) {
+    if (cnt <= 0) continue;
+    for (let j = 0; j < cnt; j++) doConsumeSF(finalAnalysis[fKey].sfNeed, workInv);
+  }
 
   const planEntries=Object.entries(bestPlan).filter(([,cnt])=>cnt>0)
     .sort((a,b)=>{
