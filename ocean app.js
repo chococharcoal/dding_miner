@@ -634,32 +634,29 @@ async function calcOpt() {
   await new Promise(r => setTimeout(r, 20));
   await new Promise(r => setTimeout(r, 20));
 
-  // ── 후처리: 에센스 ceil 올림으로 보유량 초과 시 수익 최소 완성품 1개 줄이기 ──
+  // ── 후처리: 에센스 ceil 올림으로 보유량 초과 시 수익 최소 완성품 1개씩 줄이기 ──
   {
     const SF_KEYS_SET = new Set(SF_KEYS);
     let adjusted = true;
     while (adjusted) {
       adjusted = false;
-      // 현재 planEntries 기준으로 실제 어패류 소비량 계산
-      // 에센스(output>1) 레이어: 완성품별 에센스 필요량 합산 후 ceil 배치
+      // 실제 소비량: ceil(need) × cnt (doConsumeSF와 동일 방식)
       const sfConsumed = {};
       for (const [fKey, cnt] of Object.entries(bestPlan)) {
         if (cnt <= 0) continue;
-        const sfNeed = finalAnalysis[fKey].sfNeed;
-        for (const [sf, need] of Object.entries(sfNeed)) {
+        for (const [sf, need] of Object.entries(finalAnalysis[fKey].sfNeed)) {
           if (!SF_KEYS_SET.has(sf)) continue;
-          // N개 만들 때 실제 소비 = ceil(N × need)
-          sfConsumed[sf] = (sfConsumed[sf] || 0) + Math.ceil(cnt * need);
+          sfConsumed[sf] = (sfConsumed[sf] || 0) + Math.ceil(need) * cnt;
         }
       }
-      // 초과 어패류 찾기
+      // SF_KEYS 순서대로 초과 어패류 탐색 (모든 어패류 검사)
       let overSF = null;
-      for (const [sf, consumed] of Object.entries(sfConsumed)) {
-        if (consumed > (inv[sf] || 0)) { overSF = sf; break; }
+      for (const sf of SF_KEYS) {
+        if ((sfConsumed[sf] || 0) > (inv[sf] || 0)) { overSF = sf; break; }
       }
       if (!overSF) break;
 
-      // 이 어패류를 사용하는 완성품 중 수익이 가장 낮은 것 1개 줄이기
+      // 이 어패류를 사용하는 완성품 중 단가 가장 낮은 것 1개 줄이기
       let minRev = Infinity, minKey = null;
       for (const [fKey, cnt] of Object.entries(bestPlan)) {
         if (cnt <= 0) continue;
