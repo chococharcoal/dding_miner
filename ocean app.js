@@ -268,7 +268,8 @@ function calcSFNeedFromMats(materials) {
     if (SF_SET.has(key)) { need[key] = (need[key]||0) + qty; return; }
     const rec = ALCHEMY[key]; if (!rec) return;
     const output = rec.output || 1;
-    const batches = qty / output;
+    // output > 1(정수/에센스): ceil 배치 — 실제 제작 시 투입 어패류와 일치
+    const batches = output > 1 ? Math.ceil(qty / output) : qty / output;
     for (const [mk, mq] of Object.entries(rec.materials))
       expand(mk, mq * batches, depth+1);
   }
