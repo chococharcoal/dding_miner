@@ -268,8 +268,7 @@ function calcSFNeedFromMats(materials) {
     if (SF_SET.has(key)) { need[key] = (need[key]||0) + qty; return; }
     const rec = ALCHEMY[key]; if (!rec) return;
     const output = rec.output || 1;
-    // output > 1(정수/에센스)은 ceil 배치 — 실제 제작 시 투입 어패류 수와 일치
-    const batches = output > 1 ? Math.ceil(qty / output) : qty / output;
+    const batches = qty / output;
     for (const [mk, mq] of Object.entries(rec.materials))
       expand(mk, mq * batches, depth+1);
   }
@@ -972,8 +971,7 @@ function renderOptResult({ planEntries, finalAnalysis, workInv, totalRev, totalV
           for(const[mk3,mq3]of Object.entries(rec2.materials)){
             const rec3=ALCHEMY[mk3];if(!rec3||rec3.type!=='essence')continue;
             const essKey=rec3.tier===1?'ess1':rec3.tier===2?'ess2':'ess3';
-            const needEss=mq3*netMk2; // output:1이므로 배치수=netMk2
-            // 보유 essence 차감
+            const needEss=mq3*netMk2;
             const haveEss=aggRemain[mk3]||0;
             const useEss=Math.min(haveEss,needEss);
             if(useEss>0){
@@ -1054,9 +1052,10 @@ function renderOptResult({ planEntries, finalAnalysis, workInv, totalRev, totalV
           }).join(' ');
 
         s+=`<div style="${lStyle}">`;
-        // 정수/에센스(output:2): ceil 배치로 실제 생산량 표시 (잉여 최대 1개 발생 가능)
-        const makeableBatch = output>1 ? Math.ceil(qty/output) : qty;
-        const makeableQty = isPA ? qty : makeableBatch*output;
+        // 에센스/정수(output:2): agg에 필요 개수가 들어있으므로 그대로 표시
+        // 완성품(isPA): qty 그대로
+        const makeableBatch = (!isPA && output>1) ? Math.ceil(qty/output) : qty;
+        const makeableQty = (!isPA && output>1) ? makeableBatch*output : qty;
         const effectiveSaved = saved > 0 ? saved : 0;
         const totalQty = makeableQty + effectiveSaved;
         let qtyDisplay = fmtQty(totalQty);
@@ -2173,7 +2172,6 @@ window.onOceanSaleCraftFeeChange  = onOceanSaleCraftFeeChange;
 window.onOceanSaleCraftRatioChange= onOceanSaleCraftRatioChange;
 window.calcOceanSaleCraft         = calcOceanSaleCraft;
 window.calcOceanSaleSF = calcOceanSaleSF;
-
 
 /* ════════════════════════════════════════
    ⑭ DOMContentLoaded
