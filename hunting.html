@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>사냥 계산기</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Jua&family=Noto+Sans+KR:wght@500;700;900&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+*,input,select,button,textarea{font-family:'Noto Sans KR','Apple SD Gothic Neo',sans-serif!important;font-weight:700}
+:root{
+  --bg:#fdf2ee;--surf:#fff;--bdr:#f0cec4;--bdr2:#e0a090;
+  --txt:#2a1208;--muted:#906050;--acc:#d4522a;--acc2:#e8704a;
+  --grn:#3a9e68;--grn-bg:#edf8f2;--red:#d4522a;--red-bg:#fef0ee;
+  --ylw:#c89c00;--ylw-bg:#fffbe8;--blu:#2060c8;--blu-bg:#eef3fc;
+  --r:12px;--rs:8px;--sh:0 2px 10px rgba(180,80,40,.10);
+}
+html,body{min-height:100vh;background:var(--bg) radial-gradient(circle at 10% 15%,rgba(212,82,42,.08) 0%,transparent 55%);color:var(--txt)}
+.page{padding:0 0 60px}
+.hdr{text-align:center;padding:22px 16px 16px;position:relative}
+.hdr-back{position:absolute;left:16px;top:50%;transform:translateY(-50%);font-family:'Jua',sans-serif!important;font-size:13px;color:var(--muted);text-decoration:none;display:inline-flex;align-items:center;gap:4px;padding:6px 12px;border-radius:20px;border:1.5px solid var(--bdr2);background:var(--surf);transition:all .15s}
+.hdr-back:hover{border-color:var(--acc);color:var(--acc)}
+.hdr-title{font-family:'Jua',sans-serif!important;font-size:26px;color:var(--acc);letter-spacing:-.5px}
+.hdr-tab-name{font-family:'Jua',sans-serif!important;font-size:13px;color:var(--muted);margin-top:4px}
+.bounce{display:inline-block;animation:bounce 2s ease-in-out infinite}
+@keyframes bounce{0%,100%{transform:translateY(0)}50%{transform:translateY(-5px)}}
+.layout{display:block;padding:0 16px}
+@media(min-width:900px){
+  .sidebar{position:fixed;top:0;left:0;width:360px;height:100vh;overflow-y:auto;padding:16px 12px;background:var(--bg);border-right:1.5px solid var(--bdr);z-index:100}
+  .hdr{padding:22px 16px 16px 376px}
+  .main{padding:0 16px 0 376px;display:flex;flex-direction:column;align-items:center}
+  .main>*{width:100%;max-width:760px}
+}
+.skpanel{background:var(--surf);border:1.5px solid var(--bdr);border-radius:var(--r);padding:14px;box-shadow:var(--sh);margin-bottom:14px}
+.skpanel-title{font-family:'Jua',sans-serif!important;font-size:15px;color:var(--acc);display:flex;align-items:center;gap:6px;cursor:pointer;user-select:none;margin-bottom:10px}
+.skpanel-title:hover{color:var(--acc2)}
+.toggle-arrow{font-size:11px;margin-left:auto;transition:transform .2s}
+.skpanel.collapsed .toggle-arrow{transform:rotate(-90deg)}
+.skpanel.collapsed .skbody{display:none}
+.sksec{font-size:11px;font-weight:700;color:var(--muted);letter-spacing:.5px;margin:10px 0 6px;padding-bottom:3px;border-bottom:1px dashed var(--bdr2)}
+.skgrid{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.skrow{background:var(--bg);border:1px solid var(--bdr);border-radius:var(--rs);padding:8px 10px;display:flex;flex-direction:column;gap:3px}
+.skname{font-family:'Jua',sans-serif!important;font-size:12px;color:var(--txt);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.skrow select{font-size:11px!important;font-weight:700!important;border:1.5px solid var(--bdr2);border-radius:var(--rs);padding:4px 6px;background:var(--surf);color:var(--txt);outline:none;width:100%;cursor:pointer}
+.skrow select.cdd-ready,.field select.cdd-ready{display:none}
+.skinfo{font-size:10px;color:var(--muted);font-weight:500;min-height:13px}
+.cdd{position:relative;width:100%}
+.skrow .cdd-trigger,.field .cdd-trigger{display:flex;align-items:center;justify-content:space-between;gap:4px;padding:5px 7px;border:1.5px solid var(--bdr2);border-radius:var(--rs);background:var(--surf);color:var(--txt);font-size:11px!important;font-weight:700!important;cursor:pointer;user-select:none;line-height:1.3;white-space:nowrap;overflow:hidden}
+.field .cdd-trigger{padding:7px 10px;font-size:12px!important;background:var(--bg);border-color:var(--bdr)}
+.skrow .cdd-trigger:hover,.field .cdd-trigger:hover{border-color:var(--acc)}
+.cdd-label{overflow:hidden;text-overflow:ellipsis;min-width:0;flex:1}
+.cdd-trigger .cdd-arrow{font-size:9px;color:var(--muted);flex-shrink:0;transition:transform .15s}
+.cdd.open .cdd-trigger{border-color:var(--acc);box-shadow:0 0 0 2px rgba(212,82,42,.15)}
+.cdd.open .cdd-arrow{transform:rotate(180deg)}
+.cdd-menu{display:none;position:absolute;top:calc(100% + 3px);left:0;right:0;background:var(--surf);border:1.5px solid var(--acc);border-radius:var(--rs);box-shadow:0 6px 20px rgba(0,0,0,.12);z-index:9999;max-height:220px;overflow-y:auto}
+.cdd.open .cdd-menu{display:block}
+.cdd-item{padding:5px 10px;font-size:11px!important;font-weight:700!important;color:var(--txt);cursor:pointer;border-bottom:1px solid var(--bdr);line-height:1.3}
+.cdd-item:last-child{border-bottom:none}
+.cdd-item:hover{background:var(--ylw-bg);color:var(--acc)}
+.cdd-item.selected{background:var(--acc);color:#fff}
+.tabbar{display:flex;align-items:center;flex-wrap:wrap;gap:7px;margin-bottom:12px}
+.tab{font-family:'Jua',sans-serif!important;font-size:13px;padding:7px 14px;border-radius:20px;border:2px solid var(--bdr2);background:var(--surf);color:var(--muted);cursor:pointer;transition:all .15s;white-space:nowrap}
+.tab:hover{border-color:var(--acc);color:var(--acc)}
+.tab.on{background:var(--acc);border-color:var(--acc);color:#fff;box-shadow:0 3px 10px rgba(212,82,42,.3)}
+.reset-btn{font-family:'Jua',sans-serif!important;font-size:12px;padding:5px 11px;border-radius:20px;border:1.5px solid var(--bdr2);background:var(--surf);color:var(--muted);cursor:pointer;transition:all .15s}
+.reset-btn:hover{border-color:var(--red);color:var(--red);background:var(--red-bg)}
+.panel{display:flex;flex-direction:column;gap:16px}
+.card{background:var(--surf);border:1.5px solid var(--bdr);border-radius:var(--r);padding:14px 15px;box-shadow:var(--sh)}
+.card-title{font-family:'Jua',sans-serif!important;font-size:14px;color:var(--txt);margin-bottom:10px;display:flex;align-items:center;gap:6px}
+.card-title::before{content:'';display:inline-block;width:4px;height:14px;background:var(--acc);border-radius:2px}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}
+.g4{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:8px}
+@media(max-width:500px){.g3{grid-template-columns:1fr 1fr}.g4{grid-template-columns:1fr 1fr}}
+.field{display:flex;flex-direction:column;gap:3px}
+.field label{font-size:10px;font-weight:700;color:var(--muted);line-height:1.3}
+.field input{font-size:13px!important;font-weight:700!important;border:1.5px solid var(--bdr);border-radius:var(--rs);padding:6px 9px;background:var(--bg);color:var(--txt);outline:none;width:100%;transition:border-color .15s,box-shadow .15s}
+.field input:focus{border-color:var(--acc);box-shadow:0 0 0 3px rgba(212,82,42,.12);background:var(--surf)}
+.field input::placeholder{color:#d0a0a0;font-weight:500}
+.slabel{font-family:'Jua',sans-serif!important;font-size:12px;color:var(--acc);margin:8px 0 5px;display:flex;align-items:center;gap:5px}
+.slabel::after{content:'';flex:1;height:1px;background:var(--bdr2)}
+.rrow{display:flex;justify-content:space-between;align-items:center;padding:4px 0;border-bottom:1px dashed var(--bdr);gap:8px;font-size:12px}
+.rrow:last-child{border-bottom:none}
+.rrow-strong{border-top:1px solid var(--bdr2);margin-top:4px;padding-top:5px;font-size:13px;font-weight:900!important}
+.rl{color:var(--muted);flex-shrink:0;font-weight:700}
+.rv{font-weight:900;text-align:right}
+.rsec{background:var(--bg);border-radius:var(--rs);padding:8px 10px;margin:5px 0;border:1px solid var(--bdr)}
+.rsec-title{font-family:'Jua',sans-serif!important;font-size:12px;color:var(--muted);margin-bottom:5px}
+.g{color:var(--grn)}.r{color:var(--red)}
+.result-box{background:linear-gradient(135deg,#fff2ee,#ffe8de);border:2px solid var(--acc2);border-radius:var(--rs);padding:12px;margin:8px 0 0}
+.rb-label{font-size:11px;color:var(--muted);font-weight:700;margin-bottom:3px}
+.rb-value{font-family:'Jua',sans-serif!important;font-size:20px;color:var(--acc)}
+.empty-msg{color:var(--muted);font-size:12px;text-align:center;padding:14px 0;font-weight:500}
+.sf-tog-wrap{display:flex;align-items:center;gap:10px;cursor:pointer;user-select:none;padding:8px 10px;background:var(--bg);border:1.5px solid var(--bdr);border-radius:var(--rs);margin-bottom:8px;transition:border-color .15s}
+.sf-tog-wrap:hover{border-color:var(--acc)}
+.sf-tog-track{position:relative;width:36px;height:20px;background:var(--bdr2);border-radius:10px;flex-shrink:0;transition:background .2s;display:inline-block}
+.sf-tog-thumb{position:absolute;top:2px;left:2px;width:16px;height:16px;background:#fff;border-radius:50%;box-shadow:0 1px 4px rgba(0,0,0,.2);transition:transform .2s;display:block}
+.sf-tog-label{font-family:'Jua',sans-serif!important;font-size:13px;color:var(--txt);flex-shrink:0}
+.sf-tog-desc{font-size:10px;color:var(--muted);font-weight:500}
+input[type=checkbox].sf-tog-input{display:none}
+.sf-tog-input:checked+.sf-tog-track{background:var(--acc)}
+.sf-tog-input:checked+.sf-tog-track .sf-tog-thumb{transform:translateX(16px)}
+.sf-tog-input:checked~.sf-tog-label{color:var(--acc)}
+input[type=number]::-webkit-inner-spin-button,
+input[type=number]::-webkit-outer-spin-button{-webkit-appearance:none;appearance:none;margin:0}
+input[type=number]{-moz-appearance:textfield;appearance:textfield}
+::-webkit-scrollbar{width:5px}
+::-webkit-scrollbar-thumb{background:var(--bdr2);border-radius:3px}
+/* 동물 칩 */
+.animal-chip{display:inline-flex;align-items:center;gap:4px;padding:3px 8px;border-radius:12px;border:1.5px solid var(--bdr2);background:var(--bg);font-size:11px;font-weight:700}
+/* 결과 테이블 */
+.res-table{width:100%;border-collapse:collapse;font-size:12px}
+.res-table th{background:var(--bg);border:1px solid var(--bdr);padding:5px 8px;font-family:'Jua',sans-serif!important;font-size:11px;color:var(--muted);text-align:center}
+.res-table td{border:1px solid var(--bdr);padding:5px 8px;text-align:center;font-weight:700}
+.res-table tr:nth-child(even) td{background:#f8f6ff}
+</style>
+</head>
+<body>
+<div class="page">
+<div class="hdr">
+  <a class="hdr-back" href="index.html">← 허브</a>
+  <div class="hdr-title"><span class="bounce">🏹</span> 사냥 계산기</div>
+  <div class="hdr-tab-name" id="pageTabTitle">하루 수익 예상</div>
+</div>
+<div class="layout">
+  <!-- 사이드바 -->
+  <div class="sidebar">
+    <!-- 스킬 패널 -->
+    <div class="skpanel" id="skillPanel">
+      <div class="skpanel-title" onclick="toggleSkillPanel()">
+        ⚔️ 전문가 스킬 <span class="toggle-arrow">▼</span>
+      </div>
+      <div class="skbody">
+        <div class="sksec">전투 스킬</div>
+        <div class="skgrid">
+          <div class="skrow">
+            <div class="skname">⚔️ 대검 강화</div>
+            <select id="skillSwordLevel" onchange="onSkillChange()">
+              <option value="0">강화 없음</option>
+              <option value="1">1강</option><option value="2">2강</option><option value="3">3강</option>
+              <option value="4">4강</option><option value="5">5강</option><option value="6">6강</option>
+              <option value="7">7강</option><option value="8">8강</option><option value="9">9강</option>
+              <option value="10">10강</option><option value="11">11강</option><option value="12">12강</option>
+              <option value="13">13강</option><option value="14">14강</option><option value="15">15강</option>
+            </select>
+            <div class="skinfo" id="infoSword">기본</div>
+          </div>
+          <div class="skrow">
+            <div class="skname">💥 콤보 유지</div>
+            <select id="skillComboMax" onchange="onSkillChange()">
+              <option value="10">기본 (최대 10콤보)</option>
+              <option value="15">15콤보</option>
+              <option value="20">20콤보</option>
+            </select>
+            <div class="skinfo" id="infoCombo">기본</div>
+          </div>
+          <div class="skrow">
+            <div class="skname">🎯 전리품 추가 드롭</div>
+            <select id="skillExtraDrop" onchange="onSkillChange()">
+              <option value="0">없음</option>
+              <option value="1">Lv1 +1개</option>
+              <option value="2">Lv2 +2개</option>
+            </select>
+            <div class="skinfo" id="infoExtraDrop">없음</div>
+          </div>
+          <div class="skrow">
+            <div class="skname">🪙 판매 보너스</div>
+            <select id="skillSellBonus" onchange="onSkillChange()">
+              <option value="0">없음 (0%)</option>
+              <option value="5">Lv1 (+5%)</option>
+              <option value="10">Lv2 (+10%)</option>
+              <option value="15">Lv3 (+15%)</option>
+              <option value="20">Lv4 (+20%)</option>
+            </select>
+            <div class="skinfo" id="infoSellBonus">없음</div>
+          </div>
+        </div>
+        <div class="sksec">기타</div>
+        <div class="skgrid">
+          <div class="skrow">
+            <div class="skname">❤️ 호감도 보너스</div>
+            <select id="skillAffinity" onchange="onSkillChange()">
+              <option value="0">없음 (0%)</option>
+              <option value="5">+5%</option>
+              <option value="10">+10%</option>
+              <option value="15">+15%</option>
+            </select>
+            <div class="skinfo" id="infoAffinity">없음</div>
+          </div>
+          <div class="skrow">
+            <div class="skname">🔥 80% 옵션</div>
+            <select id="skillEightyPct" onchange="onSkillChange()">
+              <option value="0">없음</option>
+              <option value="1">적용</option>
+            </select>
+            <div class="skinfo" id="infoEightyPct">없음</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <!-- 스태미나 -->
+    <div class="skpanel">
+      <div class="skpanel-title">⚡ 기본 설정</div>
+      <div class="skgrid">
+        <div class="skrow">
+          <div class="skname">스태미나</div>
+          <input id="totalStamina" type="number" inputmode="numeric" placeholder="0" oninput="calcDaily()" style="border:1.5px solid var(--bdr2);border-radius:var(--rs);padding:4px 7px;background:var(--surf);font-size:12px!important;font-weight:700!important;outline:none;width:100%">
+        </div>
+        <div class="skrow">
+          <div class="skname">평균 콤보</div>
+          <input id="avgCombo" type="number" inputmode="numeric" placeholder="5" min="1" max="20" oninput="calcDaily()" style="border:1.5px solid var(--bdr2);border-radius:var(--rs);padding:4px 7px;background:var(--surf);font-size:12px!important;font-weight:700!important;outline:none;width:100%">
+          <div class="skinfo">1~20 콤보 평균</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 메인 -->
+  <div class="main">
+    <div class="tabbar">
+      <div class="tab on" onclick="sw(0,this)">🏹 하루 수익</div>
+      <div class="tab" onclick="sw(1,this)">💰 시세 입력</div>
+      <div class="tab" onclick="sw(2,this)">⚗️ 제작 계산</div>
+      <button class="reset-btn" onclick="resetAll()">↺ 초기화</button>
+    </div>
+
+    <!-- TAB 0: 하루 수익 -->
+    <div id="t0" class="panel">
+      <div class="card">
+        <div class="card-title">🏹 하루 예상 수익</div>
+        <div id="dailyRes"><div class="empty-msg">스태미나를 입력하면 계산됩니다</div></div>
+      </div>
+    </div>
+
+    <!-- TAB 1: 시세 입력 -->
+    <div id="t1" class="panel" style="display:none">
+      <!-- 육식동물 기본가 -->
+      <div class="card">
+        <div class="card-title">🐯 육식 동물 판매가 (수렵꾼 기본가)</div>
+        <div class="g3" id="carnivoreGrid"></div>
+      </div>
+      <!-- 몬스터 심장 -->
+      <div class="card">
+        <div class="card-title">💀 몬스터 심장 시세</div>
+        <div class="g2">
+          <div class="field"><label>좀비의 심장 (개당)</label><input id="price_heart_zombie" type="number" inputmode="numeric" placeholder="0" oninput="saveAll()"></div>
+          <div class="field"><label>스켈레톤 심장 (개당)</label><input id="price_heart_skeleton" type="number" inputmode="numeric" placeholder="0" oninput="saveAll()"></div>
+          <div class="field"><label>거미의 심장 (개당)</label><input id="price_heart_spider" type="number" inputmode="numeric" placeholder="0" oninput="saveAll()"></div>
+          <div class="field"><label>크리퍼의 심장 (개당)</label><input id="price_heart_creeper" type="number" inputmode="numeric" placeholder="0" oninput="saveAll()"></div>
+        </div>
+      </div>
+      <!-- 덫 재료 -->
+      <div class="card">
+        <div class="card-title">🪤 덫 재료 시세</div>
+        <div class="g3">
+          <div class="field"><label>에메랄드 (개당)</label><input id="price_emerald" type="number" inputmode="numeric" placeholder="0" oninput="saveAll()"></div>
+          <div class="field"><label>철 (개당)</label><input id="price_iron" type="number" inputmode="numeric" placeholder="0" oninput="saveAll()"></div>
+          <div class="field"><label>거미줄 (개당)</label><input id="price_cobweb" type="number" inputmode="numeric" placeholder="0" oninput="saveAll()"></div>
+          <div class="field"><label>사과 (개당)</label><input id="price_apple" type="number" inputmode="numeric" placeholder="0" oninput="saveAll()"></div>
+          <div class="field"><label>부싯돌 (개당)</label><input id="price_flint" type="number" inputmode="numeric" placeholder="0" oninput="saveAll()"></div>
+        </div>
+        <div style="margin-top:8px;padding:6px 10px;background:var(--bg);border-radius:var(--rs);font-size:11px;color:var(--muted)">
+          💡 육식동물 덫 1개 재료: 에메랄드 10 + 철 8 + 거미줄 2 + 사과 4 + 부싯돌 4 (2개 제작)
+        </div>
+      </div>
+      <!-- 사냥 각인석 -->
+      <div class="card">
+        <div class="card-title">💎 각인석 시세 (사냥)</div>
+        <div class="slabel">🗡️ 대검 전용</div>
+        <div class="g3" id="engravingGrid_sword"></div>
+      </div>
+    </div>
+
+    <!-- TAB 2: 제작 계산 -->
+    <div id="t2" class="panel" style="display:none">
+      <!-- 전리품 → 영혼 → 계약서 -->
+      <div class="card">
+        <div class="card-title">⚗️ 전리품 → 계약서 제작</div>
+        <div class="slabel">🦒 전리품 보유량</div>
+        <div class="g3" id="lootInputGrid"></div>
+        <div style="margin-top:10px">
+          <button onclick="calcCraft()" style="font-family:'Jua',sans-serif!important;font-size:13px;padding:8px 20px;border-radius:20px;border:none;background:var(--acc);color:#fff;cursor:pointer;box-shadow:0 3px 10px rgba(124,82,200,.3)">🔍 계산하기</button>
+        </div>
+        <div id="craftRes" style="margin-top:12px"><div class="empty-msg">전리품 수량을 입력하고 계산하기를 눌러주세요</div></div>
+      </div>
+      <!-- 덫 수익 계산기 -->
+      <div class="card">
+        <div class="card-title">🪤 육식동물 수익 계산</div>
+        <div class="g2">
+          <div class="field"><label>덫 보유 수 (개)</label><input id="trapCount" type="number" inputmode="numeric" placeholder="0" oninput="calcTrap()"></div>
+          <div class="field"><label>소환 알 보유 수 (개)</label><input id="eggCount" type="number" inputmode="numeric" placeholder="0" oninput="calcTrap()"></div>
+        </div>
+        <div id="trapRes" style="margin-top:10px"><div class="empty-msg">덫 수와 소환 알 수를 입력하면 계산됩니다</div></div>
+      </div>
+    </div>
+  </div>
+</div>
+</div>
+<script type="module" src="hunting app.js"></script>
+</body>
+</html>
