@@ -850,19 +850,25 @@ function renderOptResult({ planEntries, finalAnalysis, workInv, totalRev, totalV
         html+=`<div style="font-family:'Jua',sans-serif;font-size:11px;color:var(--muted);margin:4px 0 4px">⚗️ 1차 연금품 — ${fmtTime(t1sec*(1-fr))}</div>`;
         for(const[mk2,mq2]of s2){
           const rec2=ALCHEMY[mk2];if(!rec2)continue;
-          const need2=mq2*cnt, b2=Math.ceil(need2/(rec2.output||1));
-          // 보유 차감: 1차는 essence이므로 보유 표시 가능
+          const output2=rec2.output||1;
+          // 전체 필요량 합산 후 한 번만 ceil → 표시 수량과 재료 수량 일치
+          const need2=mq2*cnt;
           const haveThis=iRemain[mk2]||0;
           const useThis=Math.min(haveThis,need2);
           if(useThis>0)iRemain[mk2]-=useThis;
           const netNeed2=need2-useThis;
-          let resultQty=fmtQty(netNeed2);
+          // 합산된 netNeed2 기준으로 ceil 배치 → 실제 제작량
+          const batch2=Math.ceil(netNeed2/output2);
+          const makeableNet=batch2*output2;
+          // 잉여(makeableNet - netNeed2)는 남은 재료로 표시
+          const surplus2=makeableNet-netNeed2;
+          let resultQty=fmtQty(makeableNet);
           if(useThis>0)resultQty+=` <span style="font-size:9px;opacity:.6">+보유${fmtQty(useThis)}</span>`;
+          if(surplus2>0)resultQty+=` <span style="font-size:9px;opacity:.5">(잉여${fmtQty(surplus2)})</span>`;
           html+=`<div style="${rowStyle}">`;
           html+=resultChip(dispName(mk2), resultQty, getMatColor(mk2));
           html+=dot;
-          // 재료는 실제 제작량(netNeed2) 기준, 보유 표시 없음
-          html+=matChips(rec2.materials, Math.ceil(netNeed2/(rec2.output||1)), true);
+          html+=matChips(rec2.materials, batch2, true);
           html+=`</div>`;
         }
       }
@@ -905,9 +911,16 @@ function renderOptResult({ planEntries, finalAnalysis, workInv, totalRev, totalV
         const netColor2=netTot>=0?'var(--grn)':'var(--red)';
         const netSign2=netTot>=0?'+':'';
         const name=fa2.name.replace(/★+\s*/g,'').replace(/\s*★+/g,'').trim();
+        // 50개 단위 분할 표시
+        let cntStr = fmtQty(cnt);
+        if(cnt > 50){
+          const parts2=[];let rem2=cnt;
+          while(rem2>0){parts2.push(Math.min(rem2,50));rem2-=50;}
+          cntStr += `<span style="font-size:10px;color:var(--muted);font-weight:500;margin-left:3px">(${parts2.join('+')})</span>`;
+        }
         html+=`<div style="${lStyle}">`;
         html+=`<span style="${chipB};background:${color2}18;border:1.5px solid ${color2};min-width:100px"><span style="color:${color2}">${name}</span></span>`;
-        html+=`<span style="font-size:12px;color:var(--muted);flex-shrink:0">${fmtQty(cnt)}개</span>`;
+        html+=`<span style="font-size:12px;color:var(--muted);flex-shrink:0">${cntStr}</span>`;
         html+=`<span style="font-size:12px;color:var(--txt);font-weight:900;flex-shrink:0">${f(rev)}원</span>`;
         html+=`<span style="font-size:11px;color:${netColor2};margin-left:auto;flex-shrink:0">${netSign2}${f(netTot)}원</span>`;
         html+=`</div>`;
@@ -1120,9 +1133,15 @@ function renderOptResult({ planEntries, finalAnalysis, workInv, totalRev, totalV
         const netColor2=netTot>=0?'var(--grn)':'var(--red)';
         const netSign2=netTot>=0?'+':'';
         const name=fa2.name.replace(/★+\s*/g,'').replace(/\s*★+/g,'').trim();
+        let qtyStr2 = fmtQty(qty);
+        if(qty > 50){
+          const parts2=[];let rem2=qty;
+          while(rem2>0){parts2.push(Math.min(rem2,50));rem2-=50;}
+          qtyStr2 += `<span style="font-size:10px;color:var(--muted);font-weight:500;margin-left:3px">(${parts2.join('+')})</span>`;
+        }
         html+=`<div style="${lStyle}">`;
         html+=`<span style="${chipB};background:${color2}18;border:1.5px solid ${color2};min-width:100px"><span style="color:${color2}">${name}</span></span>`;
-        html+=`<span style="font-size:12px;color:var(--muted);flex-shrink:0">${fmtQty(qty)}개</span>`;
+        html+=`<span style="font-size:12px;color:var(--muted);flex-shrink:0">${qtyStr2}</span>`;
         html+=`<span style="font-size:12px;color:var(--txt);font-weight:900;flex-shrink:0">${f(rev)}원</span>`;
         html+=`<span style="font-size:11px;color:${netColor2};margin-left:auto;flex-shrink:0">${netSign2}${f(netTot)}원</span>`;
         html+=`</div>`;
@@ -1224,7 +1243,29 @@ function renderOptResult({ planEntries, finalAnalysis, workInv, totalRev, totalV
     }
     remEntries = Object.entries(procRem).filter(([,v])=>v>0);
   } else {
-    remEntries = SF_KEYS.map(k=>[k,workInv[k]||0]).filter(([,v])=>v>0);
+    // 어패류 잔여
+    const sfRem = SF_KEYS.map(k=>[k,workInv[k]||0]).filter(([,v])=>v>0);
+    // 중간재료(핵·결정·영약) 잔여 — intermHave에서 실제 소비된 양 차감
+    // workInv에는 어패류만 있으므로, intermHave 중 compound(핵·결정·영약) 잔여를 별도 계산
+    const compRem = [];
+    for (const [key, haveQty] of Object.entries(intermHave)) {
+      if (haveQty <= 0) continue;
+      const rec = ALCHEMY[key]; if (!rec) continue;
+      if (rec.type !== 'compound') continue; // 핵·결정·영약만
+      // 실제 소비량 = intermHave[key] - workInv에 남은 양
+      // workInv에 compound 키는 없으므로, aggRemain에서 추적했어야 하나
+      // renderOptResult에서 aggRemain은 로컬변수라 접근 불가
+      // 대신: _cachedOptResult에 intermHave가 있고, planEntries로 소비량 재계산
+      let used = 0;
+      for (const [fKey, cnt] of planEntries) {
+        const fRec = PRECISION_ALCHEMY[fKey]; if (!fRec) continue;
+        const mq = fRec.materials[key] || 0;
+        used += mq * cnt;
+      }
+      const remaining = Math.max(0, haveQty - used);
+      if (remaining > 0) compRem.push([key, remaining]);
+    }
+    remEntries = [...sfRem, ...compRem];
   }
 
   html+=`<div class="result-box" style="margin-top:12px">`;
@@ -1233,7 +1274,20 @@ function renderOptResult({ planEntries, finalAnalysis, workInv, totalRev, totalV
 
     // 잉여 중간재료 분류
     const intermByGroup={sf:[],ess1:[],core:[],ess2:[],crys:[],ess3:[],poti:[]};
-    for(const[k,v]of remEntries) intermByGroup.sf.push([k,v]);
+    for(const[k,v]of remEntries){
+      const rec=ALCHEMY[k];
+      if(!rec){
+        // 어패류
+        intermByGroup.sf.push([k,v]);
+      } else if(rec.type==='compound'){
+        if(rec.tier===1)       intermByGroup.core.push([k,v]);
+        else if(rec.tier===2)  intermByGroup.crys.push([k,v]);
+        else if(rec.tier===3)  intermByGroup.poti.push([k,v]);
+        else                   intermByGroup.sf.push([k,v]);
+      } else {
+        intermByGroup.sf.push([k,v]);
+      }
+    }
     for(const[k,v]of Object.entries(leftoverInterm)){
       if(v<=0)continue;
       const rec=ALCHEMY[k]; if(!rec) continue;
