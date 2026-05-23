@@ -654,6 +654,9 @@ async function calcOpt() {
       for (const sf of SF_KEYS) {
         if ((sfConsumed[sf] || 0) > (inv[sf] || 0)) { overSF = sf; break; }
       }
+      console.log('[DEBUG] sfConsumed:', JSON.stringify(sfConsumed));
+      console.log('[DEBUG] inv sf:', JSON.stringify(Object.fromEntries(SF_KEYS.map(k=>[k,inv[k]||0]))));
+      console.log('[DEBUG] overSF:', overSF, '| bestPlan:', JSON.stringify(bestPlan));
       if (!overSF) break;
 
       // 이 어패류를 사용하는 완성품 중 단가 가장 낮은 것 1개 줄이기
