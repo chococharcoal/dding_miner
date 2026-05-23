@@ -640,13 +640,36 @@ async function calcOpt() {
     let adjusted = true;
     while (adjusted) {
       adjusted = false;
-      // 실제 소비량: ceil(need) × cnt (doConsumeSF와 동일 방식)
-      const sfConsumed = {};
+      // 어패류 소비량: 에센스 필요량을 완성품별로 합산 후 ceil 배치로 계산
+      // sfNeed 소수로는 부정확 → 에센스 레이어 직접 역추적
+      const essConsumed = {}; // essence key → 총 필요량
+      const sfDirectConsumed = {}; // 에센스 없이 직접 소비되는 어패류 (엘릭서 등)
       for (const [fKey, cnt] of Object.entries(bestPlan)) {
         if (cnt <= 0) continue;
-        for (const [sf, need] of Object.entries(finalAnalysis[fKey].sfNeed)) {
-          if (!SF_KEYS_SET.has(sf)) continue;
-          sfConsumed[sf] = (sfConsumed[sf] || 0) + Math.ceil(need) * cnt;
+        const fRec = PRECISION_ALCHEMY[fKey]; if (!fRec) continue;
+        // 완성품 재료를 재귀 전개해서 에센스/어패류 집계
+        function walkForSF(key, qty) {
+          if (!key || qty <= 0) return;
+          if (SF_KEYS_SET.has(key)) { sfDirectConsumed[key] = (sfDirectConsumed[key]||0) + qty; return; }
+          const rec = ALCHEMY[key]; if (!rec) return;
+          const output = rec.output || 1;
+          if (rec.type === 'essence') {
+            essConsumed[key] = (essConsumed[key]||0) + qty; return;
+          }
+          // output:1 레이어 (핵/결정/영약): 소수 배치로 전개
+          for (const [mk, mq] of Object.entries(rec.materials)) walkForSF(mk, mq * qty / output);
+        }
+        for (const [mk, mq] of Object.entries(fRec.materials)) walkForSF(mk, mq * cnt);
+      }
+      // 에센스 → 어패류: 전체 합산 후 ceil 배치
+      const sfConsumed = {...sfDirectConsumed};
+      for (const [essKey, essQty] of Object.entries(essConsumed)) {
+        const rec = ALCHEMY[essKey]; if (!rec) continue;
+        const output = rec.output || 1;
+        const batches = output > 1 ? Math.ceil(essQty / output) : essQty;
+        for (const [mk, mq] of Object.entries(rec.materials)) {
+          if (!SF_KEYS_SET.has(mk)) continue;
+          sfConsumed[mk] = (sfConsumed[mk]||0) + mq * batches;
         }
       }
       // SF_KEYS 순서대로 초과 어패류 탐색 (모든 어패류 검사)
