@@ -320,6 +320,7 @@ async function calcOpt() {
   const inv = {};
   const intermHave = {};
   const useProc = document.getElementById('useProcToggle')?.checked ?? false;
+  const sfHave = {}; // 순수 어패류 보유량 (중간재료 환산분 제외) — 후처리 초과 비교용
 
   if (!useProc) {
     /* ── 어패류 입력 모드 (기존) ── */
@@ -327,6 +328,8 @@ async function calcOpt() {
       const v = readSplitQty(`have_${sf}_${t}`);
       if (v > 0) inv[`${sf}${t}`] = (inv[`${sf}${t}`]||0) + v;
     }
+    // 순수 어패류 보유량 별도 저장
+    Object.assign(sfHave, inv);
 
     // 중간재료 수집 후 하위 어패류로 전개
     document.querySelectorAll('#intermList .interm-row').forEach(row => {
@@ -385,6 +388,10 @@ async function calcOpt() {
     for (const [key, qty] of Object.entries(intermHave)) {
       if (SF_SET2.has(key) || ALCHEMY[key]) inv[key] = (inv[key]||0) + qty;
     }
+    // useProc: inv의 어패류가 실질 보유량
+    SF_TYPES.flatMap(sf => SF_TIERS.map(t => `${sf}${t}`)).forEach(k => {
+      if (inv[k] > 0) sfHave[k] = inv[k];
+    });
   }
 
   const SF_KEYS = SF_TYPES.flatMap(sf => SF_TIERS.map(t => `${sf}${t}`));
@@ -626,7 +633,6 @@ async function calcOpt() {
       bestRev = lsSol.rev;
       bestPlan = {...lsSol.plan};
       workInv  = {...lsSol.remInv};
-      console.log('[DEBUG] workInv after best plan:', JSON.stringify(workInv));
     }
   }
 
@@ -675,11 +681,9 @@ async function calcOpt() {
       // SF_KEYS 순서대로 초과 어패류 탐색 (모든 어패류 검사)
       let overSF = null;
       for (const sf of SF_KEYS) {
-        if ((sfConsumed[sf] || 0) > (inv[sf] || 0)) { overSF = sf; break; }
+        if ((sfConsumed[sf] || 0) > (sfHave[sf] || 0)) { overSF = sf; break; }
       }
-      console.log('[DEBUG] sfConsumed:', JSON.stringify(sfConsumed));
-      console.log('[DEBUG] inv sf:', JSON.stringify(Object.fromEntries(SF_KEYS.map(k=>[k,inv[k]||0]))));
-      console.log('[DEBUG] overSF:', overSF, '| bestPlan:', JSON.stringify(bestPlan));
+
       if (!overSF) break;
 
       // 이 어패류를 사용하는 완성품 중 단가 가장 낮은 것 1개 줄이기
@@ -1090,9 +1094,6 @@ function renderOptResult({ planEntries, finalAnalysis, workInv, totalRev, totalV
         }
       }
     }
-    console.log('[DEBUG] planEntries:', JSON.stringify(Object.fromEntries(planEntries)));
-    console.log('[DEBUG] agg.ess1:', JSON.stringify(agg.ess1));
-    console.log('[DEBUG] agg.core:', JSON.stringify(agg.core));
 
     function stageSection(label,emoji,aggMap,secKey,accentColor,orderArr){
       const entries=sortedEntries(aggMap,orderArr);
@@ -1319,8 +1320,6 @@ function renderOptResult({ planEntries, finalAnalysis, workInv, totalRev, totalV
   } else {
     // 어패류 잔여
     const sfRem = SF_KEYS.map(k=>[k,workInv[k]||0]).filter(([,v])=>v>0);
-    console.log('[DEBUG] workInv in renderOptResult:', JSON.stringify(workInv));
-    console.log('[DEBUG] sfRem:', JSON.stringify(sfRem));
     // 중간재료(핵·결정·영약) 잔여 — intermHave에서 실제 소비된 양 차감
     // workInv에는 어패류만 있으므로, intermHave 중 compound(핵·결정·영약) 잔여를 별도 계산
     const compRem = [];
@@ -1342,7 +1341,6 @@ function renderOptResult({ planEntries, finalAnalysis, workInv, totalRev, totalV
       if (remaining > 0) compRem.push([key, remaining]);
     }
     remEntries = [...sfRem, ...compRem];
-    console.log('[DEBUG] final remEntries:', JSON.stringify(remEntries));
   }
 
   html+=`<div class="result-box" style="margin-top:12px">`;
@@ -1868,7 +1866,6 @@ function initOneCdd(sel){
 }
 function syncDropdownLabels(){document.querySelectorAll('.skrow select,.field select').forEach(sel=>{const cdd=sel.previousElementSibling;if(!cdd?.classList.contains('cdd'))return;const lbl=cdd.querySelector('.cdd-label');if(lbl)lbl.textContent=sel.options[sel.selectedIndex]?.text||'';cdd.querySelectorAll('.cdd-item').forEach(item=>item.classList.toggle('selected',item.dataset.value===sel.value));});}
 document.addEventListener('click',e=>{if(!e.target.closest('.cdd'))document.querySelectorAll('.cdd.open').forEach(el=>el.classList.remove('open'));});
-
 
 /* ══════════════════════════════════════════════════════════════════
    해양 판매가 계산기 (TAB 3)   ocean app.js 맨 끝에 붙여넣기
