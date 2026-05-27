@@ -101,7 +101,7 @@ export function sw(i, el) {
     if (p) p.style.display = 'none';
   }
   el.classList.add('on');
-  document.getElementById('t' + i).style.display = 'block';
+  document.getElementById('t'+i).style.display = 'flex';
   const titleEl = document.getElementById('pageTabTitle');
   if (titleEl && TAB_TITLES[i]) titleEl.textContent = TAB_TITLES[i];
   document.title = `채광 계산기 — ${TAB_TITLES[i]}`;

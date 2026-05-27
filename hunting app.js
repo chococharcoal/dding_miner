@@ -91,7 +91,7 @@ window.sw = (i, el) => {
   document.querySelectorAll('.tab').forEach(t => t.classList.remove('on'));
   [0,1,2].forEach(k => { const p = document.getElementById('t'+k); if (p) p.style.display = 'none'; });
   el.classList.add('on');
-  document.getElementById('t'+i).style.display = 'block';
+  document.getElementById('t'+i).style.display = 'flex';
   const t = document.getElementById('pageTabTitle'); if (t) t.textContent = TAB_TITLES[i];
   document.title = `사냥 계산기 — ${TAB_TITLES[i]}`;
 };
