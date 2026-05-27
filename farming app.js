@@ -295,7 +295,7 @@ window.calcDishEff=()=>{
     }
     const bonusTxt = totalBonus > 0 ? ` +${Math.round(totalBonus*100)}%` : '';
     const priceInfo = hasPrice
-      ? `판매가 ${f(r.inputPrice)}원 → 스킬 적용 ${f(r.skillSellPrice)}원${bonusTxt}<br>총 재료비 ${f(Math.round(r.cost))}원`
+      ? `판매가 ${f(r.inputPrice)}원 → 스킬 적용 ${f(r.skillSellPrice)}원<br>총 재료비 ${f(Math.round(r.cost))}원`
       : `총 재료비 ${f(Math.round(r.cost))}원`;
     return `<div class="dish-card ${rankClass}">${rankBadge}
       <div class="dish-head">
@@ -479,7 +479,7 @@ window.calcMats=()=>{
       html+=`<div class="rrow"><span class="rl" style="color:${cc}">${name}</span>`;
       html+=`<span class="rv" style="color:var(--muted)">필요 ${fmtQty(q)}`;
       if(have>0) html+=` / 보유 ${fmtQty(have)}`;
-      if(lack>0) html+=` <span class="bdg br" style="margin-left:4px">부족 ${fmtQty(lack)}개</span>`;
+      if(lack>0) html+=` <span class="bdg br" style="margin-left:4px">부족 ${fmtQty(lack)}</span>`;
       else html+=` <span class="bdg bg" style="margin-left:4px">충분</span>`;
       html+=`</span></div>`;
 
