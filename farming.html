@@ -360,14 +360,15 @@ html,body{min-height:100vh;background:var(--bg) radial-gradient(circle at 10% 15
       </div>
     </div>
     <div class="card">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
-        <div class="card-title" style="margin-bottom:0">🧂 가공품 가격</div>
-        <label style="display:flex;align-items:center;gap:6px;font-size:12px;font-weight:700;color:var(--muted);cursor:pointer">
-          <input type="checkbox" id="buyProcessedToggle" onchange="onBuyProcessedToggle()" style="width:16px;height:16px;accent-color:var(--acc)">
-          직접 구매
-        </label>
-      </div>
-      <div id="buyProcessedOff" style="font-size:11px;color:var(--muted);padding:4px 0">건초더미·밀키 가격 기반으로 원가 자동 계산</div>
+      <div class="card-title">🧂 가공품 가격</div>
+      <label style="display:flex;align-items:center;gap:10px;padding:10px 12px;background:var(--bg);border:1.5px solid var(--bdr2);border-radius:var(--rs);cursor:pointer;margin-bottom:10px">
+        <input type="checkbox" id="buyProcessedToggle" onchange="onBuyProcessedToggle()" style="width:18px;height:18px;accent-color:var(--acc);flex-shrink:0">
+        <div>
+          <div style="font-size:13px;font-weight:700;color:var(--txt)">직접 구매 모드</div>
+          <div style="font-size:10px;color:var(--muted);margin-top:1px">켜면 건초더미·밀키 원가 대신 구매가로 계산</div>
+        </div>
+      </label>
+      <div id="buyProcessedOff" style="font-size:11px;color:var(--muted);padding:2px 0 4px">건초더미·밀키 가격 기반으로 원가 자동 계산</div>
       <div id="buyProcessedOn" style="display:none">
         <div class="fnote" style="margin-bottom:8px">직접 구매 시 세트(64개)당 가격을 입력하세요</div>
         <div class="g3">
@@ -437,7 +438,11 @@ html,body{min-height:100vh;background:var(--bg) radial-gradient(circle at 10% 15
           </div>
           <div id="haveBaseTomato_p" class="sq-parsed"></div>
           <label style="color:#d94f3d;margin-top:6px;font-size:11px">+ 보유 작물 (8개 → 베이스 1개)</label>
-          <input id="haveCropTomato" type="number" inputmode="numeric" placeholder="0" min="0" oninput="calcMats()" style="margin-top:2px;border:1.5px solid #d94f3d44;border-radius:6px;padding:5px 8px;width:100%;font-size:13px;font-weight:700;background:var(--bg)">
+          <div class="split-qty-wrap" style="margin-top:2px">
+            <div><span class="sq-label">상자</span><input id="haveCropTomato_box" type="number" inputmode="numeric" placeholder="0" min="0" oninput="calcMats()" class="sq-input" style="border-color:#d94f3d44"></div>
+            <div><span class="sq-label">세트</span><input id="haveCropTomato_set" type="number" inputmode="numeric" placeholder="0" min="0" oninput="calcMats()" class="sq-input" style="border-color:#d94f3d44"></div>
+            <div><span class="sq-label">개</span><input id="haveCropTomato_ea" type="number" inputmode="numeric" placeholder="0" min="0" oninput="calcMats()" class="sq-input" style="border-color:#d94f3d44"></div>
+          </div>
         </div>
         <div class="field">
           <label style="color:#c89c00">양파 베이스</label>
@@ -448,7 +453,11 @@ html,body{min-height:100vh;background:var(--bg) radial-gradient(circle at 10% 15
           </div>
           <div id="haveBaseOnion_p" class="sq-parsed"></div>
           <label style="color:#c89c00;margin-top:6px;font-size:11px">+ 보유 작물 (8개 → 베이스 1개)</label>
-          <input id="haveCropOnion" type="number" inputmode="numeric" placeholder="0" min="0" oninput="calcMats()" style="margin-top:2px;border:1.5px solid #c89c0044;border-radius:6px;padding:5px 8px;width:100%;font-size:13px;font-weight:700;background:var(--bg)">
+          <div class="split-qty-wrap" style="margin-top:2px">
+            <div><span class="sq-label">상자</span><input id="haveCropOnion_box" type="number" inputmode="numeric" placeholder="0" min="0" oninput="calcMats()" class="sq-input" style="border-color:#c89c0044"></div>
+            <div><span class="sq-label">세트</span><input id="haveCropOnion_set" type="number" inputmode="numeric" placeholder="0" min="0" oninput="calcMats()" class="sq-input" style="border-color:#c89c0044"></div>
+            <div><span class="sq-label">개</span><input id="haveCropOnion_ea" type="number" inputmode="numeric" placeholder="0" min="0" oninput="calcMats()" class="sq-input" style="border-color:#c89c0044"></div>
+          </div>
         </div>
         <div class="field">
           <label style="color:#9ab0c8">마늘 베이스</label>
@@ -459,7 +468,11 @@ html,body{min-height:100vh;background:var(--bg) radial-gradient(circle at 10% 15
           </div>
           <div id="haveBaseGarlic_p" class="sq-parsed"></div>
           <label style="color:#9ab0c8;margin-top:6px;font-size:11px">+ 보유 작물 (8개 → 베이스 1개)</label>
-          <input id="haveCropGarlic" type="number" inputmode="numeric" placeholder="0" min="0" oninput="calcMats()" style="margin-top:2px;border:1.5px solid #9ab0c844;border-radius:6px;padding:5px 8px;width:100%;font-size:13px;font-weight:700;background:var(--bg)">
+          <div class="split-qty-wrap" style="margin-top:2px">
+            <div><span class="sq-label">상자</span><input id="haveCropGarlic_box" type="number" inputmode="numeric" placeholder="0" min="0" oninput="calcMats()" class="sq-input" style="border-color:#9ab0c844"></div>
+            <div><span class="sq-label">세트</span><input id="haveCropGarlic_set" type="number" inputmode="numeric" placeholder="0" min="0" oninput="calcMats()" class="sq-input" style="border-color:#9ab0c844"></div>
+            <div><span class="sq-label">개</span><input id="haveCropGarlic_ea" type="number" inputmode="numeric" placeholder="0" min="0" oninput="calcMats()" class="sq-input" style="border-color:#9ab0c844"></div>
+          </div>
         </div>
       </div>
     </div>
@@ -469,6 +482,7 @@ html,body{min-height:100vh;background:var(--bg) radial-gradient(circle at 10% 15
         <div class="field">
           <label style="color:#7090a8">요리용 소금</label>
           <div class="split-qty-wrap">
+            <div><span class="sq-label">상자</span><input id="haveProcessedCooking_salt_box" type="number" inputmode="numeric" placeholder="0" min="0" oninput="calcMats()" class="sq-input"></div>
             <div><span class="sq-label">세트</span><input id="haveProcessedCooking_salt_set" type="number" inputmode="numeric" placeholder="0" min="0" oninput="calcMats()" class="sq-input"></div>
             <div><span class="sq-label">개</span><input id="haveProcessedCooking_salt_ea" type="number" inputmode="numeric" placeholder="0" min="0" oninput="calcMats()" class="sq-input"></div>
           </div>
@@ -476,6 +490,7 @@ html,body{min-height:100vh;background:var(--bg) radial-gradient(circle at 10% 15
         <div class="field">
           <label style="color:#c8980c">버터 조각</label>
           <div class="split-qty-wrap">
+            <div><span class="sq-label">상자</span><input id="haveProcessedButter_box" type="number" inputmode="numeric" placeholder="0" min="0" oninput="calcMats()" class="sq-input"></div>
             <div><span class="sq-label">세트</span><input id="haveProcessedButter_set" type="number" inputmode="numeric" placeholder="0" min="0" oninput="calcMats()" class="sq-input"></div>
             <div><span class="sq-label">개</span><input id="haveProcessedButter_ea" type="number" inputmode="numeric" placeholder="0" min="0" oninput="calcMats()" class="sq-input"></div>
           </div>
@@ -483,6 +498,7 @@ html,body{min-height:100vh;background:var(--bg) radial-gradient(circle at 10% 15
         <div class="field">
           <label style="color:#b89010">치즈 조각</label>
           <div class="split-qty-wrap">
+            <div><span class="sq-label">상자</span><input id="haveProcessedCheese_box" type="number" inputmode="numeric" placeholder="0" min="0" oninput="calcMats()" class="sq-input"></div>
             <div><span class="sq-label">세트</span><input id="haveProcessedCheese_set" type="number" inputmode="numeric" placeholder="0" min="0" oninput="calcMats()" class="sq-input"></div>
             <div><span class="sq-label">개</span><input id="haveProcessedCheese_ea" type="number" inputmode="numeric" placeholder="0" min="0" oninput="calcMats()" class="sq-input"></div>
           </div>
@@ -490,6 +506,7 @@ html,body{min-height:100vh;background:var(--bg) radial-gradient(circle at 10% 15
         <div class="field">
           <label style="color:#c0a870">밀가루 반죽</label>
           <div class="split-qty-wrap">
+            <div><span class="sq-label">상자</span><input id="haveProcessedFlour_box" type="number" inputmode="numeric" placeholder="0" min="0" oninput="calcMats()" class="sq-input"></div>
             <div><span class="sq-label">세트</span><input id="haveProcessedFlour_set" type="number" inputmode="numeric" placeholder="0" min="0" oninput="calcMats()" class="sq-input"></div>
             <div><span class="sq-label">개</span><input id="haveProcessedFlour_ea" type="number" inputmode="numeric" placeholder="0" min="0" oninput="calcMats()" class="sq-input"></div>
           </div>
@@ -507,9 +524,6 @@ html,body{min-height:100vh;background:var(--bg) radial-gradient(circle at 10% 15
 
     <div class="card">
       <div class="card-title">🍳 요리 판매 계산기</div>
-      <div class="my-skill-badge" style="margin-bottom:12px">
-        💰 판매 보너스 — <span id="farmSaleMySkillVal">로딩중</span>
-      </div>
       <!-- 요리 선택 + 상자/세트/개 — 재료 계산 탭과 동일한 구조 -->
       <div class="dish-picker-row" style="margin-bottom:0">
         <div class="dish-sel-wrap">

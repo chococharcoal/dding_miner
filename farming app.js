@@ -293,10 +293,10 @@ window.calcDishEff=()=>{
         matChips += `<span class="mat-chip" style="color:${chipColor};border-color:${chipColor}44">${meta.name}${q>1?` ×${q}`:''}</span>`;
       }
     }
-    const bonusTxt = totalBonus > 0 ? ` +${Math.round(totalBonus*100)}% 스킬 적용` : '';
+    const bonusTxt = totalBonus > 0 ? ` +${Math.round(totalBonus*100)}%` : '';
     const priceInfo = hasPrice
-      ? `판매가 ${f(r.inputPrice)}원 → 스킬 적용 ${f(r.skillSellPrice)}원${bonusTxt}<br>총 재료비 ${f(Math.round(r.cost))}원 · 범위 ${f(r.rec.priceMin)}~${f(r.rec.priceMax)}원`
-      : `판매가 미입력 · 범위 ${f(r.rec.priceMin)}~${f(r.rec.priceMax)}원<br>총 재료비 ${f(Math.round(r.cost))}원`;
+      ? `판매가 ${f(r.inputPrice)}원 → 스킬 적용 ${f(r.skillSellPrice)}원${bonusTxt}<br>총 재료비 ${f(Math.round(r.cost))}원`
+      : `총 재료비 ${f(Math.round(r.cost))}원`;
     return `<div class="dish-card ${rankClass}">${rankBadge}
       <div class="dish-head">
         <div style="min-width:0">
@@ -404,9 +404,16 @@ window.calcMats=()=>{
 
   // 보유 베이스 (베이스 + 작물 환산, 8작물 = 1베이스)
   const CROPS_PER_BASE = 8;
+  function readHaveCrop(type) {
+    const T = type.charAt(0).toUpperCase()+type.slice(1);
+    const box = parseInt(document.getElementById('haveCrop'+T+'_box')?.value||'0')||0;
+    const set = parseInt(document.getElementById('haveCrop'+T+'_set')?.value||'0')||0;
+    const ea  = parseInt(document.getElementById('haveCrop'+T+'_ea') ?.value||'0')||0;
+    return box*BOX_SIZE + set*SET_SIZE + ea;
+  }
   function readHaveBase(type) {
     const base = readSplitQty('haveBase'+type.charAt(0).toUpperCase()+type.slice(1));
-    const crops = Math.max(0, parseInt(document.getElementById('haveCrop'+type.charAt(0).toUpperCase()+type.slice(1))?.value||'0')||0);
+    const crops = readHaveCrop(type);
     return base + Math.floor(crops / CROPS_PER_BASE);
   }
   const haveBase={
@@ -415,11 +422,12 @@ window.calcMats=()=>{
     garlic: readHaveBase('garlic'),
   };
 
-  // 보유 가공품 (세트+개)
+  // 보유 가공품 (상자·세트·개)
   function readHaveProcessed(key) {
+    const box = parseInt(document.getElementById('haveProcessed'+key+'_box')?.value||'0')||0;
     const set = parseInt(document.getElementById('haveProcessed'+key+'_set')?.value||'0')||0;
     const ea  = parseInt(document.getElementById('haveProcessed'+key+'_ea') ?.value||'0')||0;
-    return set * SET_SIZE + ea;
+    return box*BOX_SIZE + set*SET_SIZE + ea;
   }
   const haveProcessed = {
     cooking_salt: readHaveProcessed('Cooking_salt'),
@@ -440,24 +448,8 @@ window.calcMats=()=>{
 
   let html='';
 
-  // 베이스 필요량 섹션
+  // 베이스 부족 여부만 확인 (씨앗 계산용)
   const anyBaseNeeded = Object.values(needBase).some(v=>v>0);
-  if(anyBaseNeeded){
-    html+=`<div class="rsec">`;
-    for(const[k,need]of Object.entries(needBase)){
-      if(need<=0)continue;
-      const have=haveBase[k],lack=lackBase[k],cl=baseColors[k];
-      // 베이스 이름 크게
-      html+=`<div style="display:flex;align-items:center;justify-content:space-between;padding:6px 0;border-bottom:1px dashed var(--bdr)">`;
-      html+=`<span style="font-size:15px;font-weight:900;color:${cl}">${baseNames[k]} 베이스</span>`;
-      html+=`<span style="font-size:12px;font-weight:700;color:var(--muted)">필요 ${f(need)}개`;
-      if(have>0) html+=` / 보유 ${f(have)}개`;
-      if(lack>0) html+=` <span class="bdg br" style="margin-left:4px">부족 ${f(lack)}개</span>`;
-      else html+=` <span class="bdg bg" style="margin-left:4px">충분</span>`;
-      html+=`</span></div>`;
-    }
-    html+=`</div>`;
-  }
 
   // 가공품 필요량 (other에서 PROCESSED_RECIPES 해당하는 것)
   const needProcessed = {};
@@ -577,12 +569,14 @@ const STATIC_IDS=[
   // 가공품 구매가
   'pBuyCookingSalt','pBuyButter','pBuyCheese','pBuyFlour',
   // 보유 가공품
-  'haveProcessedCooking_salt_set','haveProcessedCooking_salt_ea',
-  'haveProcessedButter_set','haveProcessedButter_ea',
-  'haveProcessedCheese_set','haveProcessedCheese_ea',
-  'haveProcessedFlour_set','haveProcessedFlour_ea',
+  'haveProcessedCooking_salt_box','haveProcessedCooking_salt_set','haveProcessedCooking_salt_ea',
+  'haveProcessedButter_box','haveProcessedButter_set','haveProcessedButter_ea',
+  'haveProcessedCheese_box','haveProcessedCheese_set','haveProcessedCheese_ea',
+  'haveProcessedFlour_box','haveProcessedFlour_set','haveProcessedFlour_ea',
   // 보유 작물
-  'haveCropTomato','haveCropOnion','haveCropGarlic',
+  'haveCropTomato_box','haveCropTomato_set','haveCropTomato_ea',
+  'haveCropOnion_box','haveCropOnion_set','haveCropOnion_ea',
+  'haveCropGarlic_box','haveCropGarlic_set','haveCropGarlic_ea',
   'farmSaleQty_box','farmSaleQty_set','farmSaleQty_ea',
   'farmSaleOtherMoneyLv','farmSaleOtherPotLv','farmSaleRatioSlider',
   ...BASE_TYPES.flatMap(t=>BASE_SUFFIXES.map(s=>BASE_ID_PREFIX+t.charAt(0).toUpperCase()+t.slice(1)+s)),
@@ -833,13 +827,6 @@ function calcFarmSale() {
     basePrice * (100 + moneyBonus) / 100 * (100 + potBonus) / 100
   );
   const myTotal     = myUnitPrice * qty;
-
-  const badgeEl = _fel('farmSaleMySkillVal');
-  if (badgeEl) {
-    badgeEl.textContent = myBonus > 0
-      ? `돈좀벌어볼까 +${moneyBonus}% → 한솥가득 +${potBonus}% = 개당 ${_ffk(myUnitPrice)}원`
-      : '스킬 없음 (기본가)';
-  }
 
   const isProxy = _fel('farmSaleProxyToggle')?.checked ?? false;
   const gc = FSALE_GRADE_COLOR[recipe.grade] || '#888';
