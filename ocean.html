@@ -68,7 +68,7 @@ html,body{min-height:100vh;background:var(--bg) radial-gradient(circle at 10% 15
 .reset-btn:hover{border-color:var(--red);color:var(--red);background:var(--red-bg)}
 .autofill-btn{font-family:'Jua',sans-serif!important;font-size:12px;padding:5px 11px;border-radius:20px;border:1.5px solid var(--grn);background:var(--grn-bg);color:var(--grn);cursor:pointer;transition:all .15s}
 .autofill-btn:hover{background:var(--grn);color:#fff}
-.panel{display:flex;flex-direction:column;gap:16px}
+.panel{display:flex;flex-direction:column;gap:16px;padding-top:12px;padding-bottom:24px}
 .card{background:var(--surf);border:1.5px solid var(--bdr);border-radius:var(--r);padding:14px 15px;box-shadow:var(--sh)}
 .card-title{font-family:'Jua',sans-serif!important;font-size:14px;color:var(--txt);margin-bottom:10px;display:flex;align-items:center;gap:6px}
 .card-title::before{content:'';display:inline-block;width:4px;height:14px;background:var(--acc);border-radius:2px}
@@ -362,12 +362,6 @@ input[type=number]{-moz-appearance:textfield;appearance:textfield}
         <span class="sf-tog-track"><span class="sf-tog-thumb"></span></span>
         <span class="sf-tog-label">어패류 원가 포함</span>
         <span class="sf-tog-desc">순이익에 어패류 판매가를 원가로 반영</span>
-      </label>
-      <label class="sf-tog-wrap">
-        <input type="checkbox" id="viewByStageToggle" style="display:none" onchange="onViewToggle()" checked>
-        <span class="sf-tog-track"><span class="sf-tog-thumb"></span></span>
-        <span class="sf-tog-label">단계별 보기</span>
-        <span class="sf-tog-desc">정수→핵→완성품 순서로 단계 구분 표시</span>
       </label>
       <label class="sf-tog-wrap">
         <input type="checkbox" id="excludeDilutedToggle" style="display:none" onchange="saveAll()">
@@ -680,6 +674,6 @@ input[type=number]{-moz-appearance:textfield;appearance:textfield}
 </div><!-- /layout -->
 </div><!-- /page -->
 
-<script type="module" src="./ocean%20app.js?v=9"></script>
+<script type="module" src="./ocean%20app.js?v=12"></script>
 </body>
 </html>
