@@ -647,15 +647,22 @@ async function calcOpt() {
     // 어패류1→정수, 어패류2→에센스 (각각 output:2, 재료:어패류2개→에센스2개)
     const sfToEss1 = {oyster1:'essence_guardian1',conch1:'essence_wave1',octopus1:'essence_chaos1',seaweed1:'essence_life1',urchin1:'essence_corrosion1'};
     const sfToEss2 = {oyster2:'essence_guardian2',conch2:'essence_wave2',octopus2:'essence_chaos2',seaweed2:'essence_life2',urchin2:'essence_corrosion2'};
+    const sfToEss3 = {oyster3:'elixir_guardian',  conch3:'elixir_wave',  octopus3:'elixir_chaos',  seaweed3:'elixir_life',  urchin3:'elixir_corrosion'};
     for (const [sf, essKey] of Object.entries(sfToEss1)) {
       const sfQty = sfHave[sf] || 0;
-      const fromSF = Math.floor(sfQty / 2) * 2; // 짝수 단위로 만들 수 있는 어패류 수 = 제작 가능 정수 수
+      const fromSF = Math.floor(sfQty / 2) * 2; // output:2, 짝수 단위
       const fromHave = intermHave[essKey] || 0;
       essMaxMap[essKey] = fromSF + fromHave;
     }
     for (const [sf, essKey] of Object.entries(sfToEss2)) {
       const sfQty = sfHave[sf] || 0;
-      const fromSF = Math.floor(sfQty / 2) * 2;
+      const fromSF = Math.floor(sfQty / 2) * 2; // output:2, 짝수 단위
+      const fromHave = intermHave[essKey] || 0;
+      essMaxMap[essKey] = fromSF + fromHave;
+    }
+    for (const [sf, essKey] of Object.entries(sfToEss3)) {
+      const sfQty = sfHave[sf] || 0;
+      const fromSF = sfQty; // output:1, 1:1 대응
       const fromHave = intermHave[essKey] || 0;
       essMaxMap[essKey] = fromSF + fromHave;
     }
