@@ -640,19 +640,38 @@ async function calcOpt() {
   await new Promise(r => setTimeout(r, 20));
 
   // ── 후처리: 에센스 ceil 올림으로 보유량 초과 시 수익 최소 완성품 1개씩 줄이기 ──
+  // essence별 최대 제작 가능 수 = floor(어패류보유/2)*2 + 보유 essence
+  // → 이 값을 sfConsumed(실제 소비 에센스 수)와 비교
+  const essMaxMap = {}; // essKey → 최대 제작 가능 에센스 수
+  {
+    // 어패류1→정수, 어패류2→에센스 (각각 output:2, 재료:어패류2개→에센스2개)
+    const sfToEss1 = {oyster1:'essence_guardian1',conch1:'essence_wave1',octopus1:'essence_chaos1',seaweed1:'essence_life1',urchin1:'essence_corrosion1'};
+    const sfToEss2 = {oyster2:'essence_guardian2',conch2:'essence_wave2',octopus2:'essence_chaos2',seaweed2:'essence_life2',urchin2:'essence_corrosion2'};
+    for (const [sf, essKey] of Object.entries(sfToEss1)) {
+      const sfQty = sfHave[sf] || 0;
+      const fromSF = Math.floor(sfQty / 2) * 2; // 짝수 단위로 만들 수 있는 어패류 수 = 제작 가능 정수 수
+      const fromHave = intermHave[essKey] || 0;
+      essMaxMap[essKey] = fromSF + fromHave;
+    }
+    for (const [sf, essKey] of Object.entries(sfToEss2)) {
+      const sfQty = sfHave[sf] || 0;
+      const fromSF = Math.floor(sfQty / 2) * 2;
+      const fromHave = intermHave[essKey] || 0;
+      essMaxMap[essKey] = fromSF + fromHave;
+    }
+  }
+
   {
     const SF_KEYS_SET = new Set(SF_KEYS);
     let adjusted = true;
     while (adjusted) {
       adjusted = false;
-      // 어패류 소비량: 에센스 필요량을 완성품별로 합산 후 ceil 배치로 계산
-      // sfNeed 소수로는 부정확 → 에센스 레이어 직접 역추적
-      const essConsumed = {}; // essence key → 총 필요량
-      const sfDirectConsumed = {}; // 에센스 없이 직접 소비되는 어패류 (엘릭서 등)
+      // 완성품별로 essence 필요량 합산
+      const essConsumed = {};
+      const sfDirectConsumed = {};
       for (const [fKey, cnt] of Object.entries(bestPlan)) {
         if (cnt <= 0) continue;
         const fRec = PRECISION_ALCHEMY[fKey]; if (!fRec) continue;
-        // 완성품 재료를 재귀 전개해서 에센스/어패류 집계
         function walkForSF(key, qty) {
           if (!key || qty <= 0) return;
           if (SF_KEYS_SET.has(key)) { sfDirectConsumed[key] = (sfDirectConsumed[key]||0) + qty; return; }
@@ -661,42 +680,65 @@ async function calcOpt() {
           if (rec.type === 'essence') {
             essConsumed[key] = (essConsumed[key]||0) + qty; return;
           }
-          // output:1 레이어 (핵/결정/영약): 소수 배치로 전개
           for (const [mk, mq] of Object.entries(rec.materials)) walkForSF(mk, mq * qty / output);
         }
         for (const [mk, mq] of Object.entries(fRec.materials)) walkForSF(mk, mq * cnt);
       }
-      // 에센스 → 어패류: 전체 합산 후 ceil 배치
-      const sfConsumed = {...sfDirectConsumed};
-      for (const [essKey, essQty] of Object.entries(essConsumed)) {
-        const rec = ALCHEMY[essKey]; if (!rec) continue;
-        const output = rec.output || 1;
-        const batches = output > 1 ? Math.ceil(essQty / output) : essQty;
-        for (const [mk, mq] of Object.entries(rec.materials)) {
-          if (!SF_KEYS_SET.has(mk)) continue;
-          sfConsumed[mk] = (sfConsumed[mk]||0) + mq * batches;
+
+      // essence 초과 감지: essConsumed > essMaxMap
+      // 어패류 직접 소비(엘릭서 등) 초과 감지: sfDirectConsumed > sfHave
+      let overKey = null; // 초과된 essence key 또는 sf key
+      let overType = null; // 'essence' | 'sf'
+
+      // 1. essence 초과 먼저 확인
+      for (const [essKey, needed] of Object.entries(essConsumed)) {
+        const max = essMaxMap[essKey] ?? 0;
+        if (needed > max) { overKey = essKey; overType = 'essence'; break; }
+      }
+      // 2. 어패류 직접 소비 초과 확인 (엘릭서용 어패류3 등)
+      if (!overKey) {
+        for (const sf of SF_KEYS) {
+          if ((sfDirectConsumed[sf] || 0) > (sfHave[sf] || 0)) {
+            overKey = sf; overType = 'sf'; break;
+          }
         }
       }
-      // SF_KEYS 순서대로 초과 어패류 탐색 (모든 어패류 검사)
-      let overSF = null;
-      for (const sf of SF_KEYS) {
-        if ((sfConsumed[sf] || 0) > (sfHave[sf] || 0)) { overSF = sf; break; }
-      }
 
-      if (!overSF) break;
+      if (!overKey) break;
 
-      // 이 어패류를 사용하는 완성품 중 단가 가장 낮은 것 1개 줄이기
-      let minRev = Infinity, minKey = null;
+      // 초과된 essence/sf를 사용하는 완성품 중 단가 가장 낮은 것 1개 줄이기
+      let minRev = Infinity, minFKey = null;
       for (const [fKey, cnt] of Object.entries(bestPlan)) {
         if (cnt <= 0) continue;
-        const need = finalAnalysis[fKey].sfNeed[overSF] || 0;
-        if (need > 0 && finalAnalysis[fKey].sellPrice < minRev) {
+        // 이 완성품이 overKey를 사용하는지 확인
+        let uses = false;
+        function checkUses(key, qty) {
+          if (!key || qty <= 0 || uses) return;
+          if (key === overKey) { uses = true; return; }
+          const rec = ALCHEMY[key]; if (!rec) return;
+          if (rec.type === 'essence' && overType === 'essence') return; // 다른 essence는 skip
+          for (const [mk, mq] of Object.entries(rec.materials)) checkUses(mk, mq);
+        }
+        const fRec = PRECISION_ALCHEMY[fKey];
+        for (const [mk, mq] of Object.entries(fRec.materials)) checkUses(mk, mq);
+        if (uses && finalAnalysis[fKey].sellPrice < minRev) {
           minRev = finalAnalysis[fKey].sellPrice;
-          minKey = fKey;
+          minFKey = fKey;
         }
       }
-      if (minKey) {
-        bestPlan[minKey] = Math.max(0, bestPlan[minKey] - 1);
+      // checkUses가 너무 복잡하면 sfNeed 기반으로 fallback
+      if (!minFKey) {
+        for (const [fKey, cnt] of Object.entries(bestPlan)) {
+          if (cnt <= 0) continue;
+          const need = finalAnalysis[fKey].sfNeed[overKey] || 0;
+          if (need > 0 && finalAnalysis[fKey].sellPrice < minRev) {
+            minRev = finalAnalysis[fKey].sellPrice;
+            minFKey = fKey;
+          }
+        }
+      }
+      if (minFKey) {
+        bestPlan[minFKey] = Math.max(0, bestPlan[minFKey] - 1);
         adjusted = true;
       } else break;
     }
