@@ -948,10 +948,27 @@ function renderOptResult({ planEntries, finalAnalysis, workInv, totalRev, totalV
       }
     }
 
-    function stageSection(label,emoji,aggMap,secKey,accentColor,orderArr){
+    function stageSection(label,emoji,aggMap,secKey,accentColor,orderArr,chunkSize){
+      chunkSize = chunkSize || 0; // 0이면 분할 표시 안 함
       const entries=sortedEntries(aggMap,orderArr);
       if(!entries.length)return'';
-      const tSec=timeSec[secKey]*(1-fr);
+      // 시간: aggMap에 있는 key들의 시간만 합산 (정수를 두 섹션으로 나눌 때 각각 올바른 시간 표시)
+      let tSec = 0;
+      for (const [key] of entries) {
+        const rec = ALCHEMY[key] || PRECISION_ALCHEMY[key];
+        const qty = aggMap[key] || 0;
+        if (!rec) continue;
+        const output = rec.output || 1;
+        const isPA = !!PRECISION_ALCHEMY[key];
+        if (isPA) {
+          tSec += qty * (rec.craftTimeSec || 0);
+        } else if (output > 1) {
+          tSec += Math.ceil(qty / output) * (rec.craftTimeSec || 0);
+        } else {
+          tSec += qty * (rec.craftTimeSec || 0);
+        }
+      }
+      tSec *= (1 - fr);
       let s=`<div class="craft-flow-card" style="--tier-color:${accentColor};margin-bottom:10px">`;
       s+=`<div class="cfc-header" style="border-left-color:${accentColor}">`;
       s+=`<div class="cfc-header-left"><div class="cfc-name" style="font-size:14px">${emoji} ${label}</div></div>`;
@@ -1007,9 +1024,10 @@ function renderOptResult({ planEntries, finalAnalysis, workInv, totalRev, totalV
         const effectiveSaved = saved > 0 ? saved : 0;
         const totalQty = makeableQty + effectiveSaved;
         let qtyDisplay = fmtQty(totalQty);
-        if(isPA && totalQty > 50){
+        const displayChunk = isPA ? 50 : chunkSize;
+        if(displayChunk > 0 && totalQty > displayChunk){
           const parts=[];let rem=totalQty;
-          while(rem>0){parts.push(Math.min(rem,50));rem-=50;}
+          while(rem>0){parts.push(Math.min(rem,displayChunk));rem-=displayChunk;}
           qtyDisplay+=`<span style="font-size:9px;color:${color2};opacity:.7;margin-left:2px">(${parts.join('+')})</span>`;
         }
         s+=`<span style="${chipB};background:${color2}18;border:1.5px solid ${color2}"><span style="color:${color2}">${name}</span> <span style="color:${color2}">${qtyDisplay}</span></span>`;
@@ -1027,14 +1045,19 @@ function renderOptResult({ planEntries, finalAnalysis, workInv, totalRev, totalV
       return s;
     }
 
-    html+=useProc ? '' : stageSection('정수 제작',   '⚗️', agg.ess1,'ess1','#1e9e58', essOrder1);
-    html+=stageSection('핵 제작',     '💠', agg.core, 'core','#1e9e58', coreOrder);
+    // 정수: 수호/부식 98개, 나머지 48개 단위 → key별로 분리
+    const ess1_98 = {essence_guardian1: agg.ess1.essence_guardian1||0, essence_corrosion1: agg.ess1.essence_corrosion1||0};
+    const ess1_48 = {essence_wave1: agg.ess1.essence_wave1||0, essence_chaos1: agg.ess1.essence_chaos1||0, essence_life1: agg.ess1.essence_life1||0};
+
+    html+=useProc ? '' : stageSection('정수 제작 (수호/부식)', '⚗️', ess1_98, 'ess1','#1e9e58', ['essence_guardian1','essence_corrosion1'], 98);
+    html+=useProc ? '' : stageSection('정수 제작 (파동/혼란/생명)', '⚗️', ess1_48, 'ess1','#1e9e58', ['essence_wave1','essence_chaos1','essence_life1'], 48);
+    html+=useProc ? '' : stageSection('에센스 제작', '⚗️', agg.ess2, 'ess2','#2060c8', essOrder2, 66);
+    html+=useProc ? '' : stageSection('엘릭서 제작', '⚗️', agg.ess3, 'ess3','#c82828', essOrder3, 34);
+    html+=stageSection('핵 제작',     '💠', agg.core, 'core','#1e9e58', coreOrder, 50);
+    html+=stageSection('결정 제작',   '💎', agg.crys, 'crys','#2060c8', crysOrder, 24);
+    html+=stageSection('영약 제작',   '🧪', agg.poti, 'poti','#c82828', potiOrder, 24);
     html+=stageSection('1성 완성품',  '★',  agg.fin1, 'fin1','#1e9e58', fin1Order);
-    html+=useProc ? '' : stageSection('에센스 제작', '⚗️', agg.ess2, 'ess2','#2060c8', essOrder2);
-    html+=stageSection('결정 제작',   '💎', agg.crys, 'crys','#2060c8', crysOrder);
     html+=stageSection('2성 완성품',  '★★', agg.fin2, 'fin2','#2060c8', fin2Order);
-    html+=useProc ? '' : stageSection('엘릭서 제작', '⚗️', agg.ess3, 'ess3','#c82828', essOrder3);
-    html+=stageSection('영약 제작',   '🧪', agg.poti, 'poti','#c82828', potiOrder);
     html+=stageSection('3성 완성품',  '★★★',agg.fin3,'fin3','#c82828', fin3Order);
     html+=stageSection('0성 완성품',  '🔬', agg.fin0, 'fin0','#c8920a', null);
 
