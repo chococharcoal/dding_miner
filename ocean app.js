@@ -949,7 +949,7 @@ function renderOptResult({ planEntries, finalAnalysis, workInv, totalRev, totalV
     }
 
     function stageSection(label,emoji,aggMap,secKey,accentColor,orderArr,chunkSize){
-      chunkSize = chunkSize || 0; // 0이면 분할 표시 안 함
+      // chunkSize: 숫자(전체 동일) 또는 {key:단위} 객체 또는 undefined(분할없음)
       const entries=sortedEntries(aggMap,orderArr);
       if(!entries.length)return'';
       // 시간: aggMap에 있는 key들의 시간만 합산 (정수를 두 섹션으로 나눌 때 각각 올바른 시간 표시)
@@ -1024,7 +1024,15 @@ function renderOptResult({ planEntries, finalAnalysis, workInv, totalRev, totalV
         const effectiveSaved = saved > 0 ? saved : 0;
         const totalQty = makeableQty + effectiveSaved;
         let qtyDisplay = fmtQty(totalQty);
-        const displayChunk = isPA ? 50 : chunkSize;
+        // chunkSize: isPA면 50 고정, 아니면 객체/숫자/undefined 처리
+        let displayChunk = 0;
+        if (isPA) {
+          displayChunk = 50;
+        } else if (typeof chunkSize === 'object' && chunkSize !== null) {
+          displayChunk = chunkSize[key] || 0;
+        } else {
+          displayChunk = chunkSize || 0;
+        }
         if(displayChunk > 0 && totalQty > displayChunk){
           const parts=[];let rem=totalQty;
           while(rem>0){parts.push(Math.min(rem,displayChunk));rem-=displayChunk;}
@@ -1045,12 +1053,7 @@ function renderOptResult({ planEntries, finalAnalysis, workInv, totalRev, totalV
       return s;
     }
 
-    // 정수: 수호/부식 98개, 나머지 48개 단위 → key별로 분리
-    const ess1_98 = {essence_guardian1: agg.ess1.essence_guardian1||0, essence_corrosion1: agg.ess1.essence_corrosion1||0};
-    const ess1_48 = {essence_wave1: agg.ess1.essence_wave1||0, essence_chaos1: agg.ess1.essence_chaos1||0, essence_life1: agg.ess1.essence_life1||0};
-
-    html+=useProc ? '' : stageSection('정수 제작 (수호/부식)', '⚗️', ess1_98, 'ess1','#1e9e58', ['essence_guardian1','essence_corrosion1'], 98);
-    html+=useProc ? '' : stageSection('정수 제작 (파동/혼란/생명)', '⚗️', ess1_48, 'ess1','#1e9e58', ['essence_wave1','essence_chaos1','essence_life1'], 48);
+    html+=useProc ? '' : stageSection('정수 제작', '⚗️', agg.ess1,'ess1','#1e9e58', essOrder1, {essence_guardian1:98,essence_corrosion1:98,essence_wave1:48,essence_chaos1:48,essence_life1:48});
     html+=useProc ? '' : stageSection('에센스 제작', '⚗️', agg.ess2, 'ess2','#2060c8', essOrder2, 66);
     html+=useProc ? '' : stageSection('엘릭서 제작', '⚗️', agg.ess3, 'ess3','#c82828', essOrder3, 34);
     html+=stageSection('핵 제작',     '💠', agg.core, 'core','#1e9e58', coreOrder, 50);
