@@ -222,7 +222,7 @@ window.calcDaily=()=>{
   document.getElementById('dailyRes').innerHTML=`
   <div class="rsec">
     <div class="rsec-title">🌱 씨앗 획득</div>
-    <div class="rrow"><span class="rl">채집 횟수</span><span class="rv">${f(harvestCount)}회 <small style="color:var(--muted)">(${f(stamina)}÷7)</small></span></div>
+    <div class="rrow"><span class="rl">채집 횟수</span><span class="rv">${f(harvestCount)}회 <small style="color:var(--muted)">(${f(stamina)}÷5)</small></span></div>
     <div class="rrow"><span class="rl">회당 씨앗 기댓값</span><span class="rv">${fd(seedPerHarvest)}개 <small style="color:var(--muted)">${parts.join(' / ')}</small></span></div>
     <div class="rrow rrow-strong"><span class="rl" style="font-weight:900">총 씨앗</span><span class="rv g" style="font-size:15px">${fmtQty(totalSeeds)}</span></div>
     ${avgSeedUnit>0?`<div class="rrow"><span class="rl" style="font-size:11px;color:var(--muted)">씨앗 전량 판매 추정</span><span class="rv" style="font-size:11px;color:var(--muted)">${f(seedRev)}원</span></div>`:''}
