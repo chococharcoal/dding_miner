@@ -405,7 +405,7 @@ export const MINING_DEFAULT_PRICES = {
 ════════════════════════════════════════ */
 
 export const FARMING = {
-  STAMINA_PER_USE: 7,
+  STAMINA_PER_USE: 5,
   CROPS_PER_BASE:  8,
   HARVEST_RANGE: {
     tomato: { min:1, max:3 },
@@ -458,7 +458,7 @@ export const FARMING_ENGRAVING = {
 export const HOE = [
   {seedDrop:1},{seedDrop:2},{seedDrop:3},{seedDrop:3},{seedDrop:3},
   {seedDrop:4},{seedDrop:4},{seedDrop:4},{seedDrop:5},{seedDrop:5},
-  {seedDrop:6},{seedDrop:8},{seedDrop:8},{seedDrop:10},{seedDrop:10},{seedDrop:15},
+  {seedDrop:8},{seedDrop:10},{seedDrop:10},{seedDrop:12},{seedDrop:12},{seedDrop:17},
 ];
 
 export const BASES = {

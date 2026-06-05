@@ -315,6 +315,10 @@ window.onViewToggle = () => {
   saveAll();
   if (_cachedOptResult) renderOptResult(_cachedOptResult);
 };
+window.onEssFirstToggle = () => {
+  saveAll();
+  if (_cachedOptResult) renderOptResult(_cachedOptResult);
+};
 
 async function calcOpt() {
   const inv = {};
@@ -1053,16 +1057,33 @@ function renderOptResult({ planEntries, finalAnalysis, workInv, totalRev, totalV
       return s;
     }
 
-    html+=useProc ? '' : stageSection('정수 제작', '⚗️', agg.ess1,'ess1','#1e9e58', essOrder1, {essence_guardian1:98,essence_corrosion1:98,essence_wave1:48,essence_chaos1:48,essence_life1:48});
-    html+=useProc ? '' : stageSection('에센스 제작', '⚗️', agg.ess2, 'ess2','#2060c8', essOrder2, 66);
-    html+=useProc ? '' : stageSection('엘릭서 제작', '⚗️', agg.ess3, 'ess3','#c82828', essOrder3, 34);
-    html+=stageSection('핵 제작',     '💠', agg.core, 'core','#1e9e58', coreOrder, 50);
-    html+=stageSection('결정 제작',   '💎', agg.crys, 'crys','#2060c8', crysOrder, 24);
-    html+=stageSection('영약 제작',   '🧪', agg.poti, 'poti','#c82828', potiOrder, 24);
-    html+=stageSection('1성 완성품',  '★',  agg.fin1, 'fin1','#1e9e58', fin1Order);
-    html+=stageSection('2성 완성품',  '★★', agg.fin2, 'fin2','#2060c8', fin2Order);
-    html+=stageSection('3성 완성품',  '★★★',agg.fin3,'fin3','#c82828', fin3Order);
-    html+=stageSection('0성 완성품',  '🔬', agg.fin0, 'fin0','#c8920a', null);
+    const essFirstOrder = document.getElementById('essFirstToggle')?.checked ?? false;
+
+    if (essFirstOrder) {
+      // 정수→에센스→엘릭서→핵→결정→영약→완성품 순서
+      html+=useProc ? '' : stageSection('정수 제작', '⚗️', agg.ess1,'ess1','#1e9e58', essOrder1, {essence_guardian1:98,essence_corrosion1:98,essence_wave1:48,essence_chaos1:48,essence_life1:48});
+      html+=useProc ? '' : stageSection('에센스 제작', '⚗️', agg.ess2, 'ess2','#2060c8', essOrder2, 66);
+      html+=useProc ? '' : stageSection('엘릭서 제작', '⚗️', agg.ess3, 'ess3','#c82828', essOrder3, 34);
+      html+=stageSection('핵 제작',     '💠', agg.core, 'core','#1e9e58', coreOrder, 50);
+      html+=stageSection('결정 제작',   '💎', agg.crys, 'crys','#2060c8', crysOrder, 24);
+      html+=stageSection('영약 제작',   '🧪', agg.poti, 'poti','#c82828', potiOrder, 24);
+      html+=stageSection('1성 완성품',  '★',  agg.fin1, 'fin1','#1e9e58', fin1Order);
+      html+=stageSection('2성 완성품',  '★★', agg.fin2, 'fin2','#2060c8', fin2Order);
+      html+=stageSection('3성 완성품',  '★★★',agg.fin3,'fin3','#c82828', fin3Order);
+      html+=stageSection('0성 완성품',  '🔬', agg.fin0, 'fin0','#c8920a', null);
+    } else {
+      // 단계별 순서: 정수→핵→1성→에센스→결정→2성→엘릭서→영약→3성→0성
+      html+=useProc ? '' : stageSection('정수 제작', '⚗️', agg.ess1,'ess1','#1e9e58', essOrder1, {essence_guardian1:98,essence_corrosion1:98,essence_wave1:48,essence_chaos1:48,essence_life1:48});
+      html+=stageSection('핵 제작',     '💠', agg.core, 'core','#1e9e58', coreOrder, 50);
+      html+=stageSection('1성 완성품',  '★',  agg.fin1, 'fin1','#1e9e58', fin1Order);
+      html+=useProc ? '' : stageSection('에센스 제작', '⚗️', agg.ess2, 'ess2','#2060c8', essOrder2, 66);
+      html+=stageSection('결정 제작',   '💎', agg.crys, 'crys','#2060c8', crysOrder, 24);
+      html+=stageSection('2성 완성품',  '★★', agg.fin2, 'fin2','#2060c8', fin2Order);
+      html+=useProc ? '' : stageSection('엘릭서 제작', '⚗️', agg.ess3, 'ess3','#c82828', essOrder3, 34);
+      html+=stageSection('영약 제작',   '🧪', agg.poti, 'poti','#c82828', potiOrder, 24);
+      html+=stageSection('3성 완성품',  '★★★',agg.fin3,'fin3','#c82828', fin3Order);
+      html+=stageSection('0성 완성품',  '🔬', agg.fin0, 'fin0','#c8920a', null);
+    }
 
     // 단계별 보기 수익 합산
     const allFinAgg = {...agg.fin0,...agg.fin1,...agg.fin2,...agg.fin3};
@@ -1677,6 +1698,7 @@ function saveAll(){
   getStaticIds().forEach(id=>{const e=document.getElementById(id);if(e)d[id]=e.value;});
   d.__sfCostToggle     =document.getElementById('sfCostToggle')?.checked     ??false;
   d.__viewByStageToggle=document.getElementById('viewByStageToggle')?.checked??false;
+  d.__essFirstToggle   =document.getElementById('essFirstToggle')?.checked   ??false;
   const irows=[];
   document.querySelectorAll('#intermList .interm-row').forEach(row=>{
     const sel=row.querySelector('select.interm-sel');if(!sel)return;
@@ -1692,6 +1714,7 @@ function loadAll(){
     getStaticIds().forEach(id=>{const e=document.getElementById(id);if(e&&d[id]!==undefined)e.value=d[id];});
     const sfTog=document.getElementById('sfCostToggle');     if(sfTog)sfTog.checked    =d.__sfCostToggle     ??false;
     const stTog=document.getElementById('viewByStageToggle');if(stTog)stTog.checked    =d.__viewByStageToggle??false;
+    const efTog=document.getElementById('essFirstToggle');   if(efTog)efTog.checked    =d.__essFirstToggle   ??false;
     SF_TYPES.forEach(sf=>SF_TIERS.forEach(t=>{const id='have_'+sf+'_'+t,p=document.getElementById(id+'_p'),n=readSplitQty(id);if(p&&n>0)p.textContent='총 '+f(n)+'개';}));
     if(Array.isArray(d.__irows)){d.__irows.forEach(({key,box,set,ea,qty})=>{
       addIntermRow();
