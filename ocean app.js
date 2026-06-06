@@ -1761,14 +1761,66 @@ function loadAll(){
 window.toggleSkillPanel=()=>document.getElementById('skillPanel').classList.toggle('collapsed');
 window.toggleEngPanel  =()=>document.getElementById('engPanel').classList.toggle('collapsed');
 window.resetAll=()=>{
-  if(!confirm('초기화할까요?'))return;
-  localStorage.removeItem(KEY);
-  getStaticIds().forEach(id=>{const e=document.getElementById(id);if(!e)return;if(e.tagName==='SELECT')e.selectedIndex=0;else e.value='';});
-  const sfTog=document.getElementById('sfCostToggle');     if(sfTog)sfTog.checked=false;
-  const stTog=document.getElementById('viewByStageToggle');if(stTog)stTog.checked=false;
-  SF_TYPES.forEach(sf=>SF_TIERS.forEach(t=>{const p=document.getElementById('have_'+sf+'_'+t+'_p');if(p)p.textContent='';}));
-  const il=document.getElementById('intermList');if(il)il.innerHTML='';
-  intermRowId=0;syncDropdownLabels();onSkillChange();
+  // 현재 탭 인덱스 파악
+  const tabs=[0,1,2,3];
+  let curTab=0;
+  for(const i of tabs){const p=document.getElementById('t'+i);if(p&&p.style.display!=='none'){curTab=i;break;}}
+
+  const clearEl=(id)=>{const e=document.getElementById(id);if(!e)return;if(e.type==='checkbox')return;else if(e.tagName==='SELECT')e.selectedIndex=0;else e.value='';};
+  const clearIds=(ids)=>ids.forEach(clearEl);
+
+  if(curTab===0){
+    // 하루 수익: 낚싯대, 스태미나
+    if(!confirm('하루 수익 탭 입력값을 초기화할까요?'))return;
+    clearIds(['rodLevel','totalStamina']);
+    syncDropdownLabels();
+    calcDaily();
+
+  } else if(curTab===1){
+    // 시세 입력: 어패류 단가, 바닐라 재료 시세
+    if(!confirm('시세 입력 탭 입력값을 초기화할까요?'))return;
+    clearIds(['price_sf_1','price_sf_2','price_sf_3']);
+    Object.keys(VANILLA_META).forEach(k=>clearEl('vprice_'+k));
+
+  } else if(curTab===2){
+    // 연금 최적화: 보유 어패류, 중간재료, 가공품, 토글
+    if(!confirm('연금 최적화 탭 입력값을 초기화할까요?'))return;
+    // 어패류 보유량
+    SF_TYPES.forEach(sf=>SF_TIERS.forEach(t=>{
+      ['_box','_set','_ea'].forEach(s=>clearEl('have_'+sf+'_'+t+s));
+      const p=document.getElementById('have_'+sf+'_'+t+'_p');if(p)p.textContent='';
+    }));
+    // 1차 가공품 입력
+    PROC_GROUPS.forEach(grp=>grp.items.forEach(it=>{
+      ['_box','_set','_ea'].forEach(s=>clearEl('proc_'+it.key+s));
+    }));
+    // 중간재료 목록
+    const il=document.getElementById('intermList');if(il)il.innerHTML='';
+    intermRowId=0;
+    // 토글은 초기화하지 않음
+    buildHaveSeafoodGrid();
+    _cachedOptResult=null;
+    const optRes=document.getElementById('optRes');
+    if(optRes)optRes.innerHTML='<div class="empty-msg">보유 어패류를 입력한 뒤 계산하기 버튼을 눌러주세요</div>';
+
+  } else if(curTab===3){
+    // 판매가 계산기: 연금품/공예품/어패류 수량 입력
+    if(!confirm('판매가 계산기 탭 입력값을 초기화할까요?'))return;
+    // 연금품 수량
+    ['DILUTED_EXTRACT','AQUTIS','KRAKEN','LEVIATHAN','WAVE_CORE','DEEP_VIAL','SEA_WING','AQUA_PULSE','NAUTILUS','ABYSS_SPINE']
+      .forEach(k=>{clearEl('oSale_'+k+'_set');clearEl('oSale_'+k+'_ea');});
+    // 공예품 수량+가격
+    ['BROOCH','PERFUME','MIRROR','HAIRPIN','FAN','WATCH'].forEach(k=>{
+      clearEl('oSale_craft_'+k+'_qty');clearEl('oSale_craft_'+k+'_price');
+    });
+    // 어패류 판매
+    ['oSaleSF_price1','oSaleSF_price2','oSaleSF_price3','oSaleSF_qty1','oSaleSF_qty2','oSaleSF_qty3'].forEach(clearEl);
+    // 대리판매 관련
+    clearEl('oSaleAlchOtherLv');clearEl('oSaleCraftOtherLv');
+    clearEl('oSaleAlchRatioSlider');clearEl('oSaleCraftRatioSlider');
+  }
+
+  saveAll();
 };
 
 
@@ -2253,5 +2305,5 @@ domReady(()=>{
   getStaticIds().forEach(id=>{const e=document.getElementById(id);if(!e)return;e.addEventListener(e.tagName==='SELECT'?'change':'input',saveAll);});
   const sfTog=document.getElementById('sfCostToggle');     if(sfTog)sfTog.addEventListener('change',window.onSFCostToggle);
   const stTog=document.getElementById('viewByStageToggle');if(stTog)stTog.addEventListener('change',window.onViewToggle);
-  const exTog=document.getElementById('excludeDilutedToggle');if(exTog)exTog.addEventListener('change',saveAll);
+  const exTog=document.getElementById('excludeDilutedToggle');if(exTog)exTog.addEventListener('change',()=>{saveAll();if(_cachedOptResult)window.runCalcOpt();});
 });
