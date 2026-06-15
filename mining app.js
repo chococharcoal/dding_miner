@@ -4,7 +4,7 @@ import {
   MINING_DEFAULT_PRICES as DEFAULT_PRICES, 
   MINING_RECIPES as RECIPES,
   MINING, PICKAXE, ARTIFACT,
-  INGOT_RECIPES, TORCH, UNITS, PRECIOUS,
+  INGOT_RECIPES, TORCH, UNITS,
 } from './config.js';
 
 
@@ -79,12 +79,6 @@ const MAT_META = {
   redstone:              { name:'레드스톤 블럭',       color:'#d94f3d' },
   lapis:                 { name:'청금석 블럭',         color:'#3d6fd4' },
   amethyst:              { name:'자수정 블럭',         color:'#9b6dd4' },
-  topaz:                 { name:'토파즈 블럭',         color:'#c8960a' },
-  sapphire:              { name:'사파이어 블럭',       color:'#1e54b0' },
-  platinum:              { name:'플레티넘 블럭',       color:'#9ab0c8' },
-  diorite:               { name:'섬록암',              color:'#7a8c6e' },
-  tuff:                  { name:'응회암',              color:'#8a9a7a' },
-  andesite:              { name:'안산암',              color:'#8c7a5a' },
 };
 
 function matChipQty(matKey, totalQty) {
@@ -114,7 +108,6 @@ export function getSK() {
   const sl  = gi('skillSparkle');
   const ll  = gi('skillLucky');
   const fpl = gi('skillFirePick');
-  const pl  = gi('skillPrecious');
   const sp = SKILLS.SPARKLE.drops[sl]   || { pct: 0, count: 0 };
   const lk = SKILLS.LUCKY_HIT.drops[ll] || { pct: 0, count: 0 };
   return {
@@ -125,8 +118,7 @@ export function getSK() {
     sp: sp.pct, sc: sp.count,
     lp: lk.pct, lc: lk.count,
     fp: SKILLS.FIRE_PICK.dropPct[fpl]     ?? 0,
-    pb: (SKILLS.PRECIOUS.bonusPct[pl]     ?? 0) / 100,
-    fl, gl, cl, sl, ll, fpl, pl,
+    fl, gl, cl, sl, ll, fpl,
   };
 }
 
@@ -150,10 +142,9 @@ export function getENG() {
 
 export function onSkillChange() {
   const st = (id, txt) => { const e = document.getElementById(id); if (e) e.textContent = txt; };
-  const { fl, gl, cl, sl, ll, fpl, pl } = getSK();
+  const { fl, gl, cl, sl, ll, fpl } = getSK();
   st('skillFurnaceInfo',  fl  === 0 ? '기본' : `Lv${fl}  — ${SKILLS.FURNACE.reductionPct[fl]}% 감소`);
-  st('skillGemSellInfo',  gl  === 0 ? '기본' : `Lv${gl}  — 보석 +${SKILLS.GEM_SELL.bonusPct[gl]}%`);
-  st('skillPreciousInfo', pl  === 0 ? '기본' : `Lv${pl}  — 귀중품 +${SKILLS.PRECIOUS.bonusPct[pl]}%`);
+  st('skillGemSellInfo',  gl  === 0 ? '기본' : `Lv${gl}  — 정동석 +${SKILLS.GEM_SELL.bonusPct[gl]}%`);
   st('skillCobbyInfo',    cl  === 0 ? '기본' : `Lv${cl}  — 코비 +${SKILLS.COBYTIME.dropPct[cl]}%`);
   const sp = SKILLS.SPARKLE.drops[sl];
   st('skillSparkleInfo',  sl  === 0 ? '기본' : sp ? `Lv${sl} — ${sp.pct}% / ${sp.count}개` : '');
@@ -169,7 +160,7 @@ export function onEngravingChange() {
   st('engOreLuckInfo',  ol === 0 ? '없음' : `Lv${ol} — ${ENGRAVING.ORE_LUCK.extraOrePct[ol]}% / +1개`);
   st('engRelicInfo',    rl === 0 ? '없음' : `Lv${rl} — 유물 +${ENGRAVING.RELIC_SEARCH.extraArtifactPct[rl]}%`);
   st('engCobbyInfo',    cl === 0 ? '없음' : `Lv${cl} — 코비 +${ENGRAVING.COBBY_SUMMON.extraCobbyPct[cl]}%`);
-  st('engGemCobbyInfo', gc === 0 ? '없음' : `Lv${gc} — 보석코비 ${ENGRAVING.GEM_COBBY.gemConvertPct[gc]}%`);
+  st('engGemCobbyInfo', gc === 0 ? '없음' : `Lv${gc} — 정동석코비 ${ENGRAVING.GEM_COBBY.gemConvertPct[gc]}%`);
   st('engCartInfo',     ca === 0 ? '없음' : `Lv${ca} — ${ENGRAVING.MINE_CART.cartPct[ca]}% 광산수레`);
   st('engRouletteInfo', ro === 0 ? '없음' : `Lv${ro} — ${ENGRAVING.MINER_ROULETTE.dicePct[ro]}% 주사위`);
   cs();
@@ -296,7 +287,7 @@ function calc80Ingots(m) {
 
 const CC = '#e07b2a';
 const CR = '#3a9e68';
-const CS = '#d94f3d';
+const CS = '#3d6fd4';
 
 export function cs() {
   const m   = calcMining();
@@ -346,7 +337,7 @@ export function cs() {
     p80.tS80 > 0.01 ? `<span style="color:${CS};white-space:nowrap">세렌트 ${f(p80.tS80)}개</span>` : '',
   ].filter(Boolean);
   const extra80Items = [
-    p80.totalGems80   > 0 ? `<span style="white-space:nowrap">보석 ${fd(p80.totalGems80)}개</span>` : '',
+    p80.totalGems80   > 0 ? `<span style="white-space:nowrap">정동석 ${fd(p80.totalGems80)}개</span>` : '',
     p80.normalCobby80 > 0 ? `<span style="white-space:nowrap">펄스 ${fd(p80.normalCobby80)}개</span>` : '',
     p80.artPts80      > 0 ? `<span style="white-space:nowrap">유물 ${f(p80.artPts80)}pt</span>` : '',
   ].filter(Boolean);
@@ -356,7 +347,7 @@ export function cs() {
     m.totalIngotS > 0.01 ? `<span style="color:${CS};white-space:nowrap">세렌트 ${f(m.totalIngotS)}개</span>` : '',
   ].filter(Boolean);
   const extraAvgItems = [
-    m.totalGems      > 0.01 ? `<span style="white-space:nowrap">보석 ${fd(m.totalGems)}개</span>` : '',
+    m.totalGems      > 0.01 ? `<span style="white-space:nowrap">정동석 ${fd(m.totalGems)}개</span>` : '',
     m.normalCobby    > 0.01 ? `<span style="white-space:nowrap">펄스 ${fd(m.normalCobby)}개</span>` : '',
     m.totalArtifacts > 0.01 ? `<span style="white-space:nowrap">유물 ${f(m.totalArtPts)}pt</span>` : '',
   ].filter(Boolean);
@@ -374,10 +365,10 @@ export function cs() {
     ${m.totalTorch > 0.01 ? `<div class="rrow" style="border-top:1px dashed var(--bdr2);margin-top:4px;padding-top:5px"><span class="rl" style="color:var(--muted)">필요 강화횃불 합계</span><span class="rv" style="color:var(--muted)">${f(m.totalTorch)}개</span></div>` : ''}
   </div>`;
   if (m.totalGems > 0 || m.cobbyCount > 0) {
-    html += `<div class="rsec"><div class="rsec-title">💎 보석 &amp; 코비</div>
-    ${m.totalGems > 0 ? `<div class="rrow rrow-strong"><span class="rl" style="color:var(--txt);font-weight:900">보석</span><span class="rv" style="color:var(--txt)">${fd(m.totalGems)}개</span></div>` : ''}
+    html += `<div class="rsec"><div class="rsec-title">💎 정동석 &amp; 코비</div>
+    ${m.totalGems > 0 ? `<div class="rrow rrow-strong"><span class="rl" style="color:var(--txt);font-weight:900">정동석</span><span class="rv" style="color:var(--txt)">${fd(m.totalGems)}개</span></div>` : ''}
     ${m.sparkleGems > 0 ? `<div class="rrow"><span class="rl" style="color:var(--muted)">└ 반짝임의 시작</span><span class="rv" style="color:var(--muted)">${fd(m.sparkleGems)}개</span></div>` : ''}
-    ${m.gemCobby    > 0 ? `<div class="rrow"><span class="rl" style="color:var(--muted)">└ 보석코비</span><span class="rv" style="color:var(--muted)">${fd(m.gemCobby)}개</span></div>` : ''}
+    ${m.gemCobby    > 0 ? `<div class="rrow"><span class="rl" style="color:var(--muted)">└ 정동석코비</span><span class="rv" style="color:var(--muted)">${fd(m.gemCobby)}개</span></div>` : ''}
     ${m.normalCobby > 0 ? `<div class="rrow rrow-strong" style="margin-top:4px"><span class="rl" style="color:var(--txt);font-weight:900">스킬펄스</span><span class="rv" style="color:var(--txt)">${fd(m.normalCobby)}개</span></div>` : ''}
     ${m.cobbyCount  > 0 ? `<div class="rrow"><span class="rl" style="color:var(--muted)">└ 코비 소환 (${fd(m.totalCobbyPct)}%)</span><span class="rv" style="color:var(--muted)">${fd(m.cobbyCount)}회</span></div>` : ''}
     </div>`;
@@ -391,7 +382,7 @@ export function cs() {
   }
   html += `<div class="rsec"><div class="rsec-title">💰 기댓값 수익</div>
     ${row('주괴', `${f(ingotRev)}원`, 'g')}
-    ${m.totalGems > 0 ? row('보석', `${f(gemRev)}원`, 'g') : ''}
+    ${m.totalGems > 0 ? row('정동석', `${f(gemRev)}원`, 'g') : ''}
     ${m.normalCobby > 0 ? (spPrice > 0 ? row('스킬펄스', `${f(spRev)}원`, 'g') : row('스킬펄스', '단가 미입력', 'muted')) : ''}
     ${m.totalArtifacts > 0 ? (artPtPrice > 0 ? row('유물', `${f(artRev)}원`, 'g') : row('유물 포인트', '단가 미입력', 'muted')) : ''}
   </div>
@@ -471,12 +462,6 @@ export function autoFillPrices() {
   fill('vRe',  (DEFAULT_PRICES.vanilla?.redstone              ?? 0) * S);
   fill('vLa',  (DEFAULT_PRICES.vanilla?.lapis                 ?? 0) * S);
   fill('vAm',  (DEFAULT_PRICES.vanilla?.amethyst              ?? 0) * S);
-  fill('vTopaz',    DEFAULT_PRICES.precious?.topaz    ?? 0);
-  fill('vSapphire', DEFAULT_PRICES.precious?.sapphire ?? 0);
-  fill('vPlatinum', DEFAULT_PRICES.precious?.platinum ?? 0);
-  fill('vDiorite',  (DEFAULT_PRICES.stone?.diorite  ?? 0) * S);
-  fill('vTuff',     (DEFAULT_PRICES.stone?.tuff     ?? 0) * S);
-  fill('vAndesite', (DEFAULT_PRICES.stone?.andesite ?? 0) * S);
   fill('tCharcoalPrice', (DEFAULT_PRICES.charcoal ?? 0) * S);
   fill('tWoodPrice',     (DEFAULT_PRICES.wood     ?? 0) * S);
   fill('skillPulsePrice', DEFAULT_PRICES.skillPulse ?? 0);
@@ -538,7 +523,7 @@ function readSplitQty(id) {
 }
 
 export function co() {
-  const { ib, fr, pb } = getSK();
+  const { ib, fr } = getSK();
   const iCo = readSplitQty('iCo');
   const iRi = readSplitQty('iRi');
   const iSe = readSplitQty('iSe');
@@ -575,38 +560,6 @@ export function co() {
   const vc = type =>
     Object.entries(RECIPES[type].vanilla || {})
       .reduce((s, [mat, qty]) => s + qty * (vp[mat] || 0), 0);
-  const pvp = {
-    topaz:    gi('vTopaz'),
-    sapphire: gi('vSapphire'),
-    platinum: gi('vPlatinum'),
-    redstone: gi('vRe')       / SET_SIZE,
-    lapis:    gi('vLa')       / SET_SIZE,
-    gold:     gi('vGo')       / SET_SIZE,
-    diorite:  gi('vDiorite')  / SET_SIZE,
-    tuff:     gi('vTuff')     / SET_SIZE,
-    andesite: gi('vAndesite') / SET_SIZE,
-  };
-  const AP  = PRECIOUS.APPRAISAL;
-  const DOC = PRECIOUS.DOC_PRICE;
-  const precItems = Object.entries(PRECIOUS.ITEMS).map(([key, item]) => {
-    const rec = RECIPES[item.recipe];
-    const iCostPrice = item.ingotType === 'corum'  ? rawC : item.ingotType === 'rifton' ? rawR : rawS;
-    const iSellPrice = item.ingotType === 'corum'  ? cP   : item.ingotType === 'rifton' ? rP   : sP;
-    const ingotCnt  = rec.ingot_corum || rec.ingot_rifton || rec.ingot_serent || 0;
-    const ingotCost = ingotCnt * iCostPrice;
-    const vanCost = Object.entries(rec.vanilla || {})
-      .reduce((s, [mat, qty]) => s + qty * (pvp[mat] || 0), 0)
-      + (rec.doc || 0) * DOC;
-    const totalCost = ingotCost + vanCost;
-    const avgSell = (
-      item.prices.LOW   * AP.LOW.pct   / 100 +
-      item.prices.GOOD  * AP.GOOD.pct  / 100 +
-      item.prices.ROYAL * AP.ROYAL.pct / 100
-    ) * (1 + pb);
-    const netPerItem = avgSell - totalCost;
-    const ingotKey = item.ingotType === 'corum' ? 'C' : item.ingotType === 'rifton' ? 'R' : 'S';
-    return { key, item, rec, ingotCnt, ingotKey, totalCost, avgSell, netPerItem, ingotCost, vanCost, iCostPrice, iSellPrice };
-  });
   const rawSell = iCo * cP + iRi * rP + iSe * sP;
   const netLS1  = oL1 - RECIPES.LS1.ingot_corum    * rawC - vc('LS1');
   const netLS2  = oL2 - RECIPES.LS2.ingot_rifton   * rawR - vc('LS2');
@@ -619,13 +572,6 @@ export function co() {
     { key:'LS2',  label:'중급 라이프스톤', net:netLS2,  sell:oL2, iC: 0,                           iR: RECIPES.LS2.ingot_rifton, iS: 0,                        ct:ctL2, type:'ls' },
     { key:'LS3',  label:'상급 라이프스톤', net:netLS3,  sell:oL3, iC: 0,                           iR: 0,                        iS: RECIPES.LS3.ingot_serent, ct:ctL3, type:'ls' },
     { key:'ABIL', label:'어빌리티 스톤',   net:netAbil, sell:oAb, iC: 1,                           iR: 1,                        iS: 1,                        ct:ctAb, type:'ls' },
-    ...precItems.filter(p => p.netPerItem > 0).map(p => ({
-      key: p.key, label: p.item.name, net: p.netPerItem, sell: p.avgSell,
-      iC: p.ingotKey === 'C' ? p.ingotCnt : 0,
-      iR: p.ingotKey === 'R' ? p.ingotCnt : 0,
-      iS: p.ingotKey === 'S' ? p.ingotCnt : 0,
-      ct: RECIPES[p.item.recipe].craft_time_sec * (1 - fr), type: 'precious', extra: p,
-    })),
   ]
     .filter(c => c.net > 0 && c.sell > 0)
     .sort((a, b) => netPerIngot(b) - netPerIngot(a));
@@ -662,10 +608,10 @@ export function co() {
   }
   const remSell = remCo * cP + remRi * rP + remSe * sP;
   let craftRev = remSell, craftTime = 0;
-  for (const c of craftResult) { craftRev += c.count * (c.type === 'precious' ? c.extra.avgSell : c.sell); craftTime += c.count * c.ct; }
+  for (const c of craftResult) { craftRev += c.count * c.sell; craftTime += c.count * c.ct; }
   const swapRemSell = swapRemCo * cP + swapRemRi * rP + swapRemSe * sP;
   let swapCraftRev = swapRemSell, swapCraftTime = 0;
-  for (const c of swapCraftResult) { swapCraftRev += c.count * (c.type === 'precious' ? c.extra.avgSell : c.sell); swapCraftTime += c.count * c.ct; }
+  for (const c of swapCraftResult) { swapCraftRev += c.count * c.sell; swapCraftTime += c.count * c.ct; }
   function aggregateMats(results) {
     const mats = {};
     const ingotTotals = { 코룸: 0, 리프톤: 0, 세렌트: 0 };
@@ -673,10 +619,9 @@ export function co() {
       if (c.iC > 0) ingotTotals['코룸']   += c.iC * c.count;
       if (c.iR > 0) ingotTotals['리프톤'] += c.iR * c.count;
       if (c.iS > 0) ingotTotals['세렌트'] += c.iS * c.count;
-      const rec = c.type === 'ls' ? RECIPES[c.key] : c.extra?.rec;
+      const rec = RECIPES[c.key];
       if (!rec) continue;
       for (const [mat, qty] of Object.entries(rec.vanilla || {})) { if (qty) mats[mat] = (mats[mat] || 0) + qty * c.count; }
-      if (rec.doc) mats['__doc__'] = (mats['__doc__'] || 0) + rec.doc * c.count;
     }
     return { ingotTotals, mats };
   }
@@ -687,10 +632,9 @@ export function co() {
   function buildPlanCards(results) {
     if (!results.length) return '<div class="empty-msg" style="padding:14px 0">제작 가능한 옵션 없음</div>';
     return results.map(c => {
-      const rev = c.count * (c.type === 'precious' ? c.extra.avgSell : c.sell);
+      const rev = c.count * c.sell;
       const t   = c.count * c.ct;
       const npi = totalIngots(c);
-      const precBadge = c.type === 'precious' ? ' '+bdg('bpu','귀중품') : '';
       const npiTxt = npi > 0 ? '<span style="font-size:10px;color:var(--muted);font-weight:500;margin-left:4px">주괴당 '+f(c.net/npi)+'원</span>' : '';
 
       // 필요 주괴 칩
@@ -700,24 +644,7 @@ export function co() {
       if (c.iS > 0) ingotChips += ingotChip('세렌트', CS, c.iS*c.count);
 
       // 바닐라 재료 칩
-      let vanChips = '';
-      if (c.type === 'ls') {
-        vanChips = Object.entries(RECIPES[c.key].vanilla||{}).filter(([,q])=>q>0).map(([mat,qty])=>matChipQty(mat,qty*c.count)).join('');
-      } else {
-        const rec = c.extra.rec;
-        const chips = Object.entries(rec.vanilla||{}).filter(([,q])=>q>0).map(([mat,qty])=>matChipQty(mat,qty*c.count));
-        if (rec.doc) chips.push('<span class="mat-chip" style="background:#ff980018;color:#e07b2a;border-color:#e07b2a55">증서 '+c.count+'개</span>');
-        vanChips = chips.join('');
-      }
-
-      // 감정가 (귀중품)
-      const apprHtml = c.type==='precious'
-        ? '<div style="display:flex;flex-wrap:wrap;gap:4px 10px;font-size:10px;color:var(--muted);margin-top:4px">'
-          +'<span>하 '+f(c.extra.item.prices.LOW*(1+pb))+'원</span>'
-          +'<span>우수 '+f(c.extra.item.prices.GOOD*(1+pb))+'원</span>'
-          +'<span>황실 '+f(c.extra.item.prices.ROYAL*(1+pb))+'원</span>'
-          +'<span style="color:var(--grn);font-weight:700">기댓값 '+f(c.extra.avgSell)+'원</span>'
-          +'</div>' : '';
+      const vanChips = Object.entries(RECIPES[c.key].vanilla||{}).filter(([,q])=>q>0).map(([mat,qty])=>matChipQty(mat,qty*c.count)).join('');
 
       // 제작 가이드 (접기/펼치기)
       const guideId = 'cg_'+c.key+'_'+c.count;
@@ -734,7 +661,7 @@ export function co() {
 
       return '<div class="m-craft-card">'
         +'<div class="m-craft-header">'
-        +  '<div><div class="m-craft-name">'+c.label+precBadge+npiTxt+'</div>'+apprHtml+'</div>'
+        +  '<div><div class="m-craft-name">'+c.label+npiTxt+'</div></div>'
         +  '<div style="text-align:right;flex-shrink:0">'
         +    '<div class="m-craft-rev">'+f(rev)+'원</div>'
         +    '<div class="m-craft-count">'+fmtQty(c.count)+'</div>'
@@ -757,13 +684,12 @@ export function co() {
       ingotTotals['리프톤'] > 0 ? '<div class="mat-summary-row"><span class="mn" style="color:'+CR+'">● 리프톤 주괴</span><span class="mv">'+fmtQty(ingotTotals['리프톤'])+'</span></div>' : '',
       ingotTotals['세렌트'] > 0 ? '<div class="mat-summary-row"><span class="mn" style="color:'+CS+'">● 세렌트 주괴</span><span class="mv">'+fmtQty(ingotTotals['세렌트'])+'</span></div>' : '',
     ].join('');
-    const vanRows = Object.entries(mats).filter(([k])=>k!=='__doc__').map(([mat,qty])=>{
+    const vanRows = Object.entries(mats).map(([mat,qty])=>{
       const m = MAT_META[mat]||{name:mat,color:'#888'};
       return '<div class="mat-summary-row"><span class="mn" style="color:'+m.color+'">● '+m.name+'</span><span class="mv">'+fmtQty(qty)+'</span></div>';
     }).join('');
-    const docRow = mats['__doc__'] ? '<div class="mat-summary-row"><span class="mn" style="color:#e07b2a">● 증서</span><span class="mv">'+mats['__doc__']+'개</span></div>' : '';
     return '<div class="mat-toggle" onclick="this.nextElementSibling.classList.toggle(\'open\');this.querySelector(\'.mat-arr\').textContent=this.nextElementSibling.classList.contains(\'open\')?\'▲\':\'▼\'">📋 총 필요 재료 <span class="mat-arr">▼</span></div>'
-      +'<div class="mat-detail" id="'+uid+'"><div class="mat-summary">'+ingotRows+vanRows+docRow+'</div></div>';
+      +'<div class="mat-detail" id="'+uid+'"><div class="mat-summary">'+ingotRows+vanRows+'</div></div>';
   }
 
   const fBdg = fr > 0 ? bdg('bg', '초고속 용광로 -'+Math.round(fr*100)+'%') : '';
@@ -835,7 +761,6 @@ export function co() {
     +(oL2>0?netSummaryRow('중급 라스',  netLS2,  0, RECIPES.LS2.ingot_rifton,  0):'')
     +(oL3>0?netSummaryRow('상급 라스',  netLS3,  0, 0, RECIPES.LS3.ingot_serent):'')
     +(oAb>0?netSummaryRow('어빌리티 스톤', netAbil, 1, 1, 1):'')
-    +precItems.map(p=>netSummaryRow(p.item.name, p.netPerItem, p.ingotKey==='C'?p.ingotCnt:0, p.ingotKey==='R'?p.ingotCnt:0, p.ingotKey==='S'?p.ingotCnt:0)).join('')
   +'</div>'
   +'<div style="font-family:\'Jua\',sans-serif!important;font-size:14px;color:var(--txt);margin:4px 0 8px;display:flex;align-items:center;gap:6px">🔨 최적 제작 계획 '+fBdg+'</div>'
   +swapInfoHtml
@@ -852,57 +777,31 @@ export function co() {
 }
 
 /* ══════════════════════════════════════════════════════════════════
-   판매가 계산기 (TAB 3)   mining app.js 맨 끝에 붙여넣기
+   판매가 계산기 (TAB 3) — 정동석 판매
 
    export 붙일 함수:
      export function onSaleSubTab()
-     export function onSaleGemToggle()
-     export function onSaleGemFeeChange()
-     export function onSaleGemRatioChange()
      export function calcSaleGem()
-     export function onSalePrecToggle()
-     export function onSalePrecFeeChange()
-     export function onSalePrecRatioChange()
-     export function calcSalePrec()
 
    window 노출 (mining.html script 블록에 추가):
-     window.onSaleSubTab          = onSaleSubTab;
-     window.onSaleGemToggle       = onSaleGemToggle;
-     window.onSaleGemFeeChange    = onSaleGemFeeChange;
-     window.onSaleGemRatioChange  = onSaleGemRatioChange;
-     window.calcSaleGem           = calcSaleGem;
-     window.onSalePrecToggle      = onSalePrecToggle;
-     window.onSalePrecFeeChange   = onSalePrecFeeChange;
-     window.onSalePrecRatioChange = onSalePrecRatioChange;
-     window.calcSalePrec          = calcSalePrec;
+     window.onSaleSubTab = onSaleSubTab;
+     window.calcSaleGem  = calcSaleGem;
 
    SAVE_IDS에 추가:
      'saleGemC_box','saleGemC_set','saleGemC_ea',
      'saleGemR_box','saleGemR_set','saleGemR_ea',
      'saleGemS_box','saleGemS_set','saleGemS_ea',
-     'saleGemOtherLv','saleGemRatioSlider',
-     'salePrecTopaz_low','salePrecTopaz_good','salePrecTopaz_royal',
-     'salePrecSapphire_low','salePrecSapphire_good','salePrecSapphire_royal',
-     'salePrecPlatinum_low','salePrecPlatinum_good','salePrecPlatinum_royal',
-     'salePrecOtherLv','salePrecRatioSlider',
    ══════════════════════════════════════════════════════════════════ */
 
 /* ── 스킬 테이블 (config MINING_SKILLS 참조) ── */
-const SALE_GEM_BONUS  = SKILLS.GEM_SELL.bonusPct;   // 반짝반짝 눈이 부셔
-const SALE_PREC_BONUS = SKILLS.PRECIOUS.bonusPct;   // 귀하신 몸값
+const SALE_GEM_BONUS = SKILLS.GEM_SELL.bonusPct;   // 반짝반짝 눈이 부셔
 
 /* ── 가격표: config에서 직접 참조 ── */
 const SALE_GEM_REF = {
-  C: { label:'코룸 보석',   price: DEFAULT_PRICES.gem.corum,  color:'#e07b2a' },
-  R: { label:'리프톤 보석', price: DEFAULT_PRICES.gem.rifton, color:'#3a9e68' },
-  S: { label:'세렌트 보석', price: DEFAULT_PRICES.gem.serent, color:'#d94f3d' },
+  C: { label:'코룸 정동석',   price: DEFAULT_PRICES.gem.corum,  color:'#e07b2a' },
+  R: { label:'리프톤 정동석', price: DEFAULT_PRICES.gem.rifton, color:'#3a9e68' },
+  S: { label:'세렌트 정동석', price: DEFAULT_PRICES.gem.serent, color:'#3d6fd4' },
 };
-const SALE_PREC_REF = {
-  Topaz:    { label:'토파즈 보석함',   prices: PRECIOUS.ITEMS.TOPAZ_BOX.prices,       color:'#c8960a' },
-  Sapphire: { label:'사파이어 조각상', prices: PRECIOUS.ITEMS.SAPPHIRE_STATUE.prices, color:'#1e54b0' },
-  Platinum: { label:'플레티넘 왕관',   prices: PRECIOUS.ITEMS.PLATINUM_CROWN.prices,  color:'#9ab0c8' },
-};
-const PREC_GRADE_LABEL = { low:'낮은 품질', good:'우수', royal:'황실인증' };
 
 /* ── 유틸 ── */
 const _sfk   = n => Math.round(n).toLocaleString('ko-KR');
@@ -912,85 +811,25 @@ const _sgv   = id => { const e=_sel(id); return e ? e.value : ''; };
 const _srrow = (l, v, style='') =>
   `<div class="rrow"><span class="rl">${l}</span><span class="rv"${style?` style="${style}"`:''}>${v}</span></div>`;
 
-/* n + ceil(n×0.05) = target → n 역산 */
-function _sCalcN(target) {
-  if (target <= 0) return 0;
-  let n = Math.floor(target / 1.05);
-  while (n + Math.ceil(n * 0.05) < target) n++;
-  return (n + Math.ceil(n * 0.05) === target) ? n : n + 1;
-}
-
-/* 보석 수량 읽기: 종류별 상자·세트·개 → 개수 반환 */
+/* 정동석 수량 읽기: 종류별 상자·세트·개 → 개수 반환 */
 function _sGemQty(kind) {
   const BOX = typeof UNITS !== 'undefined' ? UNITS.BOX_SIZE : 1728;
   const SET = typeof UNITS !== 'undefined' ? UNITS.SET_SIZE : 64;
   return _sgi(`saleGem${kind}_box`)*BOX + _sgi(`saleGem${kind}_set`)*SET + _sgi(`saleGem${kind}_ea`);
 }
 
-/* 결과 박스 공통 */
-function _sResultBox(leftLabel, leftVal, leftColor, rightLabel, rightVal, rightColor, footer='') {
-  return `<div class="result-box">
-    <div style="display:flex;gap:0;align-items:stretch">
-      <div style="flex:1;text-align:center;padding:4px 8px">
-        <div class="rb-label">${leftLabel}</div>
-        <div class="rb-value" style="color:${leftColor};font-size:18px">${leftVal}</div>
-      </div>
-      <div style="width:1px;background:var(--bdr2);margin:4px 0"></div>
-      <div style="flex:1;text-align:center;padding:4px 8px">
-        <div class="rb-label">${rightLabel}</div>
-        <div class="rb-value" style="color:${rightColor};font-size:18px">${rightVal}</div>
-      </div>
-    </div>
-    ${footer?`<div style="text-align:center;margin-top:6px;padding-top:6px;border-top:1px dashed var(--bdr2);font-size:11px;color:var(--muted)">${footer}</div>`:''}
-  </div>`;
-}
-
-/* 대리판매 공통 계산 */
-function _sProxyCalc({ sellerTotal, agreeTotal, feeSeller }) {
-  let clientGet, sellerProfit, fee;
-  if (feeSeller) {
-    fee          = Math.ceil(agreeTotal * 0.05);
-    clientGet    = agreeTotal;
-    sellerProfit = sellerTotal - agreeTotal - fee;
-  } else {
-    const n      = _sCalcN(agreeTotal);
-    fee          = Math.ceil(n * 0.05);
-    clientGet    = n;
-    sellerProfit = sellerTotal - agreeTotal;
-  }
-  return { clientGet, sellerProfit, fee };
-}
-
-/* ── 서브탭 전환 ── */
+/* ── 서브탭 전환 (정동석만 남음) ── */
 export function onSaleSubTab(i, el) {
-  _sel('saleSubTabBar').querySelectorAll('.tab').forEach(t => t.classList.remove('on'));
-  el.classList.add('on');
-  _sel('salePanelGem').style.display  = i===0 ? '' : 'none';
-  _sel('salePanelPrec').style.display = i===1 ? '' : 'none';
+  const bar = _sel('saleSubTabBar');
+  if (bar) bar.querySelectorAll('.tab').forEach(t => t.classList.remove('on'));
+  if (el) el.classList.add('on');
+  const gem = _sel('salePanelGem');
+  if (gem) gem.style.display = '';
 }
 
 /* ════════════════════════════════
-   보석 섹션
+   정동석 섹션
 ════════════════════════════════ */
-export function onSaleGemToggle() {
-  const on = _sel('saleGemProxyToggle')?.checked ?? false;
-  _sel('saleGemProxyCard').style.display = on ? '' : 'none';
-  calcSaleGem();
-}
-
-export function onSaleGemFeeChange() {
-  const feeSeller = _sel('saleGemFeeSeller')?.checked ?? true;
-  _sel('saleGemSliderWrap').style.display = feeSeller ? '' : 'none';
-  calcSaleGem();
-}
-
-export function onSaleGemRatioChange() {
-  const v = _sgi('saleGemRatioSlider') || 135;
-  const lbl = _sel('saleGemRatioLabel');
-  if (lbl) lbl.textContent = v + '%';
-  calcSaleGem();
-}
-
 export function calcSaleGem() {
   const BOX = typeof UNITS !== 'undefined' ? UNITS.BOX_SIZE : 1728;
   const SET = typeof UNITS !== 'undefined' ? UNITS.SET_SIZE : 64;
@@ -1013,7 +852,7 @@ export function calcSaleGem() {
     const parts = [
       qtyC>0 ? `<span style="color:#e07b2a">코룸 ${qtyC.toLocaleString('ko-KR')}개</span>` : '',
       qtyR>0 ? `<span style="color:#3a9e68">리프톤 ${qtyR.toLocaleString('ko-KR')}개</span>` : '',
-      qtyS>0 ? `<span style="color:#d94f3d">세렌트 ${qtyS.toLocaleString('ko-KR')}개</span>` : '',
+      qtyS>0 ? `<span style="color:#3d6fd4">세렌트 ${qtyS.toLocaleString('ko-KR')}개</span>` : '',
     ].filter(Boolean);
     parsedEl.innerHTML = parts.length ? parts.join(' ') : '';
   }
@@ -1036,279 +875,21 @@ export function calcSaleGem() {
   const myUnitS = Math.round(baseS * (100+myBonus) / 100);
   const myTotal = myUnitC*qtyC + myUnitR*qtyR + myUnitS*qtyS;
 
-  const isProxy = _sel('saleGemProxyToggle')?.checked ?? false;
-
-  /* 직접판매 */
-  if (!isProxy) {
-    const detailRows = [
-      qtyC>0 ? _srrow(`코룸 보석 (${_sfk(baseC)}원 × ${100+myBonus}%)`, `${_sfk(myUnitC)}원 × ${qtyC.toLocaleString('ko-KR')}개 = <b>${_sfk(myUnitC*qtyC)}원</b>`) : '',
-      qtyR>0 ? _srrow(`리프톤 보석 (${_sfk(baseR)}원 × ${100+myBonus}%)`, `${_sfk(myUnitR)}원 × ${qtyR.toLocaleString('ko-KR')}개 = <b>${_sfk(myUnitR*qtyR)}원</b>`) : '',
-      qtyS>0 ? _srrow(`세렌트 보석 (${_sfk(baseS)}원 × ${100+myBonus}%)`, `${_sfk(myUnitS)}원 × ${qtyS.toLocaleString('ko-KR')}개 = <b>${_sfk(myUnitS*qtyS)}원</b>`) : '',
-    ].join('');
-    resEl.innerHTML = `
-    <div class="rsec">
-      <div class="rsec-title">💎 직접판매</div>
-      ${detailRows}
-    </div>
-    <div class="result-box">
-      <div class="rb-label">총 수령액</div>
-      <div class="rb-value" style="color:var(--grn)">${_sfk(myTotal)}원</div>
-    </div>`;
-    return;
-  }
-
-  /* 대리판매 */
-  const otherLv    = _sgi('saleGemOtherLv');
-  const otherBonus = SALE_GEM_BONUS[otherLv] ?? 0;
-  const myBetter   = myBonus > otherBonus;
-  const samePct    = myBonus === otherBonus;
-
-  if (samePct) {
-    resEl.innerHTML = `
-    <div class="rsec">
-      ${_srrow('내 스킬',   `반짝반짝 Lv${myLv} +${myBonus}%`)}
-      ${_srrow('상대 스킬', `반짝반짝 Lv${otherLv} +${otherBonus}%`)}
-    </div>
-    <div style="background:var(--ylw-bg);border:1.5px solid var(--ylw);border-radius:var(--rs);padding:10px 12px;text-align:center;font-size:13px;color:var(--ylw)">
-      두 스킬이 동일해서 대리판매로 추가 이득이 없어요
-    </div>`; return;
-  }
-
-  const sellerBonus = myBetter ? myBonus : otherBonus;
-  const sellerUnitC = Math.round(baseC * (100+sellerBonus) / 100);
-  const sellerUnitR = Math.round(baseR * (100+sellerBonus) / 100);
-  const sellerUnitS = Math.round(baseS * (100+sellerBonus) / 100);
-  const sellerTotal = sellerUnitC*qtyC + sellerUnitR*qtyR + sellerUnitS*qtyS;
-
-  /* 약정: 기본가 × 비율 × 수량 → 종류별 합산 */
-  const feeSeller  = _sel('saleGemFeeSeller')?.checked ?? true;
-  const ratioPct   = feeSeller ? (_sgi('saleGemRatioSlider') || 135) : null;
-  const agreeTotal = feeSeller
-    ? Math.round(baseC * ratioPct / 100)*qtyC
-      + Math.round(baseR * ratioPct / 100)*qtyR
-      + Math.round(baseS * ratioPct / 100)*qtyS
-    : sellerTotal;
-
-  const ratioNoteEl = _sel('saleGemRatioNote');
-  if (ratioNoteEl && feeSeller) {
-    ratioNoteEl.textContent = `기본가 × ${ratioPct}% 합산 = ${_sfk(agreeTotal)}원`;
-  }
-
-  const { clientGet, sellerProfit, fee } = _sProxyCalc({ sellerTotal, agreeTotal, feeSeller });
-  const feeNote = feeSeller
-    ? `${_sfk(agreeTotal)}원 × 5% 수수료 = ${_sfk(fee)}원 (판매자 부담)`
-    : `${_sfk(clientGet)}원 × 5% 수수료 = ${_sfk(fee)}원 (의뢰인 부담)`;
-  const extraGain = clientGet - myTotal;
-
-  if (myBetter) {
-    resEl.innerHTML = `
-    <div style="background:var(--blu-bg);border:1.5px solid var(--blu);border-radius:var(--rs);padding:8px 12px;margin-bottom:8px;font-size:12px;color:var(--blu);font-weight:700">
-      내 스킬(Lv${myLv} +${myBonus}%)이 상대방보다 높아요
-    </div>
-    <div class="rsec">
-      <div class="rsec-title">내가 대신 판매</div>
-      ${_srrow('내 스킬 적용 총 판매가', `<b>${_sfk(sellerTotal)}원</b>`, 'color:var(--grn)')}
-      ${feeSeller ? _srrow(`판매 퍼센트 (총액 × ${ratioPct}%)`, `${_sfk(agreeTotal)}원`) : ''}
-      ${_srrow('수수료', feeNote)}
-      ${_srrow('송금해야 할 금액', `<b>${_sfk(clientGet)}원</b>`)}
-    </div>
-    ${_sResultBox('상대방 받는 금액', _sfk(clientGet)+'원', 'var(--txt)',
-        '내 이득', (sellerProfit>=0?'+':'')+_sfk(sellerProfit)+'원',
-        sellerProfit>=0?'var(--grn)':'var(--red)',
-        `총 판매 ${_sfk(sellerTotal)}원 — 송금 ${_sfk(agreeTotal)}원 — 수수료 ${_sfk(fee)}원`)}`;
-  } else {
-    resEl.innerHTML = `
-    <div style="background:var(--grn-bg);border:1.5px solid var(--grn);border-radius:var(--rs);padding:8px 12px;margin-bottom:8px;font-size:12px;color:var(--grn);font-weight:700">
-      상대방 스킬(Lv${otherLv} +${otherBonus}%)이 더 높아요
-    </div>
-    <div class="rsec">
-      <div class="rsec-title">상대방이 대신 판매</div>
-      ${_srrow('상대방 스킬 적용 총 판매가', `<b>${_sfk(sellerTotal)}원</b>`)}
-      ${feeSeller ? _srrow(`(총액 × ${ratioPct}%)`, `${_sfk(agreeTotal)}원`) : ''}
-      ${_srrow('수수료', feeNote)}
-      ${_srrow('내가 받는 금액', `<b>${_sfk(clientGet)}원</b>`, 'color:var(--grn)')}
-      <div style="border-top:1px dashed var(--bdr2);margin-top:4px;padding-top:5px">
-        ${_srrow('내가 직접판매 시', `${_sfk(myTotal)}원 (Lv${myLv} +${myBonus}%)`, 'color:var(--muted)')}
-      </div>
-    </div>
-    ${_sResultBox('내가 받는 금액', _sfk(clientGet)+'원', 'var(--grn)',
-        '대리판매 추가수익', (extraGain>=0?'+':'')+_sfk(extraGain)+'원',
-        extraGain>=0?'var(--grn)':'var(--red)')}`;
-  }
-}
-
-/* ════════════════════════════════
-   귀중품 섹션
-════════════════════════════════ */
-export function onSalePrecToggle() {
-  const on = _sel('salePrecProxyToggle')?.checked ?? false;
-  _sel('salePrecProxyCard').style.display = on ? '' : 'none';
-  calcSalePrec();
-}
-
-export function onSalePrecFeeChange() {
-  const feeSeller = _sel('salePrecFeeSeller')?.checked ?? true;
-  _sel('salePrecSliderWrap').style.display = feeSeller ? '' : 'none';
-  calcSalePrec();
-}
-
-export function onSalePrecRatioChange() {
-  const v = _sgi('salePrecRatioSlider') || 135;
-  const lbl = _sel('salePrecRatioLabel');
-  if (lbl) lbl.textContent = v + '%';
-  calcSalePrec();
-}
-
-export function calcSalePrec() {
-  /* 내 스킬 뱃지 */
-  const _myPrecLv = _sgi('skillPrecious');
-  const _myPrecBonus = SALE_PREC_BONUS[_myPrecLv] ?? 0;
-  const precBadgeEl = _sel('salePrecMySkillVal');
-  if (precBadgeEl) precBadgeEl.textContent = _myPrecLv === 0 ? '0레벨 (기본)' : `Lv${_myPrecLv} +${_myPrecBonus}%`;
-
-  /* 종류×등급별 수량 읽기 */
-  const items = [
-    { key:'Topaz',    grades:{ low: _sgi('salePrecTopaz_low'),    good: _sgi('salePrecTopaz_good'),    royal: _sgi('salePrecTopaz_royal')    } },
-    { key:'Sapphire', grades:{ low: _sgi('salePrecSapphire_low'), good: _sgi('salePrecSapphire_good'), royal: _sgi('salePrecSapphire_royal') } },
-    { key:'Platinum', grades:{ low: _sgi('salePrecPlatinum_low'), good: _sgi('salePrecPlatinum_good'), royal: _sgi('salePrecPlatinum_royal') } },
-  ];
-
-  const qtyTotal = items.reduce((s,it) => s + Object.values(it.grades).reduce((a,b)=>a+b,0), 0);
-
-  /* 수량 합계 표시 */
-  const parsedEl = _sel('salePrecQtyParsed');
-  if (parsedEl) {
-    const parts = items.flatMap(it => {
-      const ref = SALE_PREC_REF[it.key];
-      return Object.entries(it.grades)
-        .filter(([,q])=>q>0)
-        .map(([g,q])=>`<span style="color:${ref.color}">${ref.label} ${PREC_GRADE_LABEL[g]} ${q.toLocaleString('ko-KR')}개</span>`);
-    });
-    parsedEl.innerHTML = parts.join(' ');
-  }
-
-  const resEl = _sel('salePrecRes'); if (!resEl) return;
-  if (!qtyTotal) { resEl.innerHTML='<div class="empty-msg">수량을 입력하면 계산됩니다</div>'; return; }
-
-  /* 내 스킬 (사이드바 skillPrecious) */
-  const myLv    = _sgi('skillPrecious');
-  const myBonus = SALE_PREC_BONUS[myLv] ?? 0;
-
-  /* 종류×등급별 내 직접판매 총액 계산 */
-  let myTotal = 0;
-  const myDetailRows = [];
-  for (const it of items) {
-    const ref = SALE_PREC_REF[it.key];
-    for (const [grade, qty] of Object.entries(it.grades)) {
-      if (!qty) continue;
-      const basePrice = ref.prices[grade.toUpperCase()];
-      const unitPrice = Math.round(basePrice * (100+myBonus) / 100);
-      myTotal += unitPrice * qty;
-      myDetailRows.push(
-        _srrow(
-          `${ref.label} ${PREC_GRADE_LABEL[grade]} (${_sfk(basePrice)}원 × ${100+myBonus}%)`,
-          `${_sfk(unitPrice)}원 × ${qty.toLocaleString('ko-KR')}개 = <b>${_sfk(unitPrice*qty)}원</b>`
-        )
-      );
-    }
-  }
-
-  const isProxy = _sel('salePrecProxyToggle')?.checked ?? false;
-
-  /* 직접판매 */
-  if (!isProxy) {
-    resEl.innerHTML = `
-    <div class="rsec">
-      <div class="rsec-title">👑 직접판매 — 귀하신 몸값 Lv${myLv} +${myBonus}%</div>
-      ${myDetailRows.join('')}
-    </div>
-    <div class="result-box">
-      <div class="rb-label">총 수령액</div>
-      <div class="rb-value" style="color:var(--grn)">${_sfk(myTotal)}원</div>
-    </div>`;
-    return;
-  }
-
-  /* 대리판매 */
-  const otherLv    = _sgi('salePrecOtherLv');
-  const otherBonus = SALE_PREC_BONUS[otherLv] ?? 0;
-  const myBetter   = myBonus > otherBonus;
-  const samePct    = myBonus === otherBonus;
-
-  if (samePct) {
-    resEl.innerHTML = `
-    <div class="rsec">
-      ${_srrow('내 스킬',   `귀하신 몸값 Lv${myLv} +${myBonus}%`)}
-      ${_srrow('상대 스킬', `귀하신 몸값 Lv${otherLv} +${otherBonus}%`)}
-    </div>
-    <div style="background:var(--ylw-bg);border:1.5px solid var(--ylw);border-radius:var(--rs);padding:10px 12px;text-align:center;font-size:13px;color:var(--ylw)">
-      두 스킬이 동일해서 대리판매로 추가 이득이 없어요
-    </div>`; return;
-  }
-
-  const sellerBonus = myBetter ? myBonus : otherBonus;
-  const feeSeller   = _sel('salePrecFeeSeller')?.checked ?? true;
-  const ratioPct    = feeSeller ? (_sgi('salePrecRatioSlider') || 135) : null;
-
-  let sellerTotal = 0, agreeByRatio = 0;
-  for (const it of items) {
-    const ref = SALE_PREC_REF[it.key];
-    for (const [grade, qty] of Object.entries(it.grades)) {
-      if (!qty) continue;
-      const basePrice = ref.prices[grade.toUpperCase()];
-      sellerTotal  += Math.round(basePrice * (100+sellerBonus) / 100) * qty;
-      agreeByRatio += Math.round(basePrice * ratioPct / 100) * qty;  // 기본가 × 비율 × 수량
-    }
-  }
-
-  const agreeTotal = feeSeller ? agreeByRatio : sellerTotal;
-
-  const ratioNoteEl = _sel('salePrecRatioNote');
-  if (ratioNoteEl && feeSeller) {
-    ratioNoteEl.textContent = `기본가 × ${ratioPct}% 합산 = ${_sfk(agreeTotal)}원`;
-  }
-
-  const { clientGet, sellerProfit, fee } = _sProxyCalc({ sellerTotal, agreeTotal, feeSeller });
-  const feeNote = feeSeller
-    ? `송금액 ${_sfk(agreeTotal)}원 × 5% 올림 = ${_sfk(fee)}원 (판매자 부담)`
-    : `송금액 ${_sfk(clientGet)}원 × 5% 올림 = ${_sfk(fee)}원 (의뢰인 차감)`;
-  const extraGain = clientGet - myTotal;
-
-  if (myBetter) {
-    resEl.innerHTML = `
-    <div style="background:var(--blu-bg);border:1.5px solid var(--blu);border-radius:var(--rs);padding:8px 12px;margin-bottom:8px;font-size:12px;color:var(--blu);font-weight:700">
-      ✋ 내 스킬(Lv${myLv} +${myBonus}%)이 상대방(Lv${otherLv} +${otherBonus}%)보다 높아요 — 내가 대신 팔아줌
-    </div>
-    <div class="rsec">
-      <div class="rsec-title">내가 대신 판매 — 귀하신 몸값 Lv${myLv} +${myBonus}%</div>
-      ${_srrow('총 판매가', `<b>${_sfk(sellerTotal)}원</b>`, 'color:var(--grn)')}
-      ${feeSeller ? _srrow(`판매 퍼센트 (기본가 × ${ratioPct}% 합산)`, `${_sfk(agreeTotal)}원`) : ''}
-      ${_srrow('수수료', feeNote)}
-      ${_srrow('송금해야 할 금액', `<b>${_sfk(clientGet)}원</b>`)}
-    </div>
-    ${_sResultBox('상대방이 받는 금액', _sfk(clientGet)+'원', 'var(--txt)',
-        '내 이득', (sellerProfit>=0?'+':'')+_sfk(sellerProfit)+'원',
-        sellerProfit>=0?'var(--grn)':'var(--red)',
-        `총 판매 ${_sfk(sellerTotal)}원 — 송금 ${_sfk(agreeTotal)}원 — 수수료 ${_sfk(fee)}원`)}`;
-  } else {
-    resEl.innerHTML = `
-    <div style="background:var(--grn-bg);border:1.5px solid var(--grn);border-radius:var(--rs);padding:8px 12px;margin-bottom:8px;font-size:12px;color:var(--grn);font-weight:700">
-      ⬆️ 상대방 스킬(Lv${otherLv} +${otherBonus}%)이 더 높아요
-    </div>
-    <div class="rsec">
-      <div class="rsec-title">상대방이 대신 판매</div>
-      ${_srrow('총 판매가', `<b>${_sfk(sellerTotal)}원</b>`)}
-      ${feeSeller ? _srrow(`판매 퍼센트 (기본가 × ${ratioPct}% 합산)`, `${_sfk(agreeTotal)}원`) : ''}
-      ${_srrow('수수료', feeNote)}
-      ${_srrow('내가 받는 금액', `<b>${_sfk(clientGet)}원</b>`, 'color:var(--grn)')}
-      <div style="border-top:1px dashed var(--bdr2);margin-top:4px;padding-top:5px">
-        ${_srrow('내가 직접판매 시', `${_sfk(myTotal)}원 (Lv${myLv} +${myBonus}%)`, 'color:var(--muted)')}
-      </div>
-    </div>
-    ${_sResultBox('내가 받는 금액', _sfk(clientGet)+'원', 'var(--grn)',
-        '대리판매 추가수익', (extraGain>=0?'+':'')+_sfk(extraGain)+'원',
-        extraGain>=0?'var(--grn)':'var(--red)')}`;
-  }
+  /* 정동석 판매 */
+  const detailRows = [
+    qtyC>0 ? _srrow(`코룸 정동석 (${_sfk(baseC)}원 × ${100+myBonus}%)`, `${_sfk(myUnitC)}원 × ${qtyC.toLocaleString('ko-KR')}개 = <b>${_sfk(myUnitC*qtyC)}원</b>`) : '',
+    qtyR>0 ? _srrow(`리프톤 정동석 (${_sfk(baseR)}원 × ${100+myBonus}%)`, `${_sfk(myUnitR)}원 × ${qtyR.toLocaleString('ko-KR')}개 = <b>${_sfk(myUnitR*qtyR)}원</b>`) : '',
+    qtyS>0 ? _srrow(`세렌트 정동석 (${_sfk(baseS)}원 × ${100+myBonus}%)`, `${_sfk(myUnitS)}원 × ${qtyS.toLocaleString('ko-KR')}개 = <b>${_sfk(myUnitS*qtyS)}원</b>`) : '',
+  ].join('');
+  resEl.innerHTML = `
+  <div class="rsec">
+    <div class="rsec-title">💎 정동석 판매 — 반짝반짝 Lv${myLv} +${myBonus}%</div>
+    ${detailRows}
+  </div>
+  <div class="result-box">
+    <div class="rb-label">총 수령액</div>
+    <div class="rb-value" style="color:var(--grn)">${_sfk(myTotal)}원</div>
+  </div>`;
 }
 
 export function init() {
