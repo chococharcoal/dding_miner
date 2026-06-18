@@ -359,7 +359,7 @@ export const MARKET_FEE = 0.05;
 /* ── 채광 기본 시세 ── */
 export const MINING_DEFAULT_PRICES = {
   ingot:  { corum:5708, rifton:5845, serent:5901 },
-  gem:    { corum:9000, rifton:9000, serent:9000 },
+  gem:    { corum:8000, rifton:8500, serent:9000 },
   ls1:14688, ls2:39623, ls3:72647, abil:17032,
   vanilla: {
     cobblestone:1266, deepslate_cobblestone:317,
