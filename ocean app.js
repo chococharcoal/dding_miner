@@ -1558,7 +1558,7 @@ function getStaticIds(){
   return['skillFurnace','skillCraftBonus','skillAlchBonus','skillDeepHarvest','skillStarBonus','skillClamBonus','engClamSearch','engSeafoodLuck','engFisherRoulette','engSpiritWhale','rodLevel','totalStamina','price_sf_1','price_sf_2','price_sf_3','sfCostToggle','viewByStageToggle','excludeDilutedToggle','useProcToggle',...Object.keys(VANILLA_META).map(k=>'vprice_'+k),...sfSplitIds,...procIds];
 }
 function saveAll(){
-  const d={};
+  const d=oceanStore.load()||{};  // 기존 저장값 위에 병합 → 화면에 없는 모드(어패류/1차가공품) 입력 보존
   getStaticIds().forEach(id=>{const e=document.getElementById(id);if(e)d[id]=e.value;});
   d.__sfCostToggle     =document.getElementById('sfCostToggle')?.checked     ??false;
   d.__viewByStageToggle=document.getElementById('viewByStageToggle')?.checked??false;
@@ -1654,6 +1654,11 @@ window.resetAll=()=>{
     PROC_GROUPS.forEach(grp=>grp.items.forEach(it=>{
       ['_box','_set','_ea'].forEach(s=>clearEl('proc_'+it.key+s));
     }));
+    // 병합 저장 대비: 화면에 없는 모드의 저장값까지 직접 제거(어패류·1차가공품 모두 초기화)
+    const _rd=oceanStore.load()||{};
+    SF_TYPES.forEach(sf=>SF_TIERS.forEach(t=>['_box','_set','_ea'].forEach(s=>{delete _rd['have_'+sf+'_'+t+s];})));
+    PROC_GROUPS.forEach(grp=>grp.items.forEach(it=>['_box','_set','_ea'].forEach(s=>{delete _rd['proc_'+it.key+s];})));
+    oceanStore.save(_rd);
     const il=document.getElementById('intermList');if(il)il.innerHTML='';
     intermRowId=0;
     buildHaveSeafoodGrid();
@@ -1962,6 +1967,10 @@ window.onOceanSaleAlchRatioChange = onOceanSaleAlchRatioChange;
 window.calcOceanSaleAlch          = calcOceanSaleAlch;
 window.calcOceanSaleCraft         = calcOceanSaleCraft;
 window.calcOceanSaleSF            = calcOceanSaleSF;
+/* 공예품 대리판매는 제거(직접판매 전용). ocean.html 에 남아있는 onclick 이 에러를 던지지 않도록 하는 무해한 호환 shim */
+window.onOceanSaleCraftToggle      = () => { const c=document.getElementById('oSaleCraftProxyCard'); if(c)c.style.display='none'; const t=document.getElementById('oSaleCraftProxyToggle'); if(t)t.checked=false; calcOceanSaleCraft(); };
+window.onOceanSaleCraftFeeChange   = () => calcOceanSaleCraft();
+window.onOceanSaleCraftRatioChange = () => calcOceanSaleCraft();
 
 
 /* ══════════════════════════════════════════════════════════════════
@@ -2147,8 +2156,6 @@ window.applyRemainToHave = () => {
 function domReady(fn){if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',fn);else fn();}
 domReady(()=>{
   buildVanillaPriceGrid();
-  // ⚠️ 버그수정: 보유칸 그리드는 useProcToggle 체크 상태에 따라 어패류/1차가공품 입력칸이 달라진다.
-  //   loadAll 보다 먼저 토글 상태를 복원해야 올바른 입력칸이 생성되고, 이후 loadAll 이 그 값을 채운다.
   try{
     const __d=oceanStore.load();
     const __u=document.getElementById('useProcToggle');       if(__u)__u.checked=__d.__useProcToggle      ??false;
