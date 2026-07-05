@@ -299,10 +299,6 @@ window.onViewToggle = () => {
   saveAll();
   if (_cachedOptResult) renderOptResult(_cachedOptResult);
 };
-window.onEssFirstToggle = () => {
-  saveAll();
-  if (_cachedOptResult) renderOptResult(_cachedOptResult);
-};
 
 async function calcOpt() {
   const inv = {};
@@ -780,6 +776,8 @@ function renderOptResult({ planEntries, finalAnalysis, workInv, totalRev, totalV
   const essOrder3=['elixir_guardian','elixir_wave','elixir_chaos','elixir_life','elixir_corrosion'];
   const coreOrder=['core_guard','core_wave','core_chaos','core_life','core_corrosion'];
   const crysOrder=['crystal_vitality','crystal_erosion','crystal_defense','crystal_torrent','crystal_poison'];
+  // 제작 단위(배치): 방어 오염의 결정만 33, 그 외 모든 결정 49 (영약은 기존 24 유지)
+  const crysChunk={crystal_defense:33,crystal_vitality:49,crystal_erosion:49,crystal_torrent:49,crystal_poison:49};
   const potiOrder=['potion_immortal','potion_barrier','potion_corrupt','potion_frenzy','potion_venom'];
   const fin1Order=['AQUTIS','KRAKEN','LEVIATHAN'];
   const fin2Order=['WAVE_CORE','DEEP_VIAL','SEA_WING'];
@@ -969,31 +967,34 @@ function renderOptResult({ planEntries, finalAnalysis, workInv, totalRev, totalV
       return s;
     }
 
-    const essFirstOrder = document.getElementById('essFirstToggle')?.checked ?? false;
-
-    if (essFirstOrder) {
-      html+=useProc ? '' : stageSection('정수 제작', '⚗️', agg.ess1,'ess1','#1e9e58', essOrder1, {essence_guardian1:98,essence_corrosion1:98,essence_wave1:48,essence_chaos1:48,essence_life1:48});
-      html+=useProc ? '' : stageSection('에센스 제작', '⚗️', agg.ess2, 'ess2','#2060c8', essOrder2, 66);
-      html+=useProc ? '' : stageSection('엘릭서 제작', '⚗️', agg.ess3, 'ess3','#c82828', essOrder3, 34);
-      html+=stageSection('핵 제작',     '💠', agg.core, 'core','#1e9e58', coreOrder, 50);
-      html+=stageSection('결정 제작',   '💎', agg.crys, 'crys','#2060c8', crysOrder, 24);
-      html+=stageSection('영약 제작',   '🧪', agg.poti, 'poti','#c82828', potiOrder, 24);
-      html+=stageSection('1성 완성품',  '★',  agg.fin1, 'fin1','#1e9e58', fin1Order);
-      html+=stageSection('2성 완성품',  '★★', agg.fin2, 'fin2','#2060c8', fin2Order);
-      html+=stageSection('3성 완성품',  '★★★',agg.fin3,'fin3','#c82828', fin3Order);
-      html+=stageSection('0성 완성품',  '🔬', agg.fin0, 'fin0','#c8920a', null);
-    } else {
-      html+=useProc ? '' : stageSection('정수 제작', '⚗️', agg.ess1,'ess1','#1e9e58', essOrder1, {essence_guardian1:98,essence_corrosion1:98,essence_wave1:48,essence_chaos1:48,essence_life1:48});
-      html+=stageSection('핵 제작',     '💠', agg.core, 'core','#1e9e58', coreOrder, 50);
-      html+=stageSection('1성 완성품',  '★',  agg.fin1, 'fin1','#1e9e58', fin1Order);
-      html+=useProc ? '' : stageSection('에센스 제작', '⚗️', agg.ess2, 'ess2','#2060c8', essOrder2, 66);
-      html+=stageSection('결정 제작',   '💎', agg.crys, 'crys','#2060c8', crysOrder, 24);
-      html+=stageSection('2성 완성품',  '★★', agg.fin2, 'fin2','#2060c8', fin2Order);
-      html+=useProc ? '' : stageSection('엘릭서 제작', '⚗️', agg.ess3, 'ess3','#c82828', essOrder3, 34);
-      html+=stageSection('영약 제작',   '🧪', agg.poti, 'poti','#c82828', potiOrder, 24);
-      html+=stageSection('3성 완성품',  '★★★',agg.fin3,'fin3','#c82828', fin3Order);
-      html+=stageSection('0성 완성품',  '🔬', agg.fin0, 'fin0','#c8920a', null);
+    /* ── 결과 표시 재구성: 0성 → 3성 → 2성 → 1성 (요청). 각 성급마다 [제작 → 완성품] ──
+       계산/집계/최적화/제작횟수는 전부 불변. 아래는 기존 agg 값을 순서·구성만 바꿔 표시.
+       0성 제작 = 추출된 희석액이 소비하는 재료(희석액 수 × 레시피)로 기존 값에서 파생(집계·최적화 불변). */
+    const _dilN = (agg.fin0 && agg.fin0['DILUTED_EXTRACT']) || 0;
+    if (_dilN > 0) {
+      const _dm = PRECISION_ALCHEMY['DILUTED_EXTRACT'].materials;
+      const zeroAgg = {
+        potion_corrupt : (_dm.potion_corrupt || 0) * _dilN,
+        crystal_defense: (_dm.crystal_defense || 0) * _dilN,
+        core_corrosion : (_dm.core_corrosion || 0) * _dilN,
+      };
+      html+=stageSection('0성 제작', '🔬', zeroAgg, 'zero','#c8920a',
+        ['potion_corrupt','crystal_defense','core_corrosion'],
+        {potion_corrupt:24, crystal_defense:33, core_corrosion:50});
     }
+    html+=stageSection('0성 완성품', '💧', agg.fin0, 'fin0','#c8920a', null);
+
+    html+=stageSection('3성 제작', '🧪', agg.poti, 'poti','#c82828',
+      ['potion_immortal','potion_barrier','potion_venom','potion_frenzy','potion_corrupt'], 24);
+    html+=stageSection('3성 완성품', '★★★', agg.fin3, 'fin3','#c82828', fin3Order);
+
+    html+=stageSection('2성 제작', '💎', agg.crys, 'crys','#2060c8',
+      ['crystal_vitality','crystal_erosion','crystal_torrent','crystal_poison','crystal_defense'], crysChunk);
+    html+=stageSection('2성 완성품', '★★', agg.fin2, 'fin2','#2060c8', fin2Order);
+
+    html+=stageSection('1성 제작', '💠', agg.core, 'core','#1e9e58',
+      ['core_guard','core_chaos','core_life','core_wave','core_corrosion'], 50);
+    html+=stageSection('1성 완성품', '★', agg.fin1, 'fin1','#1e9e58', fin1Order);
 
     const allFinAgg = {...agg.fin0,...agg.fin1,...agg.fin2,...agg.fin3};
     const finSummaryEntries = Object.entries(allFinAgg).filter(([,v])=>v>0);
@@ -1064,7 +1065,7 @@ function renderOptResult({ planEntries, finalAnalysis, workInv, totalRev, totalV
       html += `<div class="cfc-sub" style="color:var(--muted)">여러 단계에서 공통으로 필요한 재료</div></div></div>`;
       html += `<div class="cfc-section" style="padding:8px 14px">`;
       if (_sw>0)   html += `<div style="${rowS}"><span style="color:${col}">🌊 해초</span><span style="color:var(--txt)">${fmtQty(_sw)}</span></div>`;
-      if (_kelp>0) html += `<div style="${rowS}"><span style="color:${col}">🌿 켈프</span><span style="color:var(--txt)">${fmtQty(_kelp)}</span></div>`;
+      if (_kelp>0) html += `<div style="${rowS}"><span style="color:${col}">🌿 켈프 더미</span><span style="color:var(--txt)">${fmtQty(_kelp)}</span></div>`;
       if (_fr>0)   html += `<div style="${rowS}"><span style="color:${col}">🔵 불우렁쉥이</span><span style="color:var(--txt)">${fmtQty(_fr)}</span></div>`;
       if (_gb>0)   html += `<div style="${rowS}"><span style="color:${col}">🍶 유리병</span><span style="color:var(--txt)">${fmtQty(_gb)}</span></div>`;
       if (_gl>0)   html += `<div style="${rowS};border-bottom:none"><span style="color:${col}">✨ 발광 열매</span><span style="color:var(--txt)">${fmtQty(_gl)}</span></div>`;
@@ -1562,7 +1563,6 @@ function saveAll(){
   getStaticIds().forEach(id=>{const e=document.getElementById(id);if(e)d[id]=e.value;});
   d.__sfCostToggle     =document.getElementById('sfCostToggle')?.checked     ??false;
   d.__viewByStageToggle=document.getElementById('viewByStageToggle')?.checked??false;
-  d.__essFirstToggle   =document.getElementById('essFirstToggle')?.checked   ??false;
   d.__useProcToggle      =document.getElementById('useProcToggle')?.checked      ??false;
   d.__excludeDilutedToggle=document.getElementById('excludeDilutedToggle')?.checked??false;
   const irows=[];
@@ -1580,7 +1580,6 @@ function loadAll(){
     getStaticIds().forEach(id=>{const e=document.getElementById(id);if(e&&d[id]!==undefined)e.value=d[id];});
     const sfTog=document.getElementById('sfCostToggle');     if(sfTog)sfTog.checked    =d.__sfCostToggle     ??false;
     const stTog=document.getElementById('viewByStageToggle');if(stTog)stTog.checked    =d.__viewByStageToggle??false;
-    const efTog=document.getElementById('essFirstToggle');   if(efTog)efTog.checked    =d.__essFirstToggle   ??false;
     const upTog=document.getElementById('useProcToggle');       if(upTog)upTog.checked=d.__useProcToggle      ??false;
     const xdTog=document.getElementById('excludeDilutedToggle');if(xdTog)xdTog.checked=d.__excludeDilutedToggle??false;
     SF_TYPES.forEach(sf=>SF_TIERS.forEach(t=>{const id='have_'+sf+'_'+t,p=document.getElementById(id+'_p'),n=readSplitQty(id);if(p&&n>0)p.textContent='총 '+f(n)+'개';}));
@@ -2156,6 +2155,8 @@ window.applyRemainToHave = () => {
 function domReady(fn){if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',fn);else fn();}
 domReady(()=>{
   buildVanillaPriceGrid();
+  // ⚠️ 버그수정: 보유칸 그리드는 useProcToggle 체크 상태에 따라 어패류/1차가공품 입력칸이 달라진다.
+  //   loadAll 보다 먼저 토글 상태를 복원해야 올바른 입력칸이 생성되고, 이후 loadAll 이 그 값을 채운다.
   try{
     const __d=oceanStore.load();
     const __u=document.getElementById('useProcToggle');       if(__u)__u.checked=__d.__useProcToggle      ??false;

@@ -166,9 +166,6 @@ input[type=number]{-moz-appearance:textfield;appearance:textfield}
 #viewByStageToggle:checked+.sf-tog-track{background:var(--acc)}
 #viewByStageToggle:checked+.sf-tog-track .sf-tog-thumb{transform:translateX(16px)}
 #viewByStageToggle:checked~.sf-tog-label{color:var(--acc)}
-#essFirstToggle:checked+.sf-tog-track{background:var(--acc)}
-#essFirstToggle:checked+.sf-tog-track .sf-tog-thumb{transform:translateX(16px)}
-#essFirstToggle:checked~.sf-tog-label{color:var(--acc)}
 #excludeDilutedToggle:checked+.sf-tog-track{background:var(--acc)}
 #excludeDilutedToggle:checked+.sf-tog-track .sf-tog-thumb{transform:translateX(16px)}
 #excludeDilutedToggle:checked~.sf-tog-label{color:var(--acc)}
@@ -365,12 +362,6 @@ input[type=number]{-moz-appearance:textfield;appearance:textfield}
         <span class="sf-tog-track"><span class="sf-tog-thumb"></span></span>
         <span class="sf-tog-label">어패류 원가 포함</span>
         <span class="sf-tog-desc">순이익에 어패류 판매가를 원가로 반영</span>
-      </label>
-      <label class="sf-tog-wrap">
-        <input type="checkbox" id="essFirstToggle" style="display:none" onchange="onEssFirstToggle()">
-        <span class="sf-tog-track"><span class="sf-tog-thumb"></span></span>
-        <span class="sf-tog-label">짧은 시간 순 나열</span>
-        <span class="sf-tog-desc">정수→에센스→엘릭서→핵→결정→영약 순서로 표시</span>
       </label>
       <label class="sf-tog-wrap">
         <input type="checkbox" id="excludeDilutedToggle" style="display:none">

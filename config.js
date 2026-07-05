@@ -131,15 +131,15 @@ export const ALCHEMY = {
 
   /* ── 2차: 결정 → 1개 생산 ── */
   crystal_vitality: { name:'활기 보존의 결정 ★★', tier:2, type:'compound', output:1, craftTimeSec:10, color:'#3d6fd4', reversible:false,
-    materials:{ essence_guardian2:1, essence_life2:1, kelp:8, lapis_block:1 } },
+    materials:{ essence_guardian2:1, essence_life2:1, kelp:2, lapis_block:1 } },
   crystal_erosion:  { name:'파도 침식의 결정 ★★', tier:2, type:'compound', output:1, craftTimeSec:10, color:'#c89c00', reversible:false,
-    materials:{ essence_wave2:1, essence_corrosion2:1, kelp:8, redstone_block:1 } },
+    materials:{ essence_wave2:1, essence_corrosion2:1, kelp:2, redstone_block:1 } },
   crystal_defense:  { name:'방어 오염의 결정 ★★', tier:2, type:'compound', output:1, craftTimeSec:10, color:'#7c52c8', reversible:false,
-    materials:{ essence_chaos2:1, essence_guardian2:1, kelp:8, iron_ingot:3 } },
+    materials:{ essence_chaos2:1, essence_guardian2:1, kelp:2, iron_ingot:3 } },
   crystal_torrent:  { name:'격류 재생의 결정 ★★', tier:2, type:'compound', output:1, craftTimeSec:10, color:'#d94f3d', reversible:false,
-    materials:{ essence_life2:1, essence_wave2:1, kelp:8, gold_ingot:2 } },
+    materials:{ essence_life2:1, essence_wave2:1, kelp:2, gold_ingot:2 } },
   crystal_poison:   { name:'맹독 혼란의 결정 ★★', tier:2, type:'compound', output:1, craftTimeSec:10, color:'#3a9e68', reversible:false,
-    materials:{ essence_corrosion2:1, essence_chaos2:1, kelp:8, diamond:1 } },
+    materials:{ essence_corrosion2:1, essence_chaos2:1, kelp:2, diamond:1 } },
 
   /* ── 3차: 엘릭서 → 1개 생산 ── */
   elixir_guardian: { name:'수호의 엘릭서 ★★★', tier:3, type:'essence', seafood:'oyster',  output:1, craftTimeSec:10, color:'#3d6fd4', reversible:true,
@@ -155,15 +155,15 @@ export const ALCHEMY = {
 
   /* ── 3차: 영약 → 1개 생산 ── */
   potion_immortal: { name:'불멸 재생의 영약 ★★★', tier:3, type:'compound', output:1, craftTimeSec:20, color:'#3d6fd4', reversible:false,
-    materials:{ elixir_guardian:1, elixir_life:1, kelp:12, glowberry:4, coral_dead_tube:2 } },
+    materials:{ elixir_guardian:1, elixir_life:1, kelp:3, glowberry:4, coral_dead_tube:2 } },
   potion_barrier:  { name:'파동 장벽의 영약 ★★★', tier:3, type:'compound', output:1, craftTimeSec:20, color:'#c89c00', reversible:false,
-    materials:{ elixir_wave:1, elixir_guardian:1, kelp:12, glowberry:4, coral_dead_brain:2 } },
+    materials:{ elixir_wave:1, elixir_guardian:1, kelp:3, glowberry:4, coral_dead_brain:2 } },
   potion_corrupt:  { name:'타락 침식의 영약 ★★★', tier:3, type:'compound', output:1, craftTimeSec:20, color:'#7c52c8', reversible:false,
-    materials:{ elixir_chaos:1, elixir_corrosion:1, kelp:12, glowberry:4, coral_dead_bubble:2 } },
+    materials:{ elixir_chaos:1, elixir_corrosion:1, kelp:3, glowberry:4, coral_dead_bubble:2 } },
   potion_frenzy:   { name:'생명 광란의 영약 ★★★', tier:3, type:'compound', output:1, craftTimeSec:20, color:'#d94f3d', reversible:false,
-    materials:{ elixir_life:1, elixir_chaos:1, kelp:12, glowberry:4, coral_dead_fire:2 } },
+    materials:{ elixir_life:1, elixir_chaos:1, kelp:3, glowberry:4, coral_dead_fire:2 } },
   potion_venom:    { name:'맹독 파동의 영약 ★★★', tier:3, type:'compound', output:1, craftTimeSec:20, color:'#3a9e68', reversible:false,
-    materials:{ elixir_corrosion:1, elixir_wave:1, kelp:12, glowberry:4, coral_dead_horn:2 } },
+    materials:{ elixir_corrosion:1, elixir_wave:1, kelp:3, glowberry:4, coral_dead_horn:2 } },
 };
 
 export const PRECISION_ALCHEMY = {
@@ -197,7 +197,7 @@ export const VANILLA_META = {
   bass:      { name:'농어 회',     group:'fish',    priceUnit:'per_set' },
   firn:         { name:'불우렁쉥이', group:'ocean',   priceUnit:'per_set' },
   seaweed_item: { name:'해초',       group:'ocean',   priceUnit:'per_set' },
-  kelp:         { name:'켈프',       group:'ocean',   priceUnit:'per_set' },
+  kelp:         { name:'켈프 더미',  group:'ocean',   priceUnit:'per_set' },
   glass_bottle: { name:'유리병',     group:'ocean',   priceUnit:'per_set' },
   glowberry:    { name:'발광 열매',  group:'ocean',   priceUnit:'per_set' },
   oak_leaf:      { name:'참나무 잎',     group:'leaf',    priceUnit:'per_set' },
@@ -483,80 +483,80 @@ export const OTHER_META = {
 export const FARMING_RECIPES = {
   /* ── 커먼 ── */
   TOMATO_SPAGHETTI: {
-    name:'토마토 스파게티', grade:'common', currentPrice:376,
+    name:'토마토 스파게티', grade:'common', currentPrice:401,
     priceMin:259, priceMax:864, craftTimeSec:60,
     materials:{ base:{tomato:1}, crops:{pumpkin:1}, milky:{}, other:{} },
   },
   ONION_RING: {
-    name:'어니언 링', grade:'common', currentPrice:554,
+    name:'어니언 링', grade:'common', currentPrice:427,
     priceMin:307, priceMax:1026, craftTimeSec:60,
     materials:{ base:{onion:1}, crops:{potato:1}, milky:{}, other:{} },
   },
   GARLIC_CAKE: {
-    name:'갈릭 케이크', grade:'common', currentPrice:647,
+    name:'갈릭 케이크', grade:'common', currentPrice:484,
     priceMin:226, priceMax:756, craftTimeSec:60,
     materials:{ base:{garlic:1}, crops:{carrot:1}, milky:{}, other:{} },
   },
   /* ── 노멀 ── */
   PORK_TOMATO_STEW: {
-    name:'삼겹살 토마토 찌개', grade:'normal', currentPrice:1609,
+    name:'삼겹살 토마토 찌개', grade:'normal', currentPrice:1880,
     priceMin:611, priceMax:2039, craftTimeSec:120,
     materials:{ base:{tomato:2}, crops:{beet:1}, milky:{}, other:{cooking_salt:1,pork:1,pork_belly:1} },
   },
   TRI_ICECREAM: {
-    name:'삼색 아이스크림', grade:'normal', currentPrice:2241,
+    name:'삼색 아이스크림', grade:'normal', currentPrice:1163,
     priceMin:906, priceMax:3022, craftTimeSec:120,
     materials:{ base:{onion:2}, crops:{watermelon:1,sugar:1}, milky:{milk:1}, other:{coconut:1} },
   },
   GARLIC_LAMB_HOTDOG: {
-    name:'마늘 양갈비 핫도그', grade:'normal', currentPrice:1254,
+    name:'마늘 양갈비 핫도그', grade:'normal', currentPrice:1275,
     priceMin:513, priceMax:1713, craftTimeSec:120,
     materials:{ base:{garlic:2}, crops:{potato:1}, milky:{oil:1}, other:{lamb:1,lamb_rib:1} },
   },
   SWEET_CEREAL: {
-    name:'달콤 시리얼', grade:'normal', currentPrice:2052,
+    name:'달콤 시리얼', grade:'normal', currentPrice:2149,
     priceMin:773, priceMax:2578, craftTimeSec:120,
     materials:{ base:{tomato:2}, crops:{sweetfruit:1}, milky:{oil:1}, other:{pineapple:1,flour:1} },
   },
   ROAST_CHICKEN_PIE: {
-    name:'로스트 치킨 파이', grade:'normal', currentPrice:1332,
+    name:'로스트 치킨 파이', grade:'normal', currentPrice:797,
     priceMin:640, priceMax:2134, craftTimeSec:120,
     materials:{ base:{garlic:2}, crops:{carrot:1}, milky:{}, other:{butter:1,chicken:1,chicken_leg:1} },
   },
   /* ── 레어 ── */
   SWEET_CHICKEN_BURGER: {
-    name:'스윗 치킨 햄버거', grade:'rare', currentPrice:2394,
+    name:'스윗 치킨 햄버거', grade:'rare', currentPrice:1924,
     priceMin:970, priceMax:3234, craftTimeSec:180,
     materials:{ base:{tomato:1,onion:1}, crops:{beet:1,sweetfruit:1}, milky:{}, other:{chicken_breast:1,chicken_leg:1} },
   },
   TOMATO_PINEAPPLE_PIZZA: {
-    name:'토마토 파인애플 피자', grade:'rare', currentPrice:2747,
+    name:'토마토 파인애플 피자', grade:'rare', currentPrice:2836,
     priceMin:922, priceMax:3077, craftTimeSec:180,
     materials:{ base:{tomato:2,garlic:1}, crops:{}, milky:{}, other:{pineapple:1,cheese:1,steak:1,beef_sirloin:1} },
   },
   ONION_SOUP: {
-    name:'양파 수프', grade:'rare', currentPrice:1536,
+    name:'양파 수프', grade:'rare', currentPrice:1479,
     priceMin:1139, priceMax:3797, craftTimeSec:180,
     materials:{ base:{onion:2,garlic:1}, crops:{potato:1}, milky:{}, other:{coconut:1,butter:1,pork_front:1} },
   },
   HERB_PORK_BELLY_STEAM: {
-    name:'허브 삼겹살 찜', grade:'rare', currentPrice:2136,
+    name:'허브 삼겹살 찜', grade:'rare', currentPrice:1792,
     priceMin:894, priceMax:2982, craftTimeSec:180,
     materials:{ base:{garlic:2,onion:1}, crops:{pumpkin:1,potato:1}, milky:{}, other:{pork:1,pork_belly:1} },
   },
   /* ── 에픽 ── */
   TOMATO_LASAGNA: {
-    name:'토마토 라자냐', grade:'epic', currentPrice:2308,
+    name:'토마토 라자냐', grade:'epic', currentPrice:2515,
     priceMin:1253, priceMax:4177, craftTimeSec:300,
     materials:{ base:{tomato:1,onion:1,garlic:1}, crops:{carrot:1,pumpkin:1}, milky:{}, other:{flour:1,lamb_leg:1} },
   },
   DEEP_CREAM_PANE: {
-    name:'딥 크림 빠네', grade:'epic', currentPrice:1833,
+    name:'딥 크림 빠네', grade:'epic', currentPrice:1405,
     priceMin:1151, priceMax:3837, craftTimeSec:300,
     materials:{ base:{tomato:1,onion:1,garlic:1}, crops:{watermelon:1,potato:1}, milky:{milk:1}, other:{cheese:1} },
   },
   TRIPLE_BEEF_RIB_SKEWER: {
-    name:'트리플 소갈비 꼬치', grade:'epic', currentPrice:2434,
+    name:'트리플 소갈비 꼬치', grade:'epic', currentPrice:3211,
     priceMin:1291, priceMax:4307, craftTimeSec:300,
     materials:{ base:{tomato:1,onion:1,garlic:1}, crops:{carrot:1,beet:1,sugar:1}, milky:{}, other:{beef_rib:1} },
   },
