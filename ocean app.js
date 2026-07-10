@@ -967,6 +967,13 @@ function renderOptResult({ planEntries, finalAnalysis, workInv, totalRev, totalV
       return s;
     }
 
+    /* ── 1차 가공품 제작(어패류 → 정수/에센스/엘릭서): '1차 가공품으로 입력' OFF일 때만 표시 ──
+       실제 제작 흐름의 첫 단계. 순서 굴→소라→문어→미역→성게(essOrder). 표시 전용 — 집계·최적화·재료·비용 불변.
+       ON일 땐 사용자가 1차 가공품을 직접 입력하므로 이 단계를 생략. */
+    html+=useProc ? '' : stageSection('정수 제작 (1차 가공품)',   '⚗️', agg.ess1,'ess1','#1e9e58', essOrder1, {essence_guardian1:98,essence_corrosion1:98,essence_wave1:48,essence_chaos1:48,essence_life1:48});
+    html+=useProc ? '' : stageSection('에센스 제작 (1차 가공품)', '⚗️', agg.ess2, 'ess2','#2060c8', essOrder2, 66);
+    html+=useProc ? '' : stageSection('엘릭서 제작 (1차 가공품)', '⚗️', agg.ess3, 'ess3','#c82828', essOrder3, 34);
+
     /* ── 결과 표시 재구성: 0성 → 3성 → 2성 → 1성 (요청). 각 성급마다 [제작 → 완성품] ──
        계산/집계/최적화/제작횟수는 전부 불변. 아래는 기존 agg 값을 순서·구성만 바꿔 표시.
        0성 제작 = 추출된 희석액이 소비하는 재료(희석액 수 × 레시피)로 기존 값에서 파생(집계·최적화 불변). */
@@ -2068,36 +2075,55 @@ window.buildStaminaRecHtml = function buildStaminaRecHtml() {
     const sfNames={oyster:'굴',conch:'소라',octopus:'문어',seaweed:'미역',urchin:'성게'};
     const sfColors={oyster:'#3d6fd4',conch:'#c89c00',octopus:'#7c52c8',seaweed:'#d94f3d',urchin:'#3a9e68'};
 
-    // 종류별 가중치 = 병목 성급(부족량/해당성급비율의 최대)
-    const weight={}, shortDetail={}; let totalW=0;
+    // ── B안: 순효과(Net Effect) + 과잉(부산물) 페널티 ──
+    // 낚시 1회당 성급별 획득량(종류 무관, 성급 비율). 특정 성급만 콕 집어 얻을 수 없음.
+    const g={1:perH*r1,2:perH*r2,3:perH*r3};
+    // 종류별: 부족량, 병목 성급을 덮는 데 필요한 낚시 횟수(그 이상은 전량 과잉), 그때 발생하는 부산물 과잉
+    const shortDetail={}, needHauls={}, wasteQty={}, shortQty={}; let sumNeed=0;
     for(const sf of SF_TYPES){
-      let w=0; const det=[];
+      let nh=0, sTot=0; const det=[];
       for(const t of SF_TIERS){
         const a=Math.max(0,(required[`${sf}${t}`]||0)-(held[`${sf}${t}`]||0));
-        if(a>0){ if(rW[t]>0)w=Math.max(w,a/rW[t]); det.push(`${t}성 ${f(a)}`); }
+        if(a>0){ const h=(g[t]>0)?Math.ceil(a/g[t]):0; nh=Math.max(nh,h); sTot+=a; det.push(`${t}성 ${f(a)}`); }
       }
-      weight[sf]=w; shortDetail[sf]=det; totalW+=w;
+      let waste=0; // nh회 낚으면 각 성급 (생산−부족)=잉여(부산물)
+      if(nh>0) for(const t of SF_TIERS){ const a=Math.max(0,(required[`${sf}${t}`]||0)-(held[`${sf}${t}`]||0)); waste+=Math.max(0,nh*g[t]-a); }
+      needHauls[sf]=nh; shortDetail[sf]=det; shortQty[sf]=sTot; wasteQty[sf]=waste; sumNeed+=nh;
     }
 
-    if(totalW<=0)
+    if(sumNeed<=0)
       return `<div class="result-box" style="margin-top:12px"><div class="rsec-title" style="color:var(--grn)">✅ 추가 낚시 불필요</div><div style="font-size:11px;color:var(--muted);font-weight:500;padding:2px 2px 4px">보유 어패류만으로 위 최적 조합을 만들 수 있어요.</div></div>`;
 
-    // 스태미나 비례 배분 (15 단위)
     const PER=OCEAN.STAMINA_PER_USE;
-    const floors={}, fracs=[]; let assigned=0;
-    for(const sf of SF_TYPES){const raw=hc*weight[sf]/totalW; floors[sf]=Math.floor(raw); assigned+=floors[sf]; fracs.push([sf,raw-floors[sf]]);}
-    let leftH=hc-assigned; fracs.sort((a,b)=>b[1]-a[1]);
-    for(let i=0;i<leftH && fracs.length;i++) floors[fracs[i%fracs.length][0]]++;
-    const alloc={}; for(const sf of SF_TYPES) alloc[sf]=floors[sf]*PER;
+    const floors={}; let capped=false;
+    if(sumNeed<=hc){
+      // 스태미나 충분 → 필요한 만큼만(각 종류 needHauls). 남는 스태미나는 여유로 남겨 과잉 낚시 방지.
+      for(const sf of SF_TYPES) floors[sf]=needHauls[sf];
+      capped=true;
+    } else {
+      // 스태미나 부족 → 순효과 점수(부족 메움 − λ·부산물 과잉) 높은 종류 우선, 각 종류는 needHauls 상한.
+      const LAMBDA=0.5;
+      const score={}; let totalS=0;
+      for(const sf of SF_TYPES){ const s=(needHauls[sf]>0)?Math.max(0,shortQty[sf]-LAMBDA*wasteQty[sf]):0; score[sf]=s; totalS+=s; }
+      if(totalS<=0){ for(const sf of SF_TYPES){ score[sf]=needHauls[sf]; totalS+=needHauls[sf]; } } // 전부 과잉이면 부족량 비례 폴백
+      const fr=[]; let asg=0;
+      for(const sf of SF_TYPES){ const raw=totalS>0?hc*score[sf]/totalS:0; const fl=Math.min(needHauls[sf],Math.floor(raw)); floors[sf]=fl; asg+=fl; fr.push([sf,raw-Math.floor(raw)]); }
+      let left=hc-asg; fr.sort((a,b)=>b[1]-a[1]);
+      while(left>0){ let placed=false; for(const[sf] of fr){ if(floors[sf]<needHauls[sf]){ floors[sf]++; left--; placed=true; if(left<=0)break; } } if(!placed)break; }
+    }
+    const alloc={}; for(const sf of SF_TYPES) alloc[sf]=(floors[sf]||0)*PER;
 
     let rows='';
     for(const sf of SF_TYPES){
-      if(weight[sf]<=0) continue;
+      if((floors[sf]||0)<=0) continue;
       const cl=sfColors[sf];
-      rows+=`<div class="rrow"><span class="rl"><span style="color:${cl};font-weight:700">${sfNames[sf]}</span> <small style="color:var(--muted)">${shortDetail[sf].length?'부족 '+shortDetail[sf].join('·'):''}</small></span>`
+      const wasteTag = wasteQty[sf]>0 ? ` · <span style="color:var(--muted)">부산물 ${f(wasteQty[sf])}</span>` : '';
+      rows+=`<div class="rrow"><span class="rl"><span style="color:${cl};font-weight:700">${sfNames[sf]}</span> <small style="color:var(--muted)">${shortDetail[sf].length?'부족 '+shortDetail[sf].join('·'):''}${wasteTag}</small></span>`
           +`<span class="rv" style="color:${cl}">${f(alloc[sf])} <small style="color:var(--muted)">(${f(floors[sf])}회)</small></span></div>`;
     }
     const usedStam=Object.values(alloc).reduce((s,v)=>s+v,0);
+    const spareNote = (capped && usedStam<stamina)
+      ? `<div style="font-size:10px;color:var(--grn);font-weight:600;margin:4px 2px 0">💡 여유 ${f(stamina-usedStam)} — 이만큼만 낚아도 위 조합을 만들 수 있어요(나머지는 과잉이라 다른 곳에 쓰세요)</div>` : '';
 
     return `
     <div class="rsec" style="margin-top:12px">
@@ -2105,6 +2131,7 @@ window.buildStaminaRecHtml = function buildStaminaRecHtml() {
       <div style="font-size:10px;color:var(--muted);font-weight:500;margin:-2px 2px 6px">연금 최적화 탭의 보유 어패류 + 오늘 획득 예상으로 최적 연금 조합을 만들기 위한 종류별 배분이에요</div>
       ${rows}
       <div class="rrow rrow-strong"><span class="rl">추천 합계</span><span class="rv g">${f(usedStam)} / ${f(stamina)}</span></div>
+      ${spareNote}
     </div>`;
   } catch(e){ console.error('staminaRec error:',e); return ''; }
 };
@@ -2155,8 +2182,6 @@ window.applyRemainToHave = () => {
 function domReady(fn){if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',fn);else fn();}
 domReady(()=>{
   buildVanillaPriceGrid();
-  // ⚠️ 버그수정: 보유칸 그리드는 useProcToggle 체크 상태에 따라 어패류/1차가공품 입력칸이 달라진다.
-  //   loadAll 보다 먼저 토글 상태를 복원해야 올바른 입력칸이 생성되고, 이후 loadAll 이 그 값을 채운다.
   try{
     const __d=oceanStore.load();
     const __u=document.getElementById('useProcToggle');       if(__u)__u.checked=__d.__useProcToggle      ??false;
