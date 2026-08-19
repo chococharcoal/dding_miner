@@ -1,3 +1,1 @@
 queue_rules: []
-- name: Claude Code Base Action
-  uses: anthropics/claude-code-base-action@beta
